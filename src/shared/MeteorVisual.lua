@@ -290,7 +290,7 @@ function MeteorVisual.Build(typeId, opts)
 		glow.Shape = Enum.PartType.Ball
 		glow.Material = Enum.Material.Neon
 		glow.Color = def.fire[1]
-		glow.Size = Vector3.one * size * 0.62
+		glow.Size = Vector3.one * size * 0.86
 		glow.Massless = true
 		glow.CanCollide = false
 		glow.CanQuery = false
@@ -354,7 +354,7 @@ function MeteorVisual.SetSize(model, size)
 		body.Size = body:GetAttribute("Unit") * size * (body:GetAttribute("UnitScale") or 1.1)
 		local glow = model:FindFirstChild("InnerGlow")
 		if glow then
-			glow.Size = Vector3.one * size * 0.62
+			glow.Size = Vector3.one * size * 0.86
 		end
 		local bodyWeld = core:FindFirstChild("BodyWeld")
 		if bodyWeld then

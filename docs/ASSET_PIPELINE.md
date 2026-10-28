@@ -56,11 +56,12 @@ esatto, es. `Royal Comet`), render in `art/renders/meteors/`. Lo script scrive a
 `src/shared/Config/MeteorMeshes.lua` con il riquadro di ogni mesh: serve al codice per far combaciare la sfera della
 roccia con la faccia anche se ci sono corna o creste. Se rifai una cometa a mano, riesegui lo script con `--config`
 o aggiorna quel file. Niente accessori: corna, creste, cristalli e pinne fanno parte della roccia.
-**Stile scelto:** roccia low-poly sfaccettata piena di crateri ottagonali, con la **faccia scavata** (occhi arrabbiati
-e bocca con le zanne sono buchi nella roccia, lato −Z). L'interno dei buchi è colorato col colore dell'elemento e,
-quando c'è la mesh, il codice mette una sfera Neon (`InnerGlow`) dentro la roccia che si vede dai buchi: niente
-faccia a pezzi in quel caso. I colori sono cotti in una texture 1024 (`<Nome>.png`, inclusa nell'FBX).
-Fino a ~6.000 triangoli per cometa.
+**Stile scelto: due strati.** Dentro un **nucleo luminoso** del colore dell'elemento; sopra un **guscio di roccia a
+placche bombate** con le crepe (stile lava raffreddata) che scendono sotto il nucleo, così la luce esce dalle crepe.
+La **faccia è scavata** nel guscio (occhi arrabbiati e bocca con le zanne, lato −Z) e si vede il nucleo dai buchi.
+L'FBX contiene **solo il guscio** (+ corna/cristalli): il nucleo in Roblox è la sfera Neon `InnerGlow` (0,86 del
+diametro) che il codice mette dentro quando c'è la mesh; in quel caso niente faccia a pezzi. I colori sono cotti in
+una texture 2048 (`<Nome>.png`, inclusa nell'FBX). ~16.000 triangoli per cometa.
 
 ## 3. Regole tecniche per i modelli (Blender → Roblox)
 

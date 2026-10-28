@@ -149,7 +149,7 @@ def body_material(d):
     b.inputs["Roughness"].default_value = d["rough"]
     if d.get("glow") or d.get("bodyEmit"):
         nt.links.new(glow.outputs["Color"], b.inputs["Emission Color"])
-        b.inputs["Emission Strength"].default_value = d.get("glowStrength", 1)
+        b.inputs["Emission Strength"].default_value = min(d.get("glowStrength", 1), 3)
     return m
 
 
@@ -364,7 +364,8 @@ def apply_boolean(target, cutter):
     bpy.data.objects.remove(cutter)
 
 
-def build_body(d, subdiv):
+def build_body_carved(d, subdiv):
+    """Previous look: single low-poly rock with craters and the carved face."""
     rng = random.Random(d["seed"] * 101)
     off = Vector((d["seed"] * 13.1, d["seed"] * 7.3, d["seed"] * 3.7))
     # 1) Faceted rock: a coarse icosphere pushed around by noise (flat shaded = chiselled stone).
@@ -442,6 +443,88 @@ def build_body(d, subdiv):
     for poly in me.polygons:
         poly.use_smooth = False
     return body
+
+
+DEFAULT_GLOW = (1.0, 0.55, 0.2)
+
+
+def glow_of(d):
+    return d.get("glow") or d.get("coreGlow") or DEFAULT_GLOW
+
+
+def build_core(d):
+    """Inner layer: a glowing ball of the element's color, seen through the cracks and the face."""
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=4, radius=0.43)
+    gc = glow_of(d)
+    mat = new_material(d["id"] + "_Core", gc, rough=.4, emit=gc, emit_strength=d.get("coreStrength", 1.6))
+    core = mesh_object(d["id"] + "_Core", bm, mat, smooth=True)
+    fill_feature_colors(core, gc, gc)
+    return core
+
+
+def build_body(d, subdiv, budget=None):
+    """Outer layer: a rock shell of rounded plates. Along the cracks the shell dips below the
+    glowing core (radius 0.43), so the core shows through as sharp lines of light. The angry
+    face is cut through the shell. High detail for renders/baking; `budget` = max triangles."""
+    off = Vector((d["seed"] * 13.1, d["seed"] * 7.3, d["seed"] * 3.7))
+    freq = d.get("plates", 3.6)
+    gw = d.get("crack", 0.07)
+    gc = glow_of(d)
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=max(subdiv, 7), radius=0.5)
+    cols, glows = [], []
+    for v in bm.verts:
+        n = v.co.normalized()
+        dist, pts = noise.voronoi(n * freq + off, distance_metric="DISTANCE", exponent=2.5)
+        e = dist[1] - dist[0]
+        h = cell_hash(pts[0])
+        crack = (1 - smoothstep(0, gw, e)) ** 1.6
+        # Big cracks everywhere, plus thin secondary cracks inside the plates.
+        dist2, _ = noise.voronoi(n * freq * 2.6 + off * 1.9, distance_metric="DISTANCE", exponent=2.5)
+        thin = 0.0 * dist2[0]  # (secondary cracks made speckles: off)
+        mask = smoothstep(0.5, 0.68, n.dot(FRONT))  # the face is one solid plate (no cracks through it)
+        crack *= 1 - mask
+        pillow = max(smoothstep(0, gw * 4, e), mask)  # plates bulge in their middle
+        r = 0.47 + pillow * 0.03 + (h - 0.5) * 0.02 \
+            + noise.fractal(n * 1.3 + off, 1.0, 2.0, 2) * d.get("lump", .05) * 0.5 \
+            + noise.noise(n * 16 + off) * 0.004 - crack * 0.1 - thin * 0.05
+        if n.dot(FRONT) > 0.6:
+            r = max(r, 0.45 + (r - 0.45) * 0.5)
+        co = n * r
+        if d.get("stretch") and co.y > 0:
+            co.y *= d["stretch"]
+        v.co = co
+        rim = max(crack, thin) ** 0.7
+        rock = lerp3(d["rock1"], d["rock2"], h * 0.75 + 0.25 * (noise.noise(n * 9 + off) * 0.5 + 0.5))
+        rock = tuple(c * 0.65 for c in rock)
+        cols.append(lerp3(rock, gc, min(1, rim * 1.2)))
+        glows.append(tuple(x * rim for x in gc))
+    shell = mesh_object(d["id"] + "_Body", bm, body_material(d), smooth=True)
+    set_point_color(shell.data, "Col", cols)
+    set_point_color(shell.data, "Glow", glows)
+    set_point_color(shell.data, "Metal", [(0, 0, 0)] * len(cols))
+    if budget:
+        tris = sum(len(p.vertices) - 2 for p in shell.data.polygons)
+        if tris > budget:
+            bpy.ops.object.select_all(action="DESELECT")
+            shell.select_set(True)
+            bpy.context.view_layer.objects.active = shell
+            dec = shell.modifiers.new("Budget", "DECIMATE")
+            dec.ratio = budget / tris
+            bpy.ops.object.modifier_apply(modifier=dec.name)
+    # The face, cut through the shell (the core shows through).
+    cut = bmesh.new()
+    prism_bm(cut, EYE, -1.0, -0.3)
+    prism_bm(cut, [(-x, z) for (x, z) in reversed(EYE)], -1.0, -0.3)
+    prism_bm(cut, MOUTH, -1.0, -0.3)
+    bmesh.ops.recalc_face_normals(cut, faces=cut.faces)
+    bmesh.ops.triangulate(cut, faces=cut.faces)
+    cme = bpy.data.meshes.new("Cutter")
+    cut.to_mesh(cme)
+    cut.free()
+    apply_boolean(shell, link(bpy.data.objects.new("Cutter", cme)))
+    return shell
 
 
 def set_face_color(me, name, face_values):
@@ -641,10 +724,12 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def build(d, subdiv=6, with_face=True):
+def build(d, subdiv=6, with_face=True, with_core=True, budget=None):
     rng = random.Random(d["seed"])
-    body = build_body(d, subdiv)
+    body = build_body(d, subdiv, budget)
     parts = [body]
+    if with_core:
+        parts.append(build_core(d))
     for f in d["features"]:
         add_feature(d, f, rng, parts)
     face = []  # the face is carved in the rock (face_preview kept for the old look)
@@ -661,11 +746,10 @@ def setup_render(scene, res, samples):
     world = bpy.data.worlds.new("Space")
     world.use_nodes = True
     bg = world.node_tree.nodes["Background"]
-    bg.inputs["Color"].default_value = (0.012, 0.008, 0.03, 1)
+    bg.inputs["Color"].default_value = (0.004, 0.003, 0.012, 1)
     bg.inputs["Strength"].default_value = 1
     scene.world = world
-    scene.view_settings.view_transform = "AgX"
-    scene.view_settings.look = "AgX - Punchy"
+    scene.view_settings.view_transform = "Standard"
 
 
 def add_light(scene, name, kind, loc, energy, color=(1, 1, 1), size=1.0):
@@ -763,14 +847,14 @@ def join(parts, name):
     return obj
 
 
-def export_fbx(d, path, max_tris=9000, tex_size=1024):
+def export_fbx(d, path, max_tris=16000, tex_size=2048):
     """Low-poly mesh with the high-poly colors (cracks included) baked into one texture."""
     global BAKING
     reset()
     scene = bpy.context.scene
     BAKING = True
     try:
-        high = join(build(d, subdiv=6, with_face=False)[0], d["id"] + "_High")
+        high = join(build(d, subdiv=6, with_face=False, with_core=False)[0], d["id"] + "_High")  # max detail, baked onto the low one
     finally:
         BAKING = False
     low = high.copy()
