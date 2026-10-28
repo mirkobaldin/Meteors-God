@@ -27,6 +27,9 @@ local function defaultData()
 		version = 1,
 		power = 0,
 		shards = 0,
+		stardust = 0,
+		equipped = "", -- uid of the meteor that follows you and is thrown first
+		bestHunt = 0,
 		evolution = 1,
 		ascensions = 0,
 		planetsDestroyed = 0,

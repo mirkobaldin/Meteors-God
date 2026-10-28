@@ -24,12 +24,17 @@ function MeteorMath.Growth(meteor, now)
 	return math.clamp(MeteorMath.GrowthSeconds(meteor, now) / def.growTime, 0, 1)
 end
 
+-- Fed levels make a meteor bigger and stronger.
+local function levelMult(meteor, perLevel)
+	return 1 + (meteor.lv or 0) * perLevel
+end
+
 function MeteorMath.DisplaySize(meteor, now)
-	return 2.4 + MeteorMath.Growth(meteor, now) * 3.6
+	return (2.4 + MeteorMath.Growth(meteor, now) * 3.6) * levelMult(meteor, Game.Feeding.SizePerLevel)
 end
 
 function MeteorMath.LaunchSize(meteor, now)
-	return 4 + MeteorMath.Growth(meteor, now) * 7
+	return (4 + MeteorMath.Growth(meteor, now) * 7) * levelMult(meteor, Game.Feeding.SizePerLevel)
 end
 
 function MeteorMath.Expression(meteor, now)
@@ -49,7 +54,10 @@ function MeteorMath.MeteorDamage(meteor, now)
 		return 0
 	end
 	local growth = MeteorMath.Growth(meteor, now)
+	local ability = def.ability
+	local passive = ability and ability.kind == "damage" and (1 + ability.value) or 1
 	return def.baseDamage * (0.4 + 0.6 * growth) * Meteors.GetMutationMult(meteor.m)
+		* levelMult(meteor, Game.Feeding.DamagePerLevel) * passive
 end
 
 function MeteorMath.PowerMultiplier(power)

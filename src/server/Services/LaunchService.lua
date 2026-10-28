@@ -76,7 +76,9 @@ local function computeDamage(player, meteor, charge, crit)
 	local dmg = MeteorMath.MeteorDamage(meteor, os.time())
 	dmg *= 0.5 + charge
 	if crit then
-		dmg *= L.CritMultiplier + Game.UpgradeEffect(data, "crit")
+		local def = Meteors.ByID[meteor.t]
+		local boost = def and def.ability and def.ability.kind == "critBoost" and def.ability.value or 0
+		dmg *= L.CritMultiplier + Game.UpgradeEffect(data, "crit") + boost
 	end
 	dmg *= MeteorMath.PowerMultiplier(data.power)
 	dmg *= 1 + Game.UpgradeEffect(data, "power")
@@ -249,17 +251,44 @@ local function fireLaunch(player, charge, aim)
 			launchFxRemote:FireClient(other, fx)
 		end
 	end
-	services.MeteorService:SetCooldown(player, a.uid, flightTime + MeteorMath.Cooldown(data))
+	local ability = def and def.ability
+	local function abilityValue(kind)
+		return ability and ability.kind == kind and ability.value or 0
+	end
+	services.MeteorService:SetCooldown(player, a.uid, flightTime + MeteorMath.Cooldown(data) * (1 - abilityValue("recharge")))
 
-	task.delay(flightTime, function()
-		local dealt = services.PlanetService:ApplyHit(a.tier, player, damage, impact, normal, crit, color, meteor.t)
-		if active[player] == a then
-			active[player] = nil
-		end
+	local function reward(dealt)
 		local d = services.DataService:Get(player)
 		if d and dealt > 0 then
 			d.totalDamage += dealt
-			services.PlayerService:AddShards(player, dealt * Game.Economy.ShardsPerDamage * (1 + Game.UpgradeEffect(d, "greed")), true)
+			local mult = (1 + Game.UpgradeEffect(d, "greed")) * (1 + abilityValue("shards"))
+			services.PlayerService:AddShards(player, dealt * Game.Economy.ShardsPerDamage * mult, true)
+		end
+	end
+
+	task.delay(flightTime, function()
+		local planet = services.PlanetService
+		local dealt = planet:ApplyHit(a.tier, player, damage, impact, normal, crit, color, meteor.t)
+		if active[player] == a then
+			active[player] = nil
+		end
+		reward(dealt)
+		if dealt <= 0 or not ability then
+			return
+		end
+		-- The meteor's special ability.
+		if ability.kind == "mark" then
+			planet:Mark(a.tier, ability.value, 8, ability.name)
+		elseif ability.kind == "chain" then
+			task.delay(0.35, function()
+				reward(planet:ApplyBonus(a.tier, player, damage * ability.value, impact, normal, ability.name, color))
+			end)
+		elseif ability.kind == "burn" then
+			for k = 1, 5 do
+				task.delay(k * 0.6, function()
+					reward(planet:ApplyBonus(a.tier, player, damage * ability.value / 5, impact, normal, ability.name, color))
+				end)
+			end
 		end
 	end)
 end

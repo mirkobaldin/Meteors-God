@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Assets = require(Shared.Config.Assets)
 local Meteors = require(Shared.Config.Meteors)
+local Game = require(Shared.Config.Game)
 local MeteorMath = require(Shared.Util.MeteorMath)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
@@ -38,19 +39,6 @@ local function sortedMeteors(snapshot)
 	return arr
 end
 
--- How many meteors of each type are in storage (fusion needs 3).
-local function storageCounts(snapshot)
-	local counts = {}
-	for _, m in pairs(snapshot.meteors) do
-		if not m.altar and not m.paid then
-			counts[m.t] = (counts[m.t] or 0) + 1
-		end
-	end
-	return counts
-end
-
-local counts = {}
-
 local function row(entry, now)
 	local m = entry.m
 	local def = Meteors.ByID[m.t]
@@ -60,9 +48,10 @@ local function row(entry, now)
 	local rarity = Meteors.RarityByID[def.rarity]
 	local growth = MeteorMath.Growth(m, now)
 	local cd = State.CooldownLeft(entry.uid)
+	local equipped = State.Snapshot and State.Snapshot.equipped == entry.uid
 
 	local item = UI.New("Frame", {
-		Size = UDim2.new(1, -8, 0, 58),
+		Size = UDim2.new(1, -8, 0, 96),
 		BackgroundColor3 = UI.Colors.PanelLight,
 		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
@@ -84,7 +73,7 @@ local function row(entry, now)
 	UI.Text({
 		Size = UDim2.new(0.45, -60, 0, 26),
 		Position = UDim2.fromOffset(58, 4),
-		Text = (m.m and (m.m .. " ") or "") .. def.id,
+		Text = (equipped and "⭐ " or "") .. (m.m and (m.m .. " ") or "") .. def.id .. ((m.lv or 0) > 0 and ("  Lv " .. m.lv) or ""),
 		TextColor3 = m.m and Meteors.MutationByID[m.m].color or UI.Colors.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		MaxTextSize = 20,
@@ -112,21 +101,17 @@ local function row(entry, now)
 		MaxTextSize = 14,
 		Parent = item,
 	})
-	local canFuse = not m.altar and not m.paid and (counts[m.t] or 0) >= 3 and Meteors.NextRarity(def.rarity) ~= nil
-	if canFuse then
-		UI.Button({
-			Size = UDim2.new(0.16, 0, 0, 38),
-			Position = UDim2.new(0.49, 0, 0, 10),
-			Text = "✨ Fuse x3",
-			BackgroundColor3 = Color3.fromRGB(190, 110, 255),
-			MaxTextSize = 16,
-			Parent = item,
-		}, function()
-			Remotes.Get("FuseMeteors"):FireServer(entry.uid)
-		end)
-	end
 	UI.Text({
-		Visible = not canFuse,
+		Size = UDim2.new(0.62, -60, 0, 34),
+		Position = UDim2.fromOffset(58, 54),
+		Text = def.ability and ("⚡ " .. def.ability.name .. ": " .. def.ability.desc) or "",
+		TextColor3 = Color3.fromRGB(200, 220, 255),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		MaxTextSize = 14,
+		Parent = item,
+	})
+	UI.Text({
 		Size = UDim2.new(0.2, 0, 0, 20),
 		Position = UDim2.new(0.45, 0, 0, 18),
 		Text = "💥 " .. Format.Number(MeteorMath.MeteorDamage(m, now)),
@@ -134,6 +119,28 @@ local function row(entry, now)
 		MaxTextSize = 18,
 		Parent = item,
 	})
+	-- Second row: equip (pet + thrown first) and feed with Stardust.
+	UI.Button({
+		Size = UDim2.new(0.16, 0, 0, 34),
+		Position = UDim2.new(0.66, 0, 0, 54),
+		Text = equipped and "Unequip" or "⭐ Equip",
+		BackgroundColor3 = equipped and UI.Colors.PanelLight or Color3.fromRGB(255, 205, 70),
+		MaxTextSize = 16,
+		Parent = item,
+	}, function()
+		Remotes.Get("EquipMeteor"):FireServer(entry.uid)
+	end)
+	local feedCost = Game.FeedCost(rarity.order, m.lv or 0)
+	UI.Button({
+		Size = UDim2.new(0.16, 0, 0, 34),
+		Position = UDim2.new(0.83, 0, 0, 54),
+		Text = feedCost and ("🍖 " .. Format.Number(feedCost) .. " ✨") or "MAX LV",
+		BackgroundColor3 = Color3.fromRGB(120, 200, 255),
+		MaxTextSize = 15,
+		Parent = item,
+	}, function()
+		Remotes.Get("FeedMeteor"):FireServer(entry.uid)
+	end)
 
 	if m.altar then
 		UI.Button({
@@ -196,7 +203,6 @@ function Inventory:Refresh()
 		math.min(indexed, snap.indexSize),
 		snap.indexSize
 	)
-	counts = storageCounts(snap)
 	local scroll = list.CanvasPosition
 	UI.Clear(list)
 	for _, entry in ipairs(sortedMeteors(snap)) do

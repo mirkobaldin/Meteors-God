@@ -97,7 +97,7 @@ end
 local function buildTopLeft()
 	local f = UI.New("Frame", {
 		Position = UDim2.fromOffset(14, 10),
-		Size = UDim2.fromOffset(180, 92),
+		Size = UDim2.fromOffset(180, 140),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})
@@ -105,12 +105,13 @@ local function buildTopLeft()
 	UI.New("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
 	refs.planets = pill(f, 1, Icons.Planets, "🪐", Color3.fromRGB(255, 205, 110))
 	refs.shards = pill(f, 2, Icons.Shards, "💎", Color3.fromRGB(90, 220, 255))
+	refs.stardust = pill(f, 3, Icons.Stardust, "✨", Color3.fromRGB(200, 160, 255))
 end
 
 local function buildDock()
 	-- Starts below the currency pills so it never covers them.
 	local dock = UI.Panel({
-		Position = UDim2.fromOffset(14, 112),
+		Position = UDim2.fromOffset(14, 160),
 		Size = UDim2.fromOffset(88, 476),
 		BackgroundTransparency = 0.35,
 		Parent = gui,
@@ -509,6 +510,7 @@ local function update()
 	local planets = player:GetAttribute("Planets") or 0
 	refs.planets.Text = Format.Number(planets)
 	refs.shards.Text = Format.Number(player:GetAttribute("Shards") or 0)
+	refs.stardust.Text = Format.Number(player:GetAttribute("Stardust") or 0)
 	refs.power.Text = "⚡ " .. Format.Number(power)
 	local boostLeft = (player:GetAttribute("Boost2xUntil") or 0) - os.time()
 	refs.rate.Text = "+"

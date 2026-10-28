@@ -78,6 +78,17 @@ function PlayerService:AddShards(player, amount, applyPass)
 	return amount
 end
 
+function PlayerService:AddStardust(player, amount)
+	local data = services.DataService:Get(player)
+	if not data then
+		return 0
+	end
+	amount = math.floor(amount)
+	data.stardust += amount
+	PlayerService:Sync(player)
+	return amount
+end
+
 function PlayerService:AddPower(player, amount)
 	local data = services.DataService:Get(player)
 	if data then
@@ -97,6 +108,9 @@ end
 -- The pet: the player's best meteor (rarity first, then damage) floats next to them.
 -- Clients render it locally from these attributes (Controllers/Pets).
 local function bestMeteor(data)
+	if data.equipped ~= "" and data.meteors[data.equipped] then
+		return data.meteors[data.equipped]
+	end
 	local best, bestKey
 	for _, m in pairs(data.meteors) do
 		local def = Meteors.ByID[m.t]
@@ -167,6 +181,7 @@ function PlayerService:Sync(player)
 	player:SetAttribute("Power", data.power)
 	player:SetAttribute("PowerRate", PlayerService:PowerRate(player))
 	player:SetAttribute("Shards", data.shards)
+	player:SetAttribute("Stardust", data.stardust)
 	player:SetAttribute("Evolution", data.evolution)
 	player:SetAttribute("Ascensions", data.ascensions)
 	player:SetAttribute("Planets", data.planetsDestroyed)
@@ -178,6 +193,7 @@ function PlayerService:Sync(player)
 	end
 	local pet = bestMeteor(data)
 	player:SetAttribute("PetType", pet and pet.t or nil)
+	player:SetAttribute("PetLevel", pet and pet.lv or 0)
 	player:SetAttribute("PetMutation", pet and pet.m or nil)
 	updateOverhead(player, data)
 	local ls = player:FindFirstChild("leaderstats")

@@ -222,6 +222,45 @@ function Game.TitleFor(planets)
 	return best
 end
 
+-- Feeding: Stardust (earned in the Cosmic Hunt) levels a meteor up: more damage, bigger body.
+Game.Feeding = {
+	MaxLevel = 10,
+	BaseCost = 40, -- x rarity order^1.5 x Growth^level
+	Growth = 1.55,
+	DamagePerLevel = 0.15,
+	SizePerLevel = 0.06,
+	Stages = { [5] = "Awakened", [10] = "Ascended" },
+}
+
+function Game.FeedCost(rarityOrder, level)
+	local f = Game.Feeding
+	if level >= f.MaxLevel then
+		return nil
+	end
+	return math.floor(f.BaseCost * rarityOrder ^ 1.5 * f.Growth ^ level)
+end
+
+-- Fusion Reactor (on the central island): 3 meteors of a type -> 1 of the next rarity.
+Game.Fusion = {
+	RequiredPlanets = 3, -- planets destroyed to unlock it
+	Position = Vector3.new(-330, 0, -150),
+}
+
+-- Cosmic Hunt: fly through deep space and smash as many small planets as you can.
+Game.Hunt = {
+	Duration = 120,
+	Center = Vector3.new(0, 6000, 0), -- far above the map
+	Radius = 1600,
+	PlanetCount = 26,
+	PlanetRadius = { 30, 110 },
+	FireCooldown = 0.45,
+	Range = 1400,
+	FlySpeed = 120,
+	BoostSpeed = 260,
+	StardustPerPlanet = 6, -- x planet size factor
+	PortalPosition = Vector3.new(330, 0, -150),
+}
+
 Game.Trade = {
 	MinEvolution = 2,
 	MaxItemsPerSide = 8,

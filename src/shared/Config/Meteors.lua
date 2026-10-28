@@ -14,11 +14,15 @@ Meteors.Rarities = {
 
 -- impact: crater effect and the mark left on the planet
 --   rock | magma | frost | spark | venom | crystal | aurora | solar | void | nova
+-- ability: special power when thrown
+--   damage (+x damage) | burn (+x damage over 3s) | mark (planet takes +x from everyone, 8s)
+--   chain (second strike +x) | critBoost (+x crit multiplier) | shards (+x shards) | recharge (-x recharge)
 -- face.eyes: "normal" | "cyclops"
 -- face.extra: nil | "crown" | "sunglasses" | "horns"
 Meteors.Types = {
 	{
 		id = "Pebble",
+		ability = { kind = "damage", value = 0.1, name = "Rock Solid", desc = "+10% damage" },
 		impact = "rock",
 		rarity = "Common",
 		body = Color3.fromRGB(120, 110, 105),
@@ -31,6 +35,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Ember",
+		ability = { kind = "burn", value = 0.25, name = "Burn", desc = "Burns the planet: +25% damage over 3s" },
 		impact = "magma",
 		rarity = "Common",
 		body = Color3.fromRGB(200, 70, 40),
@@ -43,6 +48,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Frost",
+		ability = { kind = "mark", value = 0.15, name = "Deep Freeze", desc = "The planet takes +15% damage from everyone for 8s" },
 		impact = "frost",
 		rarity = "Uncommon",
 		body = Color3.fromRGB(150, 220, 255),
@@ -55,6 +61,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Spark",
+		ability = { kind = "chain", value = 0.3, name = "Chain Lightning", desc = "A second strike for +30% damage" },
 		impact = "spark",
 		rarity = "Uncommon",
 		body = Color3.fromRGB(255, 230, 80),
@@ -67,6 +74,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Venom",
+		ability = { kind = "burn", value = 0.45, name = "Poison", desc = "Poisons the planet: +45% damage over 3s" },
 		impact = "venom",
 		rarity = "Rare",
 		body = Color3.fromRGB(110, 220, 60),
@@ -79,6 +87,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Crystal",
+		ability = { kind = "critBoost", value = 0.6, name = "Shatter", desc = "Critical hits deal +60% more" },
 		impact = "crystal",
 		rarity = "Rare",
 		body = Color3.fromRGB(255, 140, 230),
@@ -91,6 +100,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Magma",
+		ability = { kind = "burn", value = 0.5, name = "Eruption", desc = "Lava burns the planet: +50% damage over 3s" },
 		impact = "magma",
 		rarity = "Epic",
 		body = Color3.fromRGB(90, 20, 15),
@@ -103,6 +113,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Aurora",
+		ability = { kind = "shards", value = 0.6, name = "Aurora Blessing", desc = "+60% Shards from its hits" },
 		impact = "aurora",
 		rarity = "Epic",
 		body = Color3.fromRGB(60, 230, 200),
@@ -115,6 +126,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Solar",
+		ability = { kind = "mark", value = 0.25, name = "Solar Flare", desc = "The planet takes +25% damage from everyone for 8s" },
 		impact = "solar",
 		rarity = "Legendary",
 		body = Color3.fromRGB(255, 190, 40),
@@ -127,6 +139,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Royal Comet",
+		ability = { kind = "shards", value = 1, name = "Royal Tribute", desc = "x2 Shards from its hits" },
 		impact = "frost",
 		rarity = "Legendary",
 		body = Color3.fromRGB(220, 240, 255),
@@ -139,6 +152,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Void",
+		ability = { kind = "damage", value = 0.6, name = "Void Rift", desc = "+60% damage" },
 		impact = "void",
 		rarity = "Mythic",
 		body = Color3.fromRGB(20, 10, 35),
@@ -151,6 +165,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Supernova",
+		ability = { kind = "chain", value = 0.7, name = "Nova Blast", desc = "A second blast for +70% damage" },
 		impact = "nova",
 		rarity = "Mythic",
 		body = Color3.fromRGB(255, 255, 240),
@@ -163,6 +178,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Blue Comet",
+		ability = { kind = "recharge", value = 0.5, name = "Hyperspeed", desc = "Recharges twice as fast" },
 		impact = "frost",
 		rarity = "Epic",
 		body = Color3.fromRGB(40, 90, 255),

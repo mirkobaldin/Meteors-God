@@ -15,6 +15,8 @@ local EVENTS = {
 	"TradeState", -- (state | nil)
 	"PlanetFX", -- (payload) impacts, layer breaks, supernova, rift
 	"LaunchFX", -- (payload) another player's meteor flight
+	"HuntState", -- (state) Cosmic Hunt: start / planets / score / end
+	"HuntFX", -- (payload) hunt shots and planet explosions
 	-- client -> server
 	"FireLaunch", -- (charge)
 	"CancelLaunch", -- ()
@@ -22,6 +24,11 @@ local EVENTS = {
 	"RemoveFromAltar", -- (uid)
 	"SellMeteor", -- (uid)
 	"FuseMeteors", -- (uid) fuses it with 2 more of the same type from storage
+	"EquipMeteor", -- (uid) pet + first meteor thrown (same uid = unequip)
+	"FeedMeteor", -- (uid) spend Stardust to level it up
+	"HuntStart", -- () enter the Cosmic Hunt
+	"HuntFire", -- (aimPoint) throw at a hunt planet
+	"HuntLeave", -- ()
 	"Evolve", -- ()
 	"Ascend", -- ()
 	"BuyUpgrade", -- (upgradeId, count 1..100)

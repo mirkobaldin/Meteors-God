@@ -28,21 +28,22 @@ local function refresh(player)
 	local typeId = player:GetAttribute("PetType")
 	local mutation = player:GetAttribute("PetMutation")
 	local p = pets[player]
-	if p and p.type == typeId and p.mutation == mutation then
+	if p and p.type == typeId and p.mutation == mutation and p.level == player:GetAttribute("PetLevel") then
 		return
 	end
 	remove(player)
 	if not typeId then
 		return
 	end
-	local model = MeteorVisual.Build(typeId, { size = PET_SIZE, expression = "happy", mutation = mutation })
+	local level = player:GetAttribute("PetLevel") or 0
+	local model = MeteorVisual.Build(typeId, { size = PET_SIZE * (1 + level * 0.06), expression = "happy", mutation = mutation })
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") then
 			d.CanQuery = false
 		end
 	end
 	model.Parent = folder
-	pets[player] = { model = model, type = typeId, mutation = mutation }
+	pets[player] = { model = model, type = typeId, mutation = mutation, level = level }
 end
 
 local function watch(player)
@@ -50,6 +51,9 @@ local function watch(player)
 		refresh(player)
 	end)
 	player:GetAttributeChangedSignal("PetMutation"):Connect(function()
+		refresh(player)
+	end)
+	player:GetAttributeChangedSignal("PetLevel"):Connect(function()
 		refresh(player)
 	end)
 	refresh(player)

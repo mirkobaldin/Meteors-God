@@ -181,7 +181,7 @@ local function rocks(position, normal, count, size, color, speed, material)
 	end
 end
 
-local function damageNumber(position, damage, crit, color)
+local function damageNumber(position, damage, crit, color, label)
 	local Menu = require(script.Parent.Menu)
 	if not Menu.Get("ShowDamageNumbers") then
 		return
@@ -201,7 +201,7 @@ local function damageNumber(position, damage, crit, color)
 	t.TextColor3 = crit and Color3.fromRGB(255, 215, 60) or Color3.fromRGB(255, 255, 255)
 	t.TextStrokeColor3 = crit and Color3.fromRGB(150, 40, 0) or color:Lerp(Color3.new(0, 0, 0), 0.5)
 	t.TextStrokeTransparency = 0
-	t.Text = (crit and "CRITICAL!\n" or "") .. Format.Number(damage)
+	t.Text = (crit and "CRITICAL!\n" or "") .. (label and (label .. "\n") or "") .. Format.Number(damage)
 	t.Parent = bb
 	local scale = Instance.new("UIScale")
 	scale.Scale = 0.3
@@ -539,6 +539,28 @@ function FX.Impact(p)
 	Sfx.Play(p.crit and "Crit" or "Impact", isMine and 0.9 or 0.35)
 end
 
+-- Ability bonus damage (chain strike, burn, poison): small blast + labelled number.
+function FX.Bonus(p)
+	local s = 18
+	expandAndFade(neonBall(p.point, s * 0.5, p.color or Color3.new(1, 1, 1), 0.2), Vector3.one * s * 3, 0.5)
+	if p.label == "Chain Lightning" or p.label == "Nova Blast" then
+		for _ = 1, 4 do
+			bolt(p.point + p.normal * s * rng:NextNumber(3, 6) + tangent(p.normal) * s * 2, p.point, Color3.fromRGB(255, 250, 170), 2, 0.3)
+		end
+	end
+	damageNumber(p.point + p.normal * 40 + tangent(p.normal) * 30, p.damage, false, p.color or Color3.new(1, 1, 1), p.label)
+end
+
+-- Planet marked by an ability (Deep Freeze / Solar Flare): rings sweep across it.
+function FX.Mark(p)
+	local color = p.label == "Solar Flare" and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(150, 220, 255)
+	for k = 0, 2 do
+		task.delay(k * 0.25, function()
+			ring(p.center, Vector3.new(0, 1, 0), p.radius * 2, p.radius * 2.6, color, 1.2, 0.5)
+		end)
+	end
+end
+
 -- A layer of the planet broke (mantle or core exposed).
 function FX.Layer(p)
 	local r = p.radius
@@ -869,6 +891,10 @@ function FX:Start()
 			FX.Impact(p)
 		elseif p.kind == "layer" then
 			FX.Layer(p)
+		elseif p.kind == "bonus" then
+			FX.Bonus(p)
+		elseif p.kind == "mark" then
+			FX.Mark(p)
 		elseif p.kind == "supernova" then
 			FX.Supernova(p)
 		elseif p.kind == "rift" then

@@ -11,7 +11,6 @@ local MeteorVisual = {}
 
 local BLACK = Color3.fromRGB(20, 15, 25)
 local WHITE = Color3.fromRGB(255, 255, 255)
-local PINK = Color3.fromRGB(255, 120, 150)
 local GOLD = Color3.fromRGB(255, 205, 40)
 
 -- The face is made of real parts welded to the body (eyes, pupils, brows, mouth, cheeks,
@@ -39,16 +38,17 @@ local function eyeSpec(list, x, y, w, expression, faceColor)
 		piece(list, "Block", BLACK, Vector3.new(x, y - 0.02, z - 0.02), Vector3.new(w * 0.9, w * 0.13, 0.05))
 		return
 	end
-	local white = expression == "furious" and Color3.fromRGB(255, 210, 210) or WHITE
-	piece(list, "Ball", white, Vector3.new(x, y, z), Vector3.new(w, w * 1.1, w * 0.5))
-	local pupil = expression == "furious" and 0.34 or 0.5
-	piece(list, "Ball", BLACK, Vector3.new(x, y - w * 0.06, z - w * 0.2), Vector3.new(w * pupil, w * pupil * 1.15, w * 0.3))
-	piece(list, "Ball", WHITE, Vector3.new(x + w * 0.14, y + w * 0.18, z - w * 0.3), Vector3.new(w * 0.18, w * 0.18, w * 0.12), nil, { Material = Enum.Material.Neon })
-	if expression == "angry" or expression == "furious" then
+	-- Fierce look: narrow eyes, small pupils, heavy brows always frowning.
+	local white = expression == "furious" and Color3.fromRGB(255, 200, 190) or Color3.fromRGB(255, 245, 225)
+	piece(list, "Ball", white, Vector3.new(x, y, z), Vector3.new(w, w * 0.72, w * 0.5))
+	local pupil = expression == "furious" and 0.3 or 0.42
+	piece(list, "Ball", BLACK, Vector3.new(x, y - w * 0.04, z - w * 0.2), Vector3.new(w * pupil, w * pupil * 1.3, w * 0.3))
+	piece(list, "Ball", WHITE, Vector3.new(x + w * 0.1, y + w * 0.08, z - w * 0.3), Vector3.new(w * 0.12, w * 0.12, w * 0.1), nil, { Material = Enum.Material.Neon })
+	do
 		local side = x > 0 and 1 or (x < 0 and -1 or 0)
-		local angle = expression == "furious" and math.rad(30) or math.rad(18)
-		piece(list, "Block", faceColor, Vector3.new(x, y + w * 0.5, surface(x, y + w * 0.5) - 0.03),
-			Vector3.new(w * 1.05, w * 0.22, 0.06), Vector3.new(0, 0, side * angle), { Material = Enum.Material.SmoothPlastic })
+		local angle = math.rad(expression == "furious" and 34 or (expression == "angry" and 26 or 16))
+		piece(list, "Block", faceColor, Vector3.new(x, y + w * 0.42, surface(x, y + w * 0.42) - 0.035),
+			Vector3.new(w * 1.15, w * 0.26, 0.07), Vector3.new(0, 0, side * angle), { Material = Enum.Material.Slate })
 	end
 end
 
@@ -56,10 +56,10 @@ local function mouthSpec(list, expression, body)
 	local y = -0.13
 	local z = surface(0, y)
 	if expression == "happy" then
-		piece(list, "Ball", BLACK, Vector3.new(0, y, z), Vector3.new(0.26, 0.15, 0.08))
-		piece(list, "Ball", Color3.fromRGB(255, 110, 140), Vector3.new(0, y - 0.035, z - 0.025), Vector3.new(0.14, 0.06, 0.05))
-		-- Cover the top half of the mouth with skin: a D-shaped grin.
-		piece(list, "Block", body, Vector3.new(0, y + 0.045, z - 0.03), Vector3.new(0.3, 0.07, 0.07))
+		-- Cocky grin full of teeth.
+		piece(list, "Ball", BLACK, Vector3.new(0.02, y, z), Vector3.new(0.3, 0.12, 0.08), Vector3.new(0, 0, math.rad(-6)))
+		piece(list, "Block", WHITE, Vector3.new(0.02, y + 0.02, z - 0.035), Vector3.new(0.24, 0.035, 0.04), Vector3.new(0, 0, math.rad(-6)))
+		piece(list, "Block", WHITE, Vector3.new(0.02, y - 0.03, z - 0.03), Vector3.new(0.18, 0.025, 0.04), Vector3.new(0, 0, math.rad(-6)))
 	elseif expression == "sleepy" then
 		piece(list, "Ball", BLACK, Vector3.new(0, y, z), Vector3.new(0.06, 0.06, 0.05))
 	elseif expression == "dizzy" then
@@ -111,11 +111,6 @@ local function faceSpec(def, expression)
 	elseif not sunglasses then
 		eyeSpec(list, -0.16, 0.08, 0.19, expression, skin)
 		eyeSpec(list, 0.16, 0.08, 0.19, expression, skin)
-	end
-	if expression ~= "angry" and expression ~= "furious" then
-		for _, x in ipairs({ -0.27, 0.27 }) do
-			piece(list, "Ball", PINK, Vector3.new(x, -0.05, surface(x, -0.05) - 0.005), Vector3.new(0.1, 0.055, 0.03), nil, { Transparency = 0.25 })
-		end
 	end
 	mouthSpec(list, expression, def.body)
 	extraSpec(list, face.extra, expression)

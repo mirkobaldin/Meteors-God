@@ -17,6 +17,7 @@ Assets.Icons = {
 	Menu = 0,
 	Power = 0,
 	Shards = 0,
+	Stardust = 0,
 	Planets = 0,
 	StarterPack = 0,
 	Wrath = 0,

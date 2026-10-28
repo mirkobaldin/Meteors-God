@@ -522,12 +522,49 @@ local function supernova(s)
 	end)
 end
 
+local finishIfDead
+
+-- Extra damage from a meteor ability (no crater): chain strikes, burns, poison.
+function PlanetService:ApplyBonus(tier, player, amount, point, normal, label, color)
+	local s = tiers[tier]
+	if not s or s.destroyed or s.arriving then
+		return 0
+	end
+	amount = math.floor(amount * PlanetService:MarkMult(s))
+	local dealt = math.min(amount, s.hp)
+	if dealt <= 0 then
+		return 0
+	end
+	s.hp -= dealt
+	s.contributions[player.UserId] = (s.contributions[player.UserId] or 0) + dealt
+	fxRemote:FireAllClients({ kind = "bonus", tier = tier, point = point, normal = normal, damage = dealt, label = label, color = color, thrower = player.UserId })
+	updateAttributes(s)
+	finishIfDead(s, player)
+	return dealt
+end
+
+-- Abilities like Deep Freeze: the planet takes +value damage from everyone for `duration` seconds.
+function PlanetService:Mark(tier, value, duration, label)
+	local s = tiers[tier]
+	if not s or s.destroyed then
+		return
+	end
+	s.markValue = math.max(s.markUntil and s.markUntil > os.clock() and s.markValue or 0, value)
+	s.markUntil = os.clock() + duration
+	fxRemote:FireAllClients({ kind = "mark", tier = tier, center = s.center, radius = s.R, label = label, duration = duration })
+end
+
+function PlanetService:MarkMult(s)
+	return (s.markUntil and s.markUntil > os.clock()) and (1 + s.markValue) or 1
+end
+
 -- Applies damage from a meteor impact. Returns the damage actually dealt.
 function PlanetService:ApplyHit(tier, player, damage, impact, normal, crit, color, meteorType)
 	local s = tiers[tier]
 	if not s or s.destroyed or s.arriving then
 		return 0
 	end
+	damage = math.floor(damage * PlanetService:MarkMult(s))
 	local dealt = math.min(damage, s.hp)
 	s.hp -= dealt
 	s.contributions[player.UserId] = (s.contributions[player.UserId] or 0) + dealt
@@ -569,12 +606,15 @@ function PlanetService:ApplyHit(tier, player, damage, impact, normal, crit, colo
 		fxRemote:FireAllClients({ kind = "layer", tier = tier, center = s.center, radius = s.R, layer = layer, color = s.def.core })
 	end
 	updateAttributes(s)
+	finishIfDead(s, player)
+	return dealt
+end
 
-	if s.hp <= 0 then
+function finishIfDead(s, player)
+	if s.hp <= 0 and not s.destroyed then
 		s.finisher = player
 		supernova(s)
 	end
-	return dealt
 end
 
 -- Developer Product: the Legendary planet replaces the planet of Planets.LegendaryTier

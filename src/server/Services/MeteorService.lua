@@ -86,6 +86,9 @@ function MeteorService:TakeMeteor(player, uid)
 		m.placedAt = nil
 	end
 	data.meteors[uid] = nil
+	if data.equipped == uid then
+		data.equipped = ""
+	end
 	if cooldowns[player] then
 		cooldowns[player][uid] = nil
 	end
@@ -181,11 +184,57 @@ function MeteorService:Sell(player, uid)
 	return true
 end
 
+-- Equip: this meteor follows you as a pet and is the first one thrown. Same uid again = unequip.
+function MeteorService:Equip(player, uid)
+	local data = services.DataService:Get(player)
+	if not data or not data.meteors[uid] then
+		return false
+	end
+	data.equipped = data.equipped == uid and "" or uid
+	MeteorService:PushSnapshot(player)
+	return true
+end
+
+-- Feeding: spend Stardust to level a meteor up (more damage, bigger).
+function MeteorService:Feed(player, uid)
+	local data = services.DataService:Get(player)
+	local m = data and data.meteors[uid]
+	local def = m and Meteors.ByID[m.t]
+	if not def then
+		return false
+	end
+	local level = m.lv or 0
+	local cost = Game.FeedCost(Meteors.RarityByID[def.rarity].order, level)
+	if not cost then
+		Notify.Toast(player, "This meteor is already at max level", "info")
+		return false
+	end
+	if data.stardust < cost then
+		Notify.Toast(player, "Not enough Stardust! Earn it in the Cosmic Hunt.", "bad")
+		return false
+	end
+	data.stardust -= cost
+	m.lv = level + 1
+	local stage = Game.Feeding.Stages[m.lv]
+	if stage then
+		Notify.Toast(player, "🌟 Your " .. m.t .. " became " .. stage .. "!", "good")
+	else
+		Notify.Toast(player, m.t .. " reached level " .. m.lv .. "!", "good")
+	end
+	MeteorService:RefreshAltar(player)
+	MeteorService:PushSnapshot(player)
+	return true
+end
+
 -- Fusion: the meteor + 2 more of the same type from storage -> 1 meteor of the next rarity.
 -- The mutation is kept only if all three share it.
 function MeteorService:Fuse(player, uid)
 	local data = services.DataService:Get(player)
 	local m = data and data.meteors[uid]
+	if data and data.planetsDestroyed < Game.Fusion.RequiredPlanets then
+		Notify.Toast(player, "The Fusion Reactor unlocks after " .. Game.Fusion.RequiredPlanets .. " planets destroyed", "bad")
+		return false
+	end
 	if not m or m.altar or m.paid then
 		Notify.Toast(player, "Fuse meteors from your storage (not the altar)", "bad")
 		return false
@@ -202,7 +251,8 @@ function MeteorService:Fuse(player, uid)
 		if #picked >= 3 then
 			break
 		end
-		if otherUid ~= uid and other.t == m.t and not other.altar and not other.paid and not MeteorService:IsLaunching(player, otherUid) then
+		if otherUid ~= uid and other.t == m.t and not other.altar and not other.paid and otherUid ~= data.equipped
+			and not MeteorService:IsLaunching(player, otherUid) then
 			table.insert(picked, otherUid)
 			if other.m ~= m.m then
 				sameMutation = false
@@ -215,6 +265,9 @@ function MeteorService:Fuse(player, uid)
 	end
 	for _, u in ipairs(picked) do
 		MeteorService:TakeMeteor(player, u)
+		if data.equipped == u then
+			data.equipped = ""
+		end
 	end
 	local typeId = Meteors.RandomTypeOfRarity(rng, nextRarity)
 	local mutation = sameMutation and m.m or nil
@@ -266,6 +319,11 @@ function MeteorService:BestReady(player)
 	if not data then
 		return nil
 	end
+	-- The equipped meteor goes first, wherever it is.
+	local eq = data.equipped
+	if eq ~= "" and data.meteors[eq] and MeteorService:IsReady(player, eq) then
+		return eq
+	end
 	local now = os.time()
 	local bestUid, bestDmg
 	for uid, m in pairs(data.meteors) do
@@ -301,6 +359,7 @@ function MeteorService:Snapshot(player)
 		index = data.index,
 		indexSize = Meteors.IndexSize(),
 		inventoryCap = Game.InventoryCap(data),
+		equipped = data.equipped,
 		tradeHistory = data.tradeHistory,
 	}
 end
@@ -476,6 +535,19 @@ function MeteorService:Start()
 				return
 			end
 			MeteorService:Sell(player, uid)
+		end
+	end)
+	Remotes.Get("EquipMeteor").OnServerEvent:Connect(function(player, uid)
+		if typeof(uid) == "string" and RateLimit.Allow(player, "EquipMeteor", 0.2) then
+			MeteorService:Equip(player, uid)
+		end
+	end)
+	Remotes.Get("FeedMeteor").OnServerEvent:Connect(function(player, uid)
+		if typeof(uid) == "string" and RateLimit.Allow(player, "FeedMeteor", 0.2) then
+			if services.TradeService:IsTrading(player) then
+				return
+			end
+			MeteorService:Feed(player, uid)
 		end
 	end)
 	Remotes.Get("FuseMeteors").OnServerEvent:Connect(function(player, uid)
