@@ -1,7 +1,7 @@
 """Meteor Gods - base meteor mesh, modeled on art/reference/meteor_base.png.
 
 A ball made of big chipped boulders packed together, with a sculpted stone face on the front:
-two horn-shaped brows that curl into a spiral above the nose, deep angry eye sockets and a wide
+two thick curly brows like Luffy Gear 5 (spiral above the nose, tip curling up outside), deep angry eye sockets and a wide
 mouth with fangs. Under the stones there is a glowing core (second layer) that shows through
 the gaps between the boulders, the eyes and the mouth.
 

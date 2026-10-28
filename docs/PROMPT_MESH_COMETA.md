@@ -13,9 +13,11 @@ art/reference/meteor_supernova.png.
    disponibile) partendo da art/reference/meteor_base.png. Se lo strumento non c'è, scolpiscila a mano
    (Sculpt mode) sopra le reference: prima i volumi, poi i dettagli.
 3. Confronta con la reference (render frontale e 3/4 affiancati) e correggi: fai almeno 2 giri di
-   revisione finché è identica. Dettagli che devono esserci: palla di grosse pietre scalpellate ammassate,
-   sopracciglia-corna spesse con la spirale sopra il naso e il corno corto che punta in su, orbite
-   profonde, bocca larga con due zanne in alto e due denti in basso al centro, nessun cratere in cima.
+   revisione finché è identica. Dettagli che devono esserci: palla di grosse pietre scalpellate ammassate;
+   SOPRACCIGLIA come quelle di Luffy Gear 5 (One Piece): due sopracciglia di pietra spesse e arrabbiate
+   che all'interno, sopra il naso, si arricciano in una spirale e all'esterno salgono con una punta
+   rivolta in su (NON sono corna: sono sopracciglia ricce scolpite nella roccia); orbite profonde;
+   bocca larga con due zanne in alto e due denti in basso al centro; nessun cratere in cima.
 4. Pulizia: una sola mesh, diametro 1 unità, centrata nell'origine, faccia verso -Y (vista frontale),
    circa 15.000-20.000 triangoli, normali corrette, niente colori.
    Gli OCCHI e la BOCCA devono essere BUCHI veri che attraversano la roccia (dietro ci sarà il nucleo
