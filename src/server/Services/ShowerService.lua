@@ -132,8 +132,12 @@ function ShowerService:SpawnOne(luck)
 
 	model.Parent = folder
 
+	-- Lands facing away from the field center, towards the players coming from the edges.
+	local rest = ground + Vector3.new(0, 1.5, 0)
+	local out = Vector3.new(rest.X - services.WorldService.Field.center.X, 0, rest.Z - services.WorldService.Field.center.Z)
+	local landing = out.Magnitude > 1 and CFrame.lookAt(rest, rest + out) or CFrame.new(rest)
 	local fall = TweenService:Create(core, TweenInfo.new(FALL_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		CFrame = CFrame.new(ground + Vector3.new(0, 1.5, 0)),
+		CFrame = landing,
 	})
 	fall:Play()
 	fall.Completed:Connect(function()

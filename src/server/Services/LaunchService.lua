@@ -135,7 +135,8 @@ local function beginLaunch(player)
 	})
 	local core = model.PrimaryPart
 	core.Massless = true
-	core.CFrame = root.CFrame * CFrame.new(0, 4 + size / 2, 0)
+	-- Facing backwards: the camera is behind the player, so the meteor looks at you.
+	core.CFrame = root.CFrame * CFrame.new(0, 4 + size / 2, 0) * CFrame.Angles(0, math.pi, 0)
 	local weld = Instance.new("WeldConstraint")
 	weld.Name = "HoldWeld"
 	weld.Part0 = root

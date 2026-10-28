@@ -1,6 +1,7 @@
--- Builds the living meteor model: a glowing ball with fire and a cartoon face.
--- The face is a BillboardGui, so it always looks at whoever is watching.
--- No assets required: everything is Parts, Fire, lights and GUI frames.
+-- Builds the living meteor model: a glowing rocky ball with fire and a cartoon face sculpted
+-- from parts (eyes, mouth, brows... are part of the body). The face looks along the model's -Z,
+-- so callers orient the model towards whoever should see it.
+-- No assets required: everything is Parts, Fire and lights.
 
 local Shared = script.Parent
 local Meteors = require(Shared.Config.Meteors)
@@ -10,204 +11,159 @@ local MeteorVisual = {}
 
 local BLACK = Color3.fromRGB(20, 15, 25)
 local WHITE = Color3.fromRGB(255, 255, 255)
+local PINK = Color3.fromRGB(255, 120, 150)
+local GOLD = Color3.fromRGB(255, 205, 40)
 
-local function frame(parent, props)
-	local f = Instance.new("Frame")
-	f.BorderSizePixel = 0
-	f.AnchorPoint = Vector2.new(0.5, 0.5)
-	for k, v in pairs(props) do
-		f[k] = v
-	end
-	f.Parent = parent
-	return f
+-- The face is made of real parts welded to the body (eyes, pupils, brows, mouth, cheeks,
+-- accessories), sculpted on the front of the sphere (-Z). Positions and sizes are in units of
+-- the meteor's diameter, so the face scales with it.
+
+-- Z of the sphere surface (diameter 1) at x, y on the front side, pushed in a little.
+local function surface(x, y, inset)
+	return -math.sqrt(math.max(0.25 - x * x - y * y, 0)) + (inset or 0.02)
 end
 
-local function round(f, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = radius or UDim.new(1, 0)
-	c.Parent = f
-	return f
+local function piece(list, shape, color, pos, size, rot, props)
+	table.insert(list, { shape = shape, color = color, pos = pos, size = size, rot = rot or Vector3.zero, props = props })
 end
 
-local function label(parent, text, pos, size, color)
-	local t = Instance.new("TextLabel")
-	t.BackgroundTransparency = 1
-	t.AnchorPoint = Vector2.new(0.5, 0.5)
-	t.Position = pos
-	t.Size = size
-	t.Text = text
-	t.TextScaled = true
-	t.Font = Enum.Font.FredokaOne
-	t.TextColor3 = color or BLACK
-	t.Parent = parent
-	return t
-end
-
-local function drawEye(gui, x, y, size, expression)
+local function eyeSpec(list, x, y, w, expression, faceColor)
+	local z = surface(x, y)
 	if expression == "dizzy" then
-		label(gui, "X", UDim2.fromScale(x, y), UDim2.fromScale(size * 1.1, size * 1.1))
+		for _, a in ipairs({ math.rad(45), math.rad(-45) }) do
+			piece(list, "Block", BLACK, Vector3.new(x, y, z - 0.03), Vector3.new(w * 0.85, w * 0.16, 0.05), Vector3.new(0, 0, a))
+		end
 		return
 	end
 	if expression == "sleepy" then
-		round(frame(gui, {
-			Position = UDim2.fromScale(x, y + 0.02),
-			Size = UDim2.fromScale(size, size * 0.18),
-			BackgroundColor3 = BLACK,
-		}))
+		piece(list, "Block", BLACK, Vector3.new(x, y - 0.02, z - 0.02), Vector3.new(w * 0.9, w * 0.13, 0.05))
 		return
 	end
-	local white = round(frame(gui, {
-		Position = UDim2.fromScale(x, y),
-		Size = UDim2.fromScale(size, size),
-		BackgroundColor3 = expression == "furious" and Color3.fromRGB(255, 200, 200) or WHITE,
-	}))
-	local pupilScale = expression == "furious" and 0.38 or 0.52
-	round(frame(white, {
-		Position = UDim2.fromScale(0.5, 0.58),
-		Size = UDim2.fromScale(pupilScale, pupilScale),
-		BackgroundColor3 = BLACK,
-	}))
-	round(frame(white, {
-		Position = UDim2.fromScale(0.62, 0.42),
-		Size = UDim2.fromScale(0.18, 0.18),
-		BackgroundColor3 = WHITE,
-		ZIndex = 3,
-	}))
-end
-
-local function drawBrow(gui, x, y, width, angle)
-	round(
-		frame(gui, {
-			Position = UDim2.fromScale(x, y),
-			Size = UDim2.fromScale(width, width * 0.22),
-			BackgroundColor3 = BLACK,
-			Rotation = angle,
-			ZIndex = 4,
-		}),
-		UDim.new(0.5, 0)
-	)
-end
-
-local function drawMouth(gui, expression)
-	if expression == "happy" then
-		local m = round(frame(gui, {
-			Position = UDim2.fromScale(0.5, 0.7),
-			Size = UDim2.fromScale(0.34, 0.16),
-			BackgroundColor3 = BLACK,
-		}), UDim.new(0.5, 0))
-		round(frame(m, {
-			Position = UDim2.fromScale(0.5, 0.72),
-			Size = UDim2.fromScale(0.5, 0.45),
-			BackgroundColor3 = Color3.fromRGB(255, 110, 140),
-		}))
-	elseif expression == "sleepy" then
-		round(frame(gui, {
-			Position = UDim2.fromScale(0.5, 0.7),
-			Size = UDim2.fromScale(0.1, 0.1),
-			BackgroundColor3 = BLACK,
-		}))
-		label(gui, "z", UDim2.fromScale(0.86, 0.14), UDim2.fromScale(0.18, 0.18), WHITE)
-	elseif expression == "dizzy" then
-		label(gui, "~", UDim2.fromScale(0.5, 0.72), UDim2.fromScale(0.36, 0.26))
-	else -- angry / furious
-		local m = round(frame(gui, {
-			Position = UDim2.fromScale(0.5, 0.71),
-			Size = UDim2.fromScale(expression == "furious" and 0.42 or 0.32, 0.12),
-			BackgroundColor3 = BLACK,
-		}), UDim.new(0.3, 0))
-		frame(m, {
-			Position = UDim2.fromScale(0.5, 0.3),
-			Size = UDim2.fromScale(0.8, 0.3),
-			BackgroundColor3 = WHITE,
-		})
-	end
-end
-
-local function drawExtra(gui, extra)
-	if extra == "crown" then
-		local gold = Color3.fromRGB(255, 205, 40)
-		frame(gui, {
-			Position = UDim2.fromScale(0.5, 0.1),
-			Size = UDim2.fromScale(0.42, 0.1),
-			BackgroundColor3 = gold,
-			ZIndex = 5,
-		})
-		for i = -1, 1 do
-			frame(gui, {
-				Position = UDim2.fromScale(0.5 + i * 0.15, 0.04),
-				Size = UDim2.fromScale(0.09, 0.09),
-				BackgroundColor3 = gold,
-				Rotation = 45,
-				ZIndex = 5,
-			})
-		end
-	elseif extra == "sunglasses" then
-		for _, x in ipairs({ 0.32, 0.68 }) do
-			round(
-				frame(gui, {
-					Position = UDim2.fromScale(x, 0.42),
-					Size = UDim2.fromScale(0.3, 0.2),
-					BackgroundColor3 = BLACK,
-					ZIndex = 6,
-				}),
-				UDim.new(0.35, 0)
-			)
-		end
-		frame(gui, {
-			Position = UDim2.fromScale(0.5, 0.38),
-			Size = UDim2.fromScale(0.14, 0.04),
-			BackgroundColor3 = BLACK,
-			ZIndex = 6,
-		})
-	elseif extra == "horns" then
-		local red = Color3.fromRGB(200, 30, 40)
-		for _, side in ipairs({ -1, 1 }) do
-			frame(gui, {
-				Position = UDim2.fromScale(0.5 + side * 0.3, 0.1),
-				Size = UDim2.fromScale(0.1, 0.2),
-				BackgroundColor3 = red,
-				Rotation = side * 25,
-				ZIndex = 5,
-			})
-		end
-	end
-end
-
--- Clears and redraws the face for the given expression.
-function MeteorVisual.DrawFace(gui, typeDef, expression)
-	gui:ClearAllChildren()
-	local face = typeDef.face or {}
-	local sunglasses = face.extra == "sunglasses"
-	if face.eyes == "cyclops" then
-		drawEye(gui, 0.5, 0.42, 0.36, expression)
-	elseif not sunglasses or expression == "dizzy" then
-		drawEye(gui, 0.32, 0.42, 0.24, expression)
-		drawEye(gui, 0.68, 0.42, 0.24, expression)
-	end
+	local white = expression == "furious" and Color3.fromRGB(255, 210, 210) or WHITE
+	piece(list, "Ball", white, Vector3.new(x, y, z), Vector3.new(w, w * 1.1, w * 0.5))
+	local pupil = expression == "furious" and 0.34 or 0.5
+	piece(list, "Ball", BLACK, Vector3.new(x, y - w * 0.06, z - w * 0.2), Vector3.new(w * pupil, w * pupil * 1.15, w * 0.3))
+	piece(list, "Ball", WHITE, Vector3.new(x + w * 0.14, y + w * 0.18, z - w * 0.3), Vector3.new(w * 0.18, w * 0.18, w * 0.12), nil, { Material = Enum.Material.Neon })
 	if expression == "angry" or expression == "furious" then
-		local tilt = expression == "furious" and 28 or 18
-		if face.eyes == "cyclops" then
-			drawBrow(gui, 0.5, 0.2, 0.4, 0)
-		else
-			drawBrow(gui, 0.32, 0.25, 0.26, tilt)
-			drawBrow(gui, 0.68, 0.25, 0.26, -tilt)
+		local side = x > 0 and 1 or (x < 0 and -1 or 0)
+		local angle = expression == "furious" and math.rad(30) or math.rad(18)
+		piece(list, "Block", faceColor, Vector3.new(x, y + w * 0.5, surface(x, y + w * 0.5) - 0.03),
+			Vector3.new(w * 1.05, w * 0.22, 0.06), Vector3.new(0, 0, side * angle), { Material = Enum.Material.SmoothPlastic })
+	end
+end
+
+local function mouthSpec(list, expression, body)
+	local y = -0.13
+	local z = surface(0, y)
+	if expression == "happy" then
+		piece(list, "Ball", BLACK, Vector3.new(0, y, z), Vector3.new(0.26, 0.15, 0.08))
+		piece(list, "Ball", Color3.fromRGB(255, 110, 140), Vector3.new(0, y - 0.035, z - 0.025), Vector3.new(0.14, 0.06, 0.05))
+		-- Cover the top half of the mouth with skin: a D-shaped grin.
+		piece(list, "Block", body, Vector3.new(0, y + 0.045, z - 0.03), Vector3.new(0.3, 0.07, 0.07))
+	elseif expression == "sleepy" then
+		piece(list, "Ball", BLACK, Vector3.new(0, y, z), Vector3.new(0.06, 0.06, 0.05))
+	elseif expression == "dizzy" then
+		for i = -1, 1 do
+			piece(list, "Block", BLACK, Vector3.new(i * 0.055, y + (i == 0 and 0.012 or -0.008), z - 0.01),
+				Vector3.new(0.065, 0.025, 0.05), Vector3.new(0, 0, i == 0 and 0 or i * math.rad(25)))
 		end
+	elseif expression == "furious" then
+		piece(list, "Ball", BLACK, Vector3.new(0, y - 0.01, z), Vector3.new(0.24, 0.17, 0.09))
+		piece(list, "Ball", Color3.fromRGB(200, 40, 50), Vector3.new(0, y - 0.04, z - 0.025), Vector3.new(0.13, 0.06, 0.05))
+		piece(list, "Block", WHITE, Vector3.new(0, y + 0.05, z - 0.035), Vector3.new(0.15, 0.035, 0.04))
+	else -- angry
+		for _, side in ipairs({ -1, 1 }) do
+			piece(list, "Block", BLACK, Vector3.new(side * 0.05, y - 0.01, z - 0.01), Vector3.new(0.11, 0.03, 0.05), Vector3.new(0, 0, side * math.rad(-14)))
+		end
+	end
+end
+
+local function extraSpec(list, extra, expression)
+	if extra == "crown" then
+		piece(list, "Cylinder", GOLD, Vector3.new(0, 0.46, 0), Vector3.new(0.12, 0.42, 0.42), Vector3.new(0, 0, math.rad(90)), { Material = Enum.Material.Foil })
+		for k = 0, 4 do
+			local a = k / 5 * math.pi * 2
+			piece(list, "Block", GOLD, Vector3.new(math.sin(a) * 0.18, 0.56, math.cos(a) * 0.18), Vector3.new(0.08, 0.08, 0.08),
+				Vector3.new(math.rad(45), a, math.rad(45)), { Material = Enum.Material.Foil })
+		end
+		piece(list, "Ball", Color3.fromRGB(255, 50, 80), Vector3.new(0, 0.46, -0.21), Vector3.new(0.07, 0.07, 0.05), nil, { Material = Enum.Material.Neon })
+	elseif extra == "sunglasses" and expression ~= "dizzy" then
+		for _, x in ipairs({ -0.16, 0.16 }) do
+			piece(list, "Block", BLACK, Vector3.new(x, 0.08, surface(x, 0.08) - 0.06), Vector3.new(0.22, 0.13, 0.05), nil, { Material = Enum.Material.Glass, Reflectance = 0.4 })
+		end
+		piece(list, "Block", BLACK, Vector3.new(0, 0.11, surface(0, 0.11) - 0.06), Vector3.new(0.12, 0.03, 0.04))
+	elseif extra == "horns" then
+		for _, side in ipairs({ -1, 1 }) do
+			local red = Color3.fromRGB(190, 30, 40)
+			piece(list, "Block", red, Vector3.new(side * 0.2, 0.42, -0.04), Vector3.new(0.09, 0.2, 0.09), Vector3.new(0, 0, -side * math.rad(22)))
+			piece(list, "Block", red, Vector3.new(side * 0.25, 0.54, -0.04), Vector3.new(0.05, 0.1, 0.05), Vector3.new(0, 0, -side * math.rad(35)))
+		end
+	end
+end
+
+local function faceSpec(def, expression)
+	local list = {}
+	local face = def.face or {}
+	local skin = def.body:Lerp(Color3.new(0, 0, 0), 0.35)
+	local sunglasses = face.extra == "sunglasses" and expression ~= "dizzy"
+	if face.eyes == "cyclops" then
+		eyeSpec(list, 0, 0.09, 0.34, expression, skin)
+	elseif not sunglasses then
+		eyeSpec(list, -0.16, 0.08, 0.19, expression, skin)
+		eyeSpec(list, 0.16, 0.08, 0.19, expression, skin)
 	end
 	if expression ~= "angry" and expression ~= "furious" then
-		local blush = Color3.fromRGB(255, 120, 150)
-		for _, x in ipairs({ 0.18, 0.82 }) do
-			round(frame(gui, {
-				Position = UDim2.fromScale(x, 0.6),
-				Size = UDim2.fromScale(0.12, 0.07),
-				BackgroundColor3 = blush,
-				BackgroundTransparency = 0.3,
-			}))
+		for _, x in ipairs({ -0.27, 0.27 }) do
+			piece(list, "Ball", PINK, Vector3.new(x, -0.05, surface(x, -0.05) - 0.005), Vector3.new(0.1, 0.055, 0.03), nil, { Transparency = 0.25 })
 		end
 	end
-	drawMouth(gui, expression)
-	if not (sunglasses and expression == "dizzy") then
-		drawExtra(gui, face.extra)
+	mouthSpec(list, expression, def.body)
+	extraSpec(list, face.extra, expression)
+	return list
+end
+
+local function placeFacePart(core, p, size)
+	p.Size = p:GetAttribute("U_Size") * size
+	local weld = p:FindFirstChild("FaceWeld")
+	local rot = p:GetAttribute("U_Rot")
+	weld.C0 = CFrame.new(p:GetAttribute("U_Pos") * size) * CFrame.Angles(rot.X, rot.Y, rot.Z)
+end
+
+local function buildFace(model, core, def, expression)
+	local old = model:FindFirstChild("Face")
+	if old then
+		old:Destroy()
 	end
+	local folder = Instance.new("Folder")
+	folder.Name = "Face"
+	local size = core.Size.X
+	for _, spec in ipairs(faceSpec(def, expression)) do
+		local p = Instance.new("Part")
+		p.Name = "FacePart"
+		p.Shape = Enum.PartType[spec.shape]
+		p.Material = Enum.Material.SmoothPlastic
+		p.Color = spec.color
+		p.Anchored = false
+		p.Massless = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		for k, v in pairs(spec.props or {}) do
+			p[k] = v
+		end
+		p:SetAttribute("U_Size", spec.size)
+		p:SetAttribute("U_Pos", spec.pos)
+		p:SetAttribute("U_Rot", spec.rot)
+		local weld = Instance.new("Weld")
+		weld.Name = "FaceWeld"
+		weld.Part0 = core
+		weld.Part1 = p
+		weld.Parent = p
+		placeFacePart(core, p, size)
+		p.Parent = folder
+	end
+	folder.Parent = model
 end
 
 local function applyMutation(core, fire, light, mutationId)
@@ -329,18 +285,7 @@ function MeteorVisual.Build(typeId, opts)
 
 	applyMutation(core, fire, light, opts.mutation)
 
-	local gui = Instance.new("BillboardGui")
-	gui.Name = "Face"
-	gui.Size = UDim2.new(size * 0.95, 0, size * 0.95, 0)
-	-- Camera-space offset: positive Z pulls the face towards the viewer, in front of the ball.
-	gui.StudsOffset = Vector3.new(0, 0, size * 0.6)
-	gui.LightInfluence = 0
-	gui.AlwaysOnTop = false
-	gui.MaxDistance = 600
-	gui.ResetOnSpawn = false
-	gui.Adornee = core
-	gui.Parent = core
-	MeteorVisual.DrawFace(gui, def, opts.expression or "happy")
+	buildFace(model, core, def, opts.expression or "happy")
 
 	model:SetAttribute("MeteorType", def.id)
 	model:SetAttribute("Expression", opts.expression or "happy")
@@ -352,10 +297,9 @@ function MeteorVisual.SetExpression(model, expression)
 		return
 	end
 	local core = model.PrimaryPart
-	local gui = core and core:FindFirstChild("Face")
 	local def = Meteors.ByID[model:GetAttribute("MeteorType")]
-	if gui and def then
-		MeteorVisual.DrawFace(gui, def, expression)
+	if core and def then
+		buildFace(model, core, def, expression)
 		model:SetAttribute("Expression", expression)
 	end
 end
@@ -384,10 +328,11 @@ function MeteorVisual.SetSize(model, size)
 	if light then
 		light.Range = math.clamp(size * 3, 6, 60)
 	end
-	local gui = core:FindFirstChild("Face")
-	if gui then
-		gui.Size = UDim2.new(size * 0.95, 0, size * 0.95, 0)
-		gui.StudsOffset = Vector3.new(0, 0, size * 0.6)
+	local face = model:FindFirstChild("Face")
+	if face then
+		for _, p in ipairs(face:GetChildren()) do
+			placeFacePart(core, p, size)
+		end
 	end
 end
 

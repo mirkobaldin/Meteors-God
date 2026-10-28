@@ -421,7 +421,9 @@ local function pedestal(cf, index, parent)
 		CanCollide = false,
 		Parent = parent,
 	})
-	return CFrame.new(base + Vector3.new(0, 11, 0))
+	-- Meteors hover above it, their faces turned towards the central island.
+	local top = base + Vector3.new(0, 11, 0)
+	return CFrame.lookAt(top, Vector3.new(0, top.Y, 0))
 end
 
 local function buildPlots()

@@ -724,7 +724,8 @@ function FX.Flight(opts)
 		local pos = PlanetMath.ArcPoint(from, to, eased)
 		local ahead = PlanetMath.ArcPoint(from, to, math.min(1, eased + 0.02))
 		local look = (ahead - pos).Magnitude > 0.01 and CFrame.lookAt(pos, ahead) or CFrame.new(pos)
-		core.CFrame = look * CFrame.Angles(0, 0, os.clock() * 8)
+		-- The face looks back at the chase camera, screaming, while the body rolls a little.
+		core.CFrame = look * CFrame.Angles(0, math.pi, math.sin(os.clock() * 6) * 0.4)
 		if t >= 1 then
 			conn:Disconnect()
 			handle.impact = to
