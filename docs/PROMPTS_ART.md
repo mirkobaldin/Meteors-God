@@ -71,7 +71,13 @@ File sorgente in art/blender/*.blend, export FBX in art/export/<categoria>/.
 Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
 1. Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (occhi, bocca e sopracciglia sono
    parti 3D aggiunte dal codice sul lato -Z: lascia quel lato liscio e tondo). Circa 1x1x1, pivot al centro,
-   < 3000 triangoli. Ogni rarità ha una silhouette diversa (vedi i fogli in art/concepts/meteors).
+   < 3000 triangoli. Devono essere CAZZUTI, non pucciosi: rocce dure e taglienti, spigoli, spuntoni, corna,
+   crepe di lava luminose (materiale con emissione), cristalli trasparenti, parti di metallo; usa i materiali
+   migliori di Blender. Ogni rarità ha una silhouette diversa: Common = sasso grezzo, Mythic = forma unica e
+   spaventosa. Elementi: Pebble roccia, Ember brace, Frost ghiaccio, Spark elettrico, Venom tossico con corna,
+   Crystal gemme, Magma basalto e lava con corna, Aurora, Solar con corona, Royal Comet, Void (un solo occhio),
+   Supernova, Blue Comet.
+   I concept delle case, dei props e delle strutture sono in art/concepts/ (fatti con Codex).
 2. Houses/House1 … House6: le 6 case, ingombro max raggio 100 stud, fronte -Z verso l'isola centrale,
    Part "Sign" opzionale per il nome. Niente slot: i meteoriti stanno sui piedistalli dell'isoletta.
 3. Map/Citadel (opzionale): SOLO decorazioni sopra il terreno (torri dorate, archi, rifiniture del Bifrost,

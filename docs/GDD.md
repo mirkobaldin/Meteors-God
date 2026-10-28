@@ -18,14 +18,14 @@
 Vista dall'alto, i pianeti sono davanti (+Z). Altezze: case 88 > isolette delle comete 40 > tutto il resto 0.
 1. **Isola Centrale** (raggio 480): in mezzo il **Campo dei Meteoriti** (raggio 220) di roccia scura con crateri e
    bordo luminoso; sopra, il vortice da cui piovono. Spawn sul retro, rivolto verso i ponti.
-2. **Dietro — 6 lotti a ventaglio**: ponte → **Isoletta delle Comete** (raggio 75, 4 piedistalli dove fluttuano i
+2. **Dietro — 12 lotti a ventaglio (200°)**: ponte → **Isoletta delle Comete** (raggio 75, 4 piedistalli dove fluttuano i
    meteoriti dell'altare) → ponte → **Isola della Casa** (raggio 120, tempio segnaposto finché non ci sono i modelli).
-   **Imposta Max Players del server = 6** (`Game.World.HouseCount`).
-3. **Davanti ai lati**: isola dello **Shop** a sinistra e della **Classifica** a destra (raggio 200), ognuna con una
-   **montagna alta 420** con cime secondarie e neve.
-4. **Davanti — tre Bifrost separati** (a −32°, 0°, +32°), lunghi ~650, larghi 30, con portale e requisito del tier.
-   Ognuno finisce sulla **sua Piattaforma di Lancio** (raggio 110) con **4 pad** grandi con colonna di luce,
-   rivolti al pianeta di quel tier. Sui ponti si corre ×2,2 (velocità base 30).
+   **Imposta Max Players del server = 12** (`Game.World.HouseCount`).
+3. **Isole dello Shop e della Classifica** (raggio 180), ognuna con una **montagna alta 420** con cime secondarie e neve.
+4. **Davanti — tre Bifrost separati** (a −50°, 0°, +50°), larghi 44, con portale e requisito del tier. Ognuno finisce
+   su un hub da cui partono 4 ponticelli verso **4 isolette separate, ognuna con un pad** rivolto al pianeta.
+   Shop e Classifica stanno tra i ponti. Sui ponti si corre ×2,2 (velocità base 30).
+5. **Sull'isola centrale**: il **Reattore a Fusione** (−330, −150) e il **portale della Cosmic Hunt** (330, −150).
 
 Le isole sono **Terrain** (erba sopra, roccia sotto, coste ondulate), con ~26 isolotti decorativi intorno.
 `Game.World.GenerateTerrain = false` se vuoi scolpire tu il terreno nel Terrain Editor di Studio.
@@ -171,11 +171,13 @@ Tre pianeti in cielo insieme, uno per corsia del Bifrost (`Config/Planets.lua �
 
 | Tier | Requisito | Raggio | Sequenza |
 |---|---|---|---|
-| I (sinistra) | tutti | 520 | Rocky → Ice → Candy |
-| II (centro) | Demigod | 600 | Lava → Crystal |
-| III (destra) | Cosmic God | 680 | Shadow |
+| I (sinistra) | tutti | 520 → 750 | Rocky → Ice → Candy |
+| II (centro) | Demigod | 600 → 870 | Lava → Crystal |
+| III (destra) | Cosmic God | 680 → 990 | Shadow |
 
-Dopo l'ultimo pianeta di un tier si ricomincia con vita e premi ×2,5.
+Dopo l'ultimo pianeta di un tier si ricomincia con vita e premi ×2,5. **I pianeti crescono con la vita**:
+raggio × (vita / vita del primo)^0,12, massimo ×1,45. Ogni pianeta ha un aspetto suo: anelli (Rocky, Candy, Crystal,
+Shadow, Legendary), lune (Rocky, Ice, Shadow), strisce (Candy), spuntoni giganti (Ice, Crystal), vulcani (Lava).
 - **Fatti di Terrain**: crosta con i materiali del pianeta e "continenti" di altri materiali, calotte polari, e
   dettagli: **vulcani** con lava e fumo (Lava), **spuntoni di ghiaccio** (Ice), **cristalli** (Crystal), montagne
   innevate e crateri (Rocky), colline alla menta e limone (Candy), spuntoni scuri (Shadow).
@@ -252,12 +254,29 @@ Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Il Legendary Pl
 Ogni giocatore ha un lotto: Isoletta delle Comete (i meteoriti dell'altare fluttuano sui piedistalli) + Isola della
 Casa. Con i modelli in `Assets/Houses/House1..6` la casa **cresce con l'Evoluzione** al posto del tempio segnaposto.
 
+## 12a. Meteoriti: equipaggiamento, nutrimento, abilità
+
+- **Equip** (Inventario): il meteorite equipaggiato è il tuo **pet** ed è il primo che lanci (anche se non è sull'altare).
+- **Nutrire** con **Stardust ✨** (si guadagna nella Cosmic Hunt): +15% danno e un po' più grande per livello, max 10;
+  al livello 5 diventa *Awakened*, al 10 *Ascended*. Costo = 40 × rarità^1,5 × 1,55^livello.
+- **Abilità** (una per tipo, in `Config/Meteors.lua`): Burn/Poison/Eruption (danno extra in 3 s), Chain Lightning e
+  Nova Blast (secondo colpo), Deep Freeze e Solar Flare (il pianeta prende più danni da tutti per 8 s), Shatter
+  (critico più forte), Aurora/Royal (più Frammenti), Rock Solid/Void (più danno), Hyperspeed (ricarica dimezzata).
+- **Reattore a Fusione**: si sblocca a 3 pianeti distrutti; 3 meteoriti uguali in magazzino → 1 della rarità dopo.
+
+## 12c. Cosmic Hunt (modalità volo)
+
+Portale sull'isola centrale → 120 s nello spazio profondo (6.000 stud sopra la mappa). Voli liberamente (WASD,
+Spazio su, Ctrl giù, Shift turbo; su mobile il joystick vola dove guarda la camera) e clicchi per lanciare il
+meteorite equipaggiato contro 26 pianetini condivisi. Ogni pianeta distrutto dà Stardust (più grande = di più) e
+ricompare altrove. Record personale salvato (`bestHunt`).
+
 ## 12b. Extra (fatti)
 
 - **Pet**: la tua cometa migliore ti fluttua accanto, visibile a tutti e girata verso la camera di chi guarda.
 - **Titoli** sopra la testa per pianeti distrutti (Planet Cracker 1, Breaker 10, Star Breaker 50, Planet Eater 200,
   World Ender 1000), ✦ per ogni Ascensione e ★ ogni 25 livelli di upgrade.
-- **Fusione**: 3 meteoriti dello stesso tipo in magazzino → 1 della rarità successiva (bottone "Fuse x3").
+- **Fusione**: al Reattore a Fusione (vedi 12a).
 - **Eventi cosmici** (35% delle piogge): Eclipse (mutazioni ×5), Golden Rain, Meteor Frenzy (doppi meteoriti),
   Lucky Stars (fortuna ×3). Il mondo si colora un po' durante l'evento.
 - **Facce 3D**: occhi, pupille, sopracciglia, bocca, guance e accessori sono parti del corpo (non più adesivi).
@@ -286,6 +305,7 @@ Casa. Con i modelli in `Assets/Houses/House1..6` la casa **cresce con l'Evoluzio
 - **v0.1 (questa)**: cittadella, ponti, ciclo, pioggia, altari e crescita, lancio, pianeti a strati, Potere +1, evoluzioni, ascensione, upgrade, negozio, trading, salvataggi.
 - **Prossimo**: suoni e animazioni (ID in `Config/Assets.lua`), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
 - **v0.2 (fatto)**: nuova interfaccia, premi giornalieri, regalo a tempo, codici, indice, hook per modelli/animazioni/suoni.
+- **v0.8**: 12 giocatori, isolette dei pad, ponti più larghi, pianeti diversi che crescono, meno lag, resti sul pad finché lanci, VFX vento e fulmini, equip/nutrire/abilità, facce cattive, Reattore a Fusione, Cosmic Hunt, Stardust.
 - **v0.7**: mappa ×3, tre ponti separati con piattaforme da 4 pad, pianeti più grandi e vicini, luce diurna e skybox del proprietario, accessori non più al neon, fine del blocco all'esplosione.
 - **v0.6**: mappa dallo schizzo, pianeti di Terrain a 3 tier con crateri e spaccatura, lancio rifatto, VFX per elemento, facce 3D, pet, titoli, fusione, eventi cosmici.
 - **v0.5**: terreno, cielo con pianeti/galassie/nebulose, classifica globale, upgrade infiniti (8 tipi).
