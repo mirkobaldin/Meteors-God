@@ -22,6 +22,8 @@ Il codice vive in questa repository e si sincronizza in Studio con **Rojo**.
 1. `git clone` / `git pull` di questa repository.
 2. Apri la cartella in VS Code ed esegui *"Rojo: Open menu" → Start* (oppure `rojo serve` da terminale).
 3. In Roblox Studio apri un place **Baseplate** nuovo, apri il plugin Rojo e premi **Connect**.
+   Il progetto usa la porta **34873** (impostata in `default.project.json`), così può girare insieme a un altro
+   progetto Rojo sulla porta standard 34872: nel plugin imposta la porta a `34873` prima di premere Connect.
 4. Il codice viene inserito in `ReplicatedStorage.Shared`, `ServerScriptService.Server` e
    `StarterPlayer.StarterPlayerScripts.Client`. La mappa viene generata da codice quando premi **Play**.
 
