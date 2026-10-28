@@ -24,7 +24,10 @@ Usa Blender (tramite il Blender MCP se è collegato, altrimenti scrivimi gli scr
 File sorgente in art/blender/*.blend, export FBX in art/export/<categoria>/.
 
 Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
-1. Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (occhi, bocca e sopracciglia sono
+1. GIÀ FATTO dalla sessione cloud: le 13 comete sono in art/export/meteors/*.fbx (con texture) e si rigenerano con
+   art/blender/meteors_build.py. Tu devi solo IMPORTARLE in Studio (vedi docs/ASSET_PIPELINE.md). Se vuoi
+   rifinirne una a mano, tieni le stesse regole:
+   Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (occhi, bocca e sopracciglia sono
    parti 3D aggiunte dal codice sul lato -Z: lascia quel lato liscio e tondo). Circa 1x1x1, pivot al centro,
    < 3000 triangoli. Devono essere CAZZUTI, non pucciosi: rocce dure e taglienti, spigoli, spuntoni, corna,
    crepe di lava luminose (materiale con emissione), cristalli trasparenti, parti di metallo; usa i materiali

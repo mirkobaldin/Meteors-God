@@ -24,11 +24,13 @@ Each image is a design sheet for ONE meteor:
   plates, sharp edges, cracks, horns or spikes, crystals or metal where the element asks for it;
 - the face is SCULPTED into the rock, not a sticker: deep-set narrow glowing eyes under heavy rock brows that are
   always frowning, a wide mouth full of jagged teeth, NO blush, NO big round cute eyes;
+- NO accessories of any kind (no sunglasses, no hats, no crowns, no jewelry, no clothes): horns, crests, spikes,
+  crystals and fins must GROW OUT OF THE ROCK itself, same material as the body;
 - no flame trail, no motion blur, no VFX around it, no background: only the meteor itself.
 
 Rarity must show in the shape: Common = simple rough rock with a few cracks; Uncommon = more defined, some element
-growths; Rare = horns or big crystals; Epic = armored plates and a strong glow; Legendary = crown-like or royal
-features, gold and light; Mythic = a unique, terrifying shape that looks like the final boss.
+growths; Rare = horns or big crystals; Epic = armored plates and a strong glow; Legendary = crown-like crest grown from the
+rock, veins of gold ore and light; Mythic = a unique, terrifying shape that looks like the final boss.
 
 The 13 meteors (element / rarity / what makes it unique):
 1. pebble: grey stone / Common / a rough cracked boulder with a scar over one eye, hard and stubborn.
@@ -42,9 +44,10 @@ The 13 meteors (element / rarity / what makes it unique):
    mouth.
 8. aurora: northern lights / Epic / dark blue rock with green-teal-violet glowing veins like an aurora, smooth
    polished plates.
-9. solar: sun / Legendary / golden-orange molten rock with a spiked crown of solar flares, blinding white-gold eyes.
-10. royal_comet: royal ice / Legendary / pale blue-white comet rock with a gold crown and gold armor bands, a
-    noble and arrogant king.
+9. solar: sun / Legendary / golden-orange molten rock with a crest of solar-flare spikes growing from the rock,
+   blinding white-gold eyes.
+10. royal_comet: royal ice / Legendary / pale blue-white comet rock with a natural crown of ice crystals growing
+    from its top and veins of gold ore in its cracks, a noble and arrogant king.
 11. void: black hole / Mythic / pitch-black rock with a single huge violet eye in the middle, purple cracks,
     reality bending around its edges, very creepy.
 12. supernova: exploding star / Mythic / white-hot core breaking through red and gold armor plates, rays of light

@@ -6,6 +6,7 @@
 local Shared = script.Parent
 local Meteors = require(Shared.Config.Meteors)
 local AssetLibrary = require(Shared.AssetLibrary)
+local MeteorMeshes = require(Shared.Config.MeteorMeshes)
 
 local MeteorVisual = {}
 
@@ -26,7 +27,7 @@ local function piece(list, shape, color, pos, size, rot, props)
 	table.insert(list, { shape = shape, color = color, pos = pos, size = size, rot = rot or Vector3.zero, props = props })
 end
 
-local function eyeSpec(list, x, y, w, expression, faceColor)
+local function eyeSpec(list, x, y, w, expression, faceColor, glow)
 	local z = surface(x, y)
 	if expression == "dizzy" then
 		for _, a in ipairs({ math.rad(45), math.rad(-45) }) do
@@ -38,28 +39,37 @@ local function eyeSpec(list, x, y, w, expression, faceColor)
 		piece(list, "Block", BLACK, Vector3.new(x, y - 0.02, z - 0.02), Vector3.new(w * 0.9, w * 0.13, 0.05))
 		return
 	end
-	-- Fierce look: narrow eyes, small pupils, heavy brows always frowning.
-	local white = expression == "furious" and Color3.fromRGB(255, 200, 190) or Color3.fromRGB(255, 245, 225)
-	piece(list, "Ball", white, Vector3.new(x, y, z), Vector3.new(w, w * 0.72, w * 0.5))
-	local pupil = expression == "furious" and 0.3 or 0.42
-	piece(list, "Ball", BLACK, Vector3.new(x, y - w * 0.04, z - w * 0.2), Vector3.new(w * pupil, w * pupil * 1.3, w * 0.3))
-	piece(list, "Ball", WHITE, Vector3.new(x + w * 0.1, y + w * 0.08, z - w * 0.3), Vector3.new(w * 0.12, w * 0.12, w * 0.1), nil, { Material = Enum.Material.Neon })
-	do
-		local side = x > 0 and 1 or (x < 0 and -1 or 0)
-		local angle = math.rad(expression == "furious" and 34 or (expression == "angry" and 26 or 16))
-		piece(list, "Block", faceColor, Vector3.new(x, y + w * 0.42, surface(x, y + w * 0.42) - 0.035),
-			Vector3.new(w * 1.15, w * 0.26, 0.07), Vector3.new(0, 0, side * angle), { Material = Enum.Material.Slate })
+	-- Fierce look: a dark socket with a glowing slanted slit (the meteor's own fire color), a thin
+	-- black pupil and a heavy rock brow pressing down on it. Inner corners lower = angry.
+	local side = x > 0 and 1 or (x < 0 and -1 or 0)
+	local slant = side * math.rad(18)
+	local open = expression == "furious" and 0.36 or 0.3
+	piece(list, "Ball", faceColor, Vector3.new(x, y, z + 0.015), Vector3.new(w * 1.15, w * 0.6, w * 0.3), Vector3.new(0, 0, slant))
+	piece(list, "Ball", glow, Vector3.new(x, y, z - 0.012), Vector3.new(w * 0.95, w * open, w * 0.3), Vector3.new(0, 0, slant), { Material = Enum.Material.Neon })
+	piece(list, "Block", BLACK, Vector3.new(x + side * w * 0.05, y, z - 0.04), Vector3.new(w * 0.09, w * open * 0.9, 0.03))
+	local angle = math.rad(expression == "furious" and 36 or 28)
+	local by = y + w * 0.5
+	piece(list, "Block", faceColor, Vector3.new(x - side * w * 0.05, by, surface(x, by) - 0.045),
+		Vector3.new(w * 1.35, w * 0.45, 0.09), Vector3.new(0, 0, side * angle), { Material = Enum.Material.Slate })
+end
+
+-- Row of pointed teeth (diamonds) along a mouth edge.
+local function teeth(list, y, count, spacing, size)
+	for i = 1, count do
+		local tx = (i - (count + 1) / 2) * spacing
+		piece(list, "Block", Color3.fromRGB(240, 235, 220), Vector3.new(tx, y, surface(tx, y) - 0.03),
+			Vector3.new(size, size, 0.035), Vector3.new(0, 0, math.rad(45)))
 	end
 end
 
 local function mouthSpec(list, expression, body)
-	local y = -0.13
+	local y = -0.15
 	local z = surface(0, y)
 	if expression == "happy" then
-		-- Cocky grin full of teeth.
-		piece(list, "Ball", BLACK, Vector3.new(0.02, y, z), Vector3.new(0.3, 0.12, 0.08), Vector3.new(0, 0, math.rad(-6)))
-		piece(list, "Block", WHITE, Vector3.new(0.02, y + 0.02, z - 0.035), Vector3.new(0.24, 0.035, 0.04), Vector3.new(0, 0, math.rad(-6)))
-		piece(list, "Block", WHITE, Vector3.new(0.02, y - 0.03, z - 0.03), Vector3.new(0.18, 0.025, 0.04), Vector3.new(0, 0, math.rad(-6)))
+		-- Wide cocky grin full of pointed teeth.
+		piece(list, "Ball", BLACK, Vector3.new(0, y - 0.02, z + 0.01), Vector3.new(0.36, 0.1, 0.12))
+		teeth(list, y + 0.025, 6, 0.06, 0.04)
+		teeth(list, y - 0.06, 5, 0.06, 0.035)
 	elseif expression == "sleepy" then
 		piece(list, "Ball", BLACK, Vector3.new(0, y, z), Vector3.new(0.06, 0.06, 0.05))
 	elseif expression == "dizzy" then
@@ -68,52 +78,56 @@ local function mouthSpec(list, expression, body)
 				Vector3.new(0.065, 0.025, 0.05), Vector3.new(0, 0, i == 0 and 0 or i * math.rad(25)))
 		end
 	elseif expression == "furious" then
-		piece(list, "Ball", BLACK, Vector3.new(0, y - 0.01, z), Vector3.new(0.24, 0.17, 0.09))
-		piece(list, "Ball", Color3.fromRGB(200, 40, 50), Vector3.new(0, y - 0.04, z - 0.025), Vector3.new(0.13, 0.06, 0.05))
-		piece(list, "Block", WHITE, Vector3.new(0, y + 0.05, z - 0.035), Vector3.new(0.15, 0.035, 0.04))
-	else -- angry
-		for _, side in ipairs({ -1, 1 }) do
-			piece(list, "Block", BLACK, Vector3.new(side * 0.05, y - 0.01, z - 0.01), Vector3.new(0.11, 0.03, 0.05), Vector3.new(0, 0, side * math.rad(-14)))
-		end
+		-- Roaring: wide open, fangs top and bottom.
+		piece(list, "Ball", BLACK, Vector3.new(0, y - 0.02, z + 0.01), Vector3.new(0.32, 0.18, 0.12))
+		piece(list, "Ball", Color3.fromRGB(170, 30, 40), Vector3.new(0, y - 0.07, z - 0.02), Vector3.new(0.16, 0.06, 0.05))
+		teeth(list, y + 0.055, 5, 0.06, 0.045)
+		teeth(list, y - 0.1, 4, 0.065, 0.04)
+	else -- angry: teeth clenched
+		piece(list, "Ball", BLACK, Vector3.new(0, y - 0.01, z + 0.01), Vector3.new(0.3, 0.08, 0.12))
+		teeth(list, y + 0.012, 5, 0.055, 0.035)
+		teeth(list, y - 0.03, 5, 0.055, 0.035)
 	end
 end
 
-local function extraSpec(list, extra, expression)
-	if extra == "crown" then
-		piece(list, "Cylinder", GOLD, Vector3.new(0, 0.46, 0), Vector3.new(0.12, 0.42, 0.42), Vector3.new(0, 0, math.rad(90)), { Material = Enum.Material.Foil })
-		for k = 0, 4 do
-			local a = k / 5 * math.pi * 2
-			piece(list, "Block", GOLD, Vector3.new(math.sin(a) * 0.18, 0.56, math.cos(a) * 0.18), Vector3.new(0.08, 0.08, 0.08),
-				Vector3.new(math.rad(45), a, math.rad(45)), { Material = Enum.Material.Foil })
+-- Extras are part of the rock itself (no accessories): same material and color as the body.
+local function extraSpec(list, extra, rock)
+	if extra == "crest" then
+		-- A crown of rock spikes growing out of the top.
+		for k = 0, 6 do
+			local a = k / 7 * math.pi * 2
+			local tall = k % 2 == 0 and 0.22 or 0.15
+			piece(list, "Block", rock, Vector3.new(math.sin(a) * 0.2, 0.44 + tall / 2, math.cos(a) * 0.2), Vector3.new(0.08, tall, 0.08),
+				Vector3.new(math.cos(a) * math.rad(18), a, -math.sin(a) * math.rad(18)))
 		end
-		piece(list, "Ball", Color3.fromRGB(255, 50, 80), Vector3.new(0, 0.46, -0.21), Vector3.new(0.07, 0.07, 0.05), nil, { Material = Enum.Material.Neon })
-	elseif extra == "sunglasses" and expression ~= "dizzy" then
-		for _, x in ipairs({ -0.16, 0.16 }) do
-			piece(list, "Block", BLACK, Vector3.new(x, 0.08, surface(x, 0.08) - 0.06), Vector3.new(0.22, 0.13, 0.05), nil, { Material = Enum.Material.Glass, Reflectance = 0.4 })
+	elseif extra == "fins" then
+		-- Swept-back spikes like a helmet, shaped for speed.
+		for _, side in ipairs({ -1, 0, 1 }) do
+			piece(list, "Block", rock, Vector3.new(side * 0.22, 0.38, 0.12), Vector3.new(0.07, 0.07, 0.4),
+				Vector3.new(math.rad(30), 0, side * math.rad(-25)))
 		end
-		piece(list, "Block", BLACK, Vector3.new(0, 0.11, surface(0, 0.11) - 0.06), Vector3.new(0.12, 0.03, 0.04))
 	elseif extra == "horns" then
 		for _, side in ipairs({ -1, 1 }) do
-			local red = Color3.fromRGB(190, 30, 40)
-			piece(list, "Block", red, Vector3.new(side * 0.2, 0.42, -0.04), Vector3.new(0.09, 0.2, 0.09), Vector3.new(0, 0, -side * math.rad(22)))
-			piece(list, "Block", red, Vector3.new(side * 0.25, 0.54, -0.04), Vector3.new(0.05, 0.1, 0.05), Vector3.new(0, 0, -side * math.rad(35)))
+			piece(list, "Block", rock, Vector3.new(side * 0.2, 0.42, -0.04), Vector3.new(0.09, 0.2, 0.09), Vector3.new(0, 0, -side * math.rad(22)))
+			piece(list, "Block", rock, Vector3.new(side * 0.25, 0.54, -0.04), Vector3.new(0.05, 0.1, 0.05), Vector3.new(0, 0, -side * math.rad(35)))
 		end
 	end
 end
 
-local function faceSpec(def, expression)
+local function faceSpec(def, expression, hasBody)
 	local list = {}
 	local face = def.face or {}
 	local skin = def.body:Lerp(Color3.new(0, 0, 0), 0.35)
-	local sunglasses = face.extra == "sunglasses" and expression ~= "dizzy"
 	if face.eyes == "cyclops" then
-		eyeSpec(list, 0, 0.09, 0.34, expression, skin)
-	elseif not sunglasses then
-		eyeSpec(list, -0.16, 0.08, 0.19, expression, skin)
-		eyeSpec(list, 0.16, 0.08, 0.19, expression, skin)
+		eyeSpec(list, 0, 0.08, 0.3, expression, skin, def.fire[1])
+	else
+		eyeSpec(list, -0.15, 0.07, 0.19, expression, skin, def.fire[1])
+		eyeSpec(list, 0.15, 0.07, 0.19, expression, skin, def.fire[1])
 	end
 	mouthSpec(list, expression, def.body)
-	extraSpec(list, face.extra, expression)
+	if not hasBody then -- the Blender mesh already has its horns, crests and fins
+		extraSpec(list, face.extra, def.body:Lerp(Color3.new(0, 0, 0), 0.25))
+	end
 	return list
 end
 
@@ -132,7 +146,7 @@ local function buildFace(model, core, def, expression)
 	local folder = Instance.new("Folder")
 	folder.Name = "Face"
 	local size = core.Size.X
-	for _, spec in ipairs(faceSpec(def, expression)) do
+	for _, spec in ipairs(faceSpec(def, expression, model:FindFirstChild("Body") ~= nil)) do
 		local p = Instance.new("Part")
 		p.Name = "FacePart"
 		p.Shape = Enum.PartType[spec.shape]
@@ -246,11 +260,16 @@ function MeteorVisual.Build(typeId, opts)
 	local body = AssetLibrary.MeteorBody(def.id)
 	if body then
 		shell:Destroy()
+		-- Config.MeteorMeshes (written by art/blender/meteors_build.py) has the mesh's bounding box
+		-- in units of its sphere's diameter, so the sphere matches the core and the face sits on it.
+		local info = MeteorMeshes[def.id]
 		local s = body.Size
 		local maxDim = math.max(s.X, s.Y, s.Z, 0.01)
 		body.Name = "Body"
-		body:SetAttribute("Unit", s / maxDim)
-		body.Size = (s / maxDim) * size * 1.1
+		body:SetAttribute("Unit", info and info.size or s / maxDim)
+		body:SetAttribute("UnitScale", info and 1 or 1.1)
+		body:SetAttribute("UnitOffset", info and info.center or Vector3.zero)
+		body.Size = body:GetAttribute("Unit") * size * body:GetAttribute("UnitScale")
 		body.Anchored = false
 		body.Massless = true
 		body.CanCollide = false
@@ -258,9 +277,11 @@ function MeteorVisual.Build(typeId, opts)
 		body.CanTouch = false
 		body.CFrame = core.CFrame
 		body.Parent = model
-		local bodyWeld = Instance.new("WeldConstraint")
+		local bodyWeld = Instance.new("Weld")
+		bodyWeld.Name = "BodyWeld"
 		bodyWeld.Part0 = core
 		bodyWeld.Part1 = body
+		bodyWeld.C0 = CFrame.new(body:GetAttribute("UnitOffset") * size)
 		bodyWeld.Parent = core
 		core.Transparency = 1
 	end
@@ -312,7 +333,11 @@ function MeteorVisual.SetSize(model, size)
 	end
 	local body = model:FindFirstChild("Body")
 	if body and body:GetAttribute("Unit") then
-		body.Size = body:GetAttribute("Unit") * size * 1.1
+		body.Size = body:GetAttribute("Unit") * size * (body:GetAttribute("UnitScale") or 1.1)
+		local bodyWeld = core:FindFirstChild("BodyWeld")
+		if bodyWeld then
+			bodyWeld.C0 = CFrame.new((body:GetAttribute("UnitOffset") or Vector3.zero) * size)
+		end
 	end
 	local fire = core:FindFirstChildOfClass("Fire")
 	if fire then

@@ -302,6 +302,14 @@ Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lan
 5. **Museo personale**: la casa mostra le comete più rare in vetrine; gli altri possono visitarla e "mettere
    una stella". Classifica delle case più stellate.
 
+### Idee del proprietario (da fare più avanti)
+- **Cavalcare la propria cometa** (tipo nuvola Speedy di Goku): si sblocca a una certa Evoluzione (es. Titan).
+  La cometa equipaggiata si allarga sotto i piedi e diventa una cavalcatura volante per muoversi per la mappa
+  (più veloce del Bifrost); comete più rare = più veloci e con una scia diversa.
+- **PvP con comete-arma**: in una futura modalità PvP ogni cometa ha due forme. **Attacco cometa** (la lanci come
+  adesso, a distanza) oppure **attacco arma**: la cometa si trasforma in un'arma del suo elemento (Magma → martello
+  di lava, Frost → lancia di ghiaccio, Spark → frusta elettrica, Void → falce oscura...). Si cambia forma con un tasto.
+
 ### Ancora da fare (dalla lista "più figo")
 - Replay al rallentatore del colpo finale su un maxischermo nell'isola centrale.
 - Evento Buco Nero che risucchia le comete a terra.
@@ -315,7 +323,9 @@ Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lan
 - **v0.9**: nuova spaccatura (linea → vetro rotto → tunnel azzurro), fix della telecamera bloccata sul pianeta,
   molti meno messaggi (annunci in coda, toast max 2, numeri di danno solo tuoi, i successi degli altri solo in chat),
   Cosmic Hunt rifatta (camera, posa da supereroe, cometa in mano, pianetini di terreno con crateri ed esplosioni),
-  prompt di Codex rifatti in stile ville moderne di lusso.
+  prompt di Codex rifatti in stile ville moderne di lusso. Le 13 comete modellate in Blender (script
+  `art/blender/meteors_build.py`): niente accessori, corna/creste/cristalli/pinne fanno parte della roccia;
+  faccia più cattiva (occhi a fessura luminosi del colore del fuoco, sopracciglia di roccia a V, denti aguzzi).
 - **v0.8**: 12 giocatori, isolette dei pad, ponti più larghi, pianeti diversi che crescono, meno lag, resti sul pad finché lanci, VFX vento e fulmini, equip/nutrire/abilità, facce cattive, Reattore a Fusione, Cosmic Hunt, Stardust.
 - **v0.7**: mappa ×3, tre ponti separati con piattaforme da 4 pad, pianeti più grandi e vicini, luce diurna e skybox del proprietario, accessori non più al neon, fine del blocco all'esplosione.
 - **v0.6**: mappa dallo schizzo, pianeti di Terrain a 3 tier con crateri e spaccatura, lancio rifatto, VFX per elemento, facce 3D, pet, titoli, fusione, eventi cosmici.

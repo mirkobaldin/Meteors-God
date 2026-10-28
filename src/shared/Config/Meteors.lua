@@ -18,7 +18,7 @@ Meteors.Rarities = {
 --   damage (+x damage) | burn (+x damage over 3s) | mark (planet takes +x from everyone, 8s)
 --   chain (second strike +x) | critBoost (+x crit multiplier) | shards (+x shards) | recharge (-x recharge)
 -- face.eyes: "normal" | "cyclops"
--- face.extra: nil | "crown" | "sunglasses" | "horns"
+-- face.extra: nil | "crest" | "fins" | "horns" (rock features of the body, never accessories)
 Meteors.Types = {
 	{
 		id = "Pebble",
@@ -131,7 +131,7 @@ Meteors.Types = {
 		rarity = "Legendary",
 		body = Color3.fromRGB(255, 190, 40),
 		fire = { Color3.fromRGB(255, 240, 120), Color3.fromRGB(255, 120, 0) },
-		face = { eyes = "normal", extra = "crown" },
+		face = { eyes = "normal", extra = "crest" },
 		baseDamage = 450,
 		growTime = 1800,
 		powerBonus = 0.8,
@@ -144,7 +144,7 @@ Meteors.Types = {
 		rarity = "Legendary",
 		body = Color3.fromRGB(220, 240, 255),
 		fire = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(80, 160, 255) },
-		face = { eyes = "normal", extra = "crown" },
+		face = { eyes = "normal", extra = "crest" },
 		baseDamage = 500,
 		growTime = 1800,
 		powerBonus = 0.8,
@@ -170,7 +170,7 @@ Meteors.Types = {
 		rarity = "Mythic",
 		body = Color3.fromRGB(255, 255, 240),
 		fire = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 80, 200) },
-		face = { eyes = "normal", extra = "sunglasses" },
+		face = { eyes = "normal", extra = "crest" },
 		baseDamage = 1100,
 		growTime = 3600,
 		powerBonus = 1.6,
@@ -183,7 +183,7 @@ Meteors.Types = {
 		rarity = "Epic",
 		body = Color3.fromRGB(40, 90, 255),
 		fire = { Color3.fromRGB(120, 200, 255), Color3.fromRGB(20, 40, 200) },
-		face = { eyes = "normal", extra = "sunglasses" },
+		face = { eyes = "normal", extra = "fins" },
 		baseDamage = 260,
 		growTime = 900,
 		powerBonus = 0.45,

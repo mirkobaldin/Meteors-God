@@ -50,6 +50,14 @@ la faccia (occhi, pupille, sopracciglia, bocca, guance) è fatta di **parti 3D s
 −Z, così le espressioni cambiano. Lascia il fronte (−Z) abbastanza liscio e tondo per ospitarla.
 Dimensione 1×1×1 stud circa: il codice lo scala. Pivot al centro. Se manca, `Assets/Meteors/Default`.
 
+**Le 13 comete sono già fatte** da `art/blender/meteors_build.py` (Blender, procedurale): FBX in
+`art/export/meteors/<Nome>.fbx` (nome senza spazi, es. `RoyalComet.fbx`; in Studio rinomina il MeshPart con l'`id`
+esatto, es. `Royal Comet`), render in `art/renders/meteors/`. Lo script scrive anche
+`src/shared/Config/MeteorMeshes.lua` con il riquadro di ogni mesh: serve al codice per far combaciare la sfera della
+roccia con la faccia anche se ci sono corna o creste. Se rifai una cometa a mano, riesegui lo script con `--config`
+o aggiorna quel file. Niente accessori: corna, creste, cristalli e pinne fanno parte della roccia.
+I colori sono nei **vertex color** (crepe luminose comprese): all'import in Studio lascia attivi i vertex color.
+
 ## 3. Regole tecniche per i modelli (Blender → Roblox)
 
 - Esporta **FBX** (o OBJ). In Studio: **Avatar / 3D Importer** (`File → Import 3D`).
