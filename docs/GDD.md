@@ -13,13 +13,16 @@
 4. **Il server distrugge insieme.** Un pianeta condiviso; quando esplode piove il bottino per tutti.
 5. **Produzione minima.** Tutto è generato da codice: mondo, pianeti, facce, effetti. Zero animazioni del personaggio custom, zero mesh obbligatorie.
 
-## 2. La mappa: il Bordo dell'Universo
+## 2. La mappa: il Bordo dell'Universo (3 zone, come Asgard)
 
-- **Cittadella degli Dei**: piattaforma circolare fluttuante (raggio ~120 stud) sospesa nel vuoto. Notte stellata, luce viola/blu.
-- **Altari** (8, uno per giocatore) disposti ad anello: mostrano i meteoriti del giocatore, che crescono qui.
-- **Hub centrale**: punto di spawn.
-- **Ponti Stellari** (4): piste di energia stile Bifrost che partono dal bordo e si interrompono nel vuoto. In fondo c'è il **Pad di Lancio**.
-- **Il Vuoto**: oltre i ponti, il pianeta bersaglio fluttua lontano. Sotto la cittadella c'è il nulla (cadere = respawn).
+1. **Città degli Dei** — isola centrale rialzata di marmo e oro: palazzo con guglia e sfera viola al centro,
+   spawn, e le **8 case dei giocatori** ad anello (crescono con l'Evoluzione).
+2. **Campo d'Impatto** — anello di roccia vulcanica scura più in basso, attorno alla città, separato da un fossato
+   di energia e collegato da 4 rampe. **Qui cadono i meteoriti** durante la pioggia.
+3. **Bifrost** — un unico grande ponte arcobaleno che parte dal bordo del campo e porta alla **Piattaforma di Lancio**
+   (4 pad) rivolta verso il pianeta, lontanissimo nel vuoto.
+
+Sotto tutto c'è solo il vuoto (cadere = respawn).
 
 ## 3. Ciclo di gioco (5 minuti)
 

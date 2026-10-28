@@ -74,7 +74,7 @@ local function onPad(position)
 	for _, pad in ipairs(pads:GetChildren()) do
 		local p = pad.Position
 		local flat = Vector3.new(position.X - p.X, 0, position.Z - p.Z)
-		if flat.Magnitude <= Game.World.LaunchPadRadius - 2 and math.abs(position.Y - p.Y) < 10 then
+		if flat.Magnitude <= Game.World.LaunchPadRadius and math.abs(position.Y - p.Y) < 10 then
 			return true
 		end
 	end

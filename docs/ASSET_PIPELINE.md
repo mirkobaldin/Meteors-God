@@ -20,17 +20,24 @@ La cartella ha `ignoreUnknownInstances = true`, quindi ci sono due modi equivale
 ## 2. Contratto dei nomi
 
 ### `Assets/Map/Citadel` — la mappa (Model)
-La cittadella dei giocatori. Deve contenere questi **marker** (Part invisibili, `Anchored`, `CanCollide = false`, `Transparency = 1`):
+La mappa è divisa in 3 zone, come Asgard:
+1. **Città degli Dei** — isola centrale rialzata (raggio ~70, alta ~10) con le 8 case dei giocatori e il palazzo/guglia al centro.
+2. **Campo d'Impatto** — anello di roccia scura più in basso attorno alla città (raggio interno ~92, esterno ~190),
+   separato dalla città da un fossato di energia e collegato da 4 rampe. **Qui cadono i meteoriti.**
+3. **Bifrost** — un unico grande ponte arcobaleno (lungo ~280, largo ~26) che parte dal bordo del campo e porta
+   alla **Piattaforma di Lancio** circolare (raggio ~38) con 4 pad rivolti verso il pianeta.
+
+Marker richiesti (Part invisibili, `Anchored`, `CanCollide = false`, `Transparency = 1`) dentro `Markers/`:
 
 | Marker | Cosa indica |
 |---|---|
-| `Markers/Spawn` | punto di spawn (centro, faccia superiore = pavimento) |
-| `Markers/House1` … `Markers/House8` | posizione e orientamento delle 8 case dei giocatori (la faccia frontale `-Z` guarda verso il centro) |
-| `Markers/LaunchPad1` … `Markers/LaunchPad4` | centro dei pad di lancio in fondo ai ponti |
-| `Markers/Return1` … `Markers/Return4` | dove torna il giocatore dopo il lancio (inizio di ogni ponte, `-Z` verso il pianeta) |
-| `Markers/Planet` | centro del pianeta bersaglio (lontano, oltre i ponti) |
+| `Markers/Spawn` | punto di spawn nella città |
+| `Markers/House1` … `Markers/House8` | posizione e orientamento delle case (la faccia `-Z` guarda verso il centro della città) |
+| `Markers/Field` | centro del Campo d'Impatto, con **attributi** `InnerRadius` e `OuterRadius` (numeri, in stud) |
+| `Markers/LaunchPad1` … `Markers/LaunchPad4` | centro dei pad sulla piattaforma di lancio |
+| `Markers/Return1` … `Markers/Return4` | dove torna il giocatore dopo il lancio (inizio del Bifrost, `-Z` verso il pianeta) |
+| `Markers/Planet` | centro del pianeta bersaglio (molto lontano, ~2.500 stud oltre la piattaforma) |
 
-Misure di riferimento (stud): cittadella raggio ~120, ponti lunghi ~220 e larghi ~12, pianeta a ~760 stud dal centro, alto ~170.
 Un personaggio Roblox è alto ~5 stud.
 
 ### `Assets/Houses/House1` … `House6` — le case divine dei giocatori (Model)

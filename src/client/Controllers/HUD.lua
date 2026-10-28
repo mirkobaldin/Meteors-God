@@ -556,6 +556,17 @@ function HUD:Init()
 	buildOffer()
 	buildBottom()
 	buildShowButton()
+	UI.Text({
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -8, 1, -4),
+		Size = UDim2.fromOffset(120, 14),
+		Text = "v" .. require(Shared.Config.Game).Version,
+		TextColor3 = UI.Colors.Muted,
+		TextTransparency = 0.3,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		MaxTextSize = 12,
+		Parent = gui,
+	})
 end
 
 function HUD:Start()

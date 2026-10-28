@@ -37,4 +37,4 @@ for _, name in ipairs(ORDER) do
 	end
 end
 
-print("[MeteorGods] server started")
+print("[MeteorGods] server started, version " .. require(game:GetService("ReplicatedStorage").Shared.Config.Game).Version)

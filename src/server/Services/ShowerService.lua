@@ -23,12 +23,13 @@ local pickedRemote
 local FALL_HEIGHT = 260
 local FALL_TIME = 1.6
 
+-- Random point on the Impact Field ring (uniform over the area).
 local function randomGroundPoint()
-	local r = Game.World.CitadelRadius - 10
-	local dist = math.sqrt(rng:NextNumber()) * r
-	dist = math.max(dist, 26) -- keep the hub clear
+	local field = services.WorldService.Field
+	local inner, outer = field.inner + 6, field.outer - 6
+	local dist = math.sqrt(rng:NextNumber() * (outer * outer - inner * inner) + inner * inner)
 	local a = rng:NextNumber() * math.pi * 2
-	return Vector3.new(math.sin(a) * dist, Game.World.CitadelY + 2, math.cos(a) * dist)
+	return field.center + Vector3.new(math.sin(a) * dist, 2, math.cos(a) * dist)
 end
 
 local function impactFlash(position, color)

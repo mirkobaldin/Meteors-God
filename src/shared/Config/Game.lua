@@ -6,6 +6,9 @@ local IS_STUDIO = RunService:IsStudio()
 
 local Game = {}
 
+-- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
+Game.Version = "0.3.0"
+
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
 	ShowerDuration = IS_STUDIO and 20 or 60,
@@ -19,18 +22,24 @@ Game.Cycle = {
 }
 
 Game.World = {
-	CitadelRadius = 120,
-	CitadelY = 0,
+	-- Zone 1: City of the Gods (houses)
+	CityY = 10,
+	CityRadius = 70,
 	AltarCount = 8,
-	AltarRingRadius = 78,
+	AltarRingRadius = 48,
 	AltarSlotsBase = 3,
-	BridgeCount = 4,
-	BridgeSpacing = 32,
-	BridgeLength = 220,
-	BridgeWidth = 12,
-	PlanetPosition = Vector3.new(0, 380, 2600),
+	-- Zone 2: Impact Field (meteors fall here)
+	FieldY = 0,
+	FieldInner = 92,
+	FieldOuter = 190,
+	-- Zone 3: Bifrost + Launch Platform
+	BifrostLength = 280,
+	BifrostWidth = 26,
+	PlatformRadius = 38,
+	LaunchPadCount = 4,
+	LaunchPadRadius = 8,
+	PlanetPosition = Vector3.new(0, 380, 2700),
 	PlanetRadius = 420,
-	LaunchPadRadius = 14,
 }
 
 Game.Launch = {
