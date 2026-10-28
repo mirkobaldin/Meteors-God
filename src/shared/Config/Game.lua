@@ -7,7 +7,7 @@ local IS_STUDIO = RunService:IsStudio()
 local Game = {}
 
 -- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
-Game.Version = "0.3.0"
+Game.Version = "0.4.0"
 
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
@@ -22,23 +22,23 @@ Game.Cycle = {
 }
 
 Game.World = {
-	-- Zone 1: City of the Gods (houses)
-	CityY = 10,
-	CityRadius = 70,
+	-- Zone 1 (back): Houses district
+	HousesCenter = Vector3.new(0, 0, -95),
+	HousesRadius = 170,
+	HouseRingRadius = 140,
 	AltarCount = 8,
-	AltarRingRadius = 48,
 	AltarSlotsBase = 3,
-	-- Zone 2: Impact Field (meteors fall here)
-	FieldY = 0,
-	FieldInner = 92,
-	FieldOuter = 190,
-	-- Zone 3: Bifrost + Launch Platform
-	BifrostLength = 280,
+	-- Zone 2 (middle): Meteor Field, meteors fall between FieldInner and FieldRadius
+	FieldCenter = Vector3.new(0, 6, 0),
+	FieldRadius = 115,
+	FieldInner = 26,
+	-- Zone 3 (front): Bifrost + Launch Platform
+	BifrostLength = 300,
 	BifrostWidth = 26,
 	PlatformRadius = 38,
 	LaunchPadCount = 4,
 	LaunchPadRadius = 8,
-	PlanetPosition = Vector3.new(0, 380, 2700),
+	PlanetPosition = Vector3.new(0, 380, 2750),
 	PlanetRadius = 420,
 }
 
@@ -68,10 +68,10 @@ Game.Economy = {
 }
 
 Game.Upgrades = {
-	{ id = "speed", name = "Velocità", desc = "+2 velocità di corsa", max = 10, baseCost = 50, growth = 1.8 },
-	{ id = "power", name = "Potenza", desc = "+10% danno", max = 10, baseCost = 80, growth = 1.9 },
-	{ id = "recharge", name = "Ricarica", desc = "-8% tempo di ricarica", max = 10, baseCost = 60, growth = 1.85 },
-	{ id = "luck", name = "Fortuna", desc = "+2% rarità superiore alla raccolta", max = 10, baseCost = 120, growth = 2 },
+	{ id = "speed", name = "Speed", desc = "+2 running speed", max = 10, baseCost = 50, growth = 1.8 },
+	{ id = "power", name = "Power", desc = "+10% damage", max = 10, baseCost = 80, growth = 1.9 },
+	{ id = "recharge", name = "Recharge", desc = "-8% recharge time", max = 10, baseCost = 60, growth = 1.85 },
+	{ id = "luck", name = "Luck", desc = "+2% chance of a rarer meteor on pickup", max = 10, baseCost = 120, growth = 2 },
 }
 
 Game.UpgradeByID = {}

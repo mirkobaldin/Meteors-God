@@ -151,7 +151,7 @@ function Notifications:Start()
 		local evo = Players.LocalPlayer:GetAttribute("Evolution")
 		if lastEvolution and evo > lastEvolution then
 			Sfx.Play("Evolve", 0.8)
-			Notifications.Popup("EVOLUZIONE!", "Sei diventato più divino", UI.Colors.Gold)
+			Notifications.Popup("EVOLUTION!", "You became more divine", UI.Colors.Gold)
 		end
 		lastEvolution = evo
 	end)
@@ -165,20 +165,20 @@ function Notifications:Start()
 		end
 		local rarity = Meteors.RarityByID[def.rarity]
 		local name = (info.mutation and (info.mutation .. " ") or "") .. def.id
-		local subtitle = def.rarity .. (info.upgraded and "  ·  FORTUNA! Rarità superiore!" or "")
+		local subtitle = def.rarity .. (info.upgraded and "  ·  LUCKY! Rarity upgraded!" or "")
 		Anim.Play("Pickup")
 		Sfx.Play((rarity.order >= 3 or info.mutation) and "RarePickup" or "Pickup")
 		if rarity.order >= 3 or info.mutation or info.upgraded then
 			Notifications.Popup(name .. "!", subtitle, rarity.color)
 		else
-			Notifications.Toast("Hai raccolto: " .. name, "good")
+			Notifications.Toast("You picked up: " .. name, "good")
 		end
 	end)
 
 	Remotes.Get("PlanetDestroyed").OnClientEvent:Connect(function(info)
 		Notifications.Popup(
-			"PIANETA DISTRUTTO!",
-			"+" .. Format.Number(info.shards) .. " Frammenti  ·  contributo " .. math.floor(info.share * 100) .. "%",
+			"PLANET DESTROYED!",
+			"+" .. Format.Number(info.shards) .. " Shards  ·  contribution " .. math.floor(info.share * 100) .. "%",
 			UI.Colors.Gold
 		)
 	end)

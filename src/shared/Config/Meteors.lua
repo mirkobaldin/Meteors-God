@@ -4,20 +4,20 @@
 local Meteors = {}
 
 Meteors.Rarities = {
-	{ id = "Comune", weight = 60, color = Color3.fromRGB(190, 190, 200), order = 1 },
-	{ id = "Non comune", weight = 25, color = Color3.fromRGB(90, 220, 110), order = 2 },
-	{ id = "Raro", weight = 10, color = Color3.fromRGB(70, 150, 255), order = 3 },
-	{ id = "Epico", weight = 4, color = Color3.fromRGB(180, 90, 255), order = 4 },
-	{ id = "Leggendario", weight = 0.9, color = Color3.fromRGB(255, 200, 40), order = 5 },
-	{ id = "Mitico", weight = 0.1, color = Color3.fromRGB(255, 60, 140), order = 6 },
+	{ id = "Common", weight = 60, color = Color3.fromRGB(190, 190, 200), order = 1 },
+	{ id = "Uncommon", weight = 25, color = Color3.fromRGB(90, 220, 110), order = 2 },
+	{ id = "Rare", weight = 10, color = Color3.fromRGB(70, 150, 255), order = 3 },
+	{ id = "Epic", weight = 4, color = Color3.fromRGB(180, 90, 255), order = 4 },
+	{ id = "Legendary", weight = 0.9, color = Color3.fromRGB(255, 200, 40), order = 5 },
+	{ id = "Mythic", weight = 0.1, color = Color3.fromRGB(255, 60, 140), order = 6 },
 }
 
 -- face.eyes: "normal" | "cyclops"
 -- face.extra: nil | "crown" | "sunglasses" | "horns"
 Meteors.Types = {
 	{
-		id = "Sassolino",
-		rarity = "Comune",
+		id = "Pebble",
+		rarity = "Common",
 		body = Color3.fromRGB(120, 110, 105),
 		fire = { Color3.fromRGB(255, 140, 40), Color3.fromRGB(255, 60, 20) },
 		face = { eyes = "normal" },
@@ -27,8 +27,8 @@ Meteors.Types = {
 		sellPrice = 10,
 	},
 	{
-		id = "Brace",
-		rarity = "Comune",
+		id = "Ember",
+		rarity = "Common",
 		body = Color3.fromRGB(200, 70, 40),
 		fire = { Color3.fromRGB(255, 120, 30), Color3.fromRGB(200, 30, 10) },
 		face = { eyes = "normal" },
@@ -38,8 +38,8 @@ Meteors.Types = {
 		sellPrice = 12,
 	},
 	{
-		id = "Gelo",
-		rarity = "Non comune",
+		id = "Frost",
+		rarity = "Uncommon",
 		body = Color3.fromRGB(150, 220, 255),
 		fire = { Color3.fromRGB(180, 240, 255), Color3.fromRGB(60, 140, 255) },
 		face = { eyes = "normal" },
@@ -49,8 +49,8 @@ Meteors.Types = {
 		sellPrice = 30,
 	},
 	{
-		id = "Scintilla",
-		rarity = "Non comune",
+		id = "Spark",
+		rarity = "Uncommon",
 		body = Color3.fromRGB(255, 230, 80),
 		fire = { Color3.fromRGB(255, 255, 150), Color3.fromRGB(255, 200, 0) },
 		face = { eyes = "normal" },
@@ -60,8 +60,8 @@ Meteors.Types = {
 		sellPrice = 32,
 	},
 	{
-		id = "Veleno",
-		rarity = "Raro",
+		id = "Venom",
+		rarity = "Rare",
 		body = Color3.fromRGB(110, 220, 60),
 		fire = { Color3.fromRGB(180, 255, 80), Color3.fromRGB(40, 160, 20) },
 		face = { eyes = "normal", extra = "horns" },
@@ -71,8 +71,8 @@ Meteors.Types = {
 		sellPrice = 90,
 	},
 	{
-		id = "Cristallo",
-		rarity = "Raro",
+		id = "Crystal",
+		rarity = "Rare",
 		body = Color3.fromRGB(255, 140, 230),
 		fire = { Color3.fromRGB(255, 200, 255), Color3.fromRGB(200, 80, 255) },
 		face = { eyes = "normal" },
@@ -83,7 +83,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Magma",
-		rarity = "Epico",
+		rarity = "Epic",
 		body = Color3.fromRGB(90, 20, 15),
 		fire = { Color3.fromRGB(255, 90, 0), Color3.fromRGB(150, 0, 0) },
 		face = { eyes = "normal", extra = "horns" },
@@ -94,7 +94,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Aurora",
-		rarity = "Epico",
+		rarity = "Epic",
 		body = Color3.fromRGB(60, 230, 200),
 		fire = { Color3.fromRGB(120, 255, 200), Color3.fromRGB(140, 80, 255) },
 		face = { eyes = "normal" },
@@ -104,8 +104,8 @@ Meteors.Types = {
 		sellPrice = 320,
 	},
 	{
-		id = "Solare",
-		rarity = "Leggendario",
+		id = "Solar",
+		rarity = "Legendary",
 		body = Color3.fromRGB(255, 190, 40),
 		fire = { Color3.fromRGB(255, 240, 120), Color3.fromRGB(255, 120, 0) },
 		face = { eyes = "normal", extra = "crown" },
@@ -115,8 +115,8 @@ Meteors.Types = {
 		sellPrice = 1200,
 	},
 	{
-		id = "Cometa Regale",
-		rarity = "Leggendario",
+		id = "Royal Comet",
+		rarity = "Legendary",
 		body = Color3.fromRGB(220, 240, 255),
 		fire = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(80, 160, 255) },
 		face = { eyes = "normal", extra = "crown" },
@@ -126,8 +126,8 @@ Meteors.Types = {
 		sellPrice = 1300,
 	},
 	{
-		id = "Vuoto",
-		rarity = "Mitico",
+		id = "Void",
+		rarity = "Mythic",
 		body = Color3.fromRGB(20, 10, 35),
 		fire = { Color3.fromRGB(170, 80, 255), Color3.fromRGB(30, 0, 60) },
 		face = { eyes = "cyclops" },
@@ -138,7 +138,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Supernova",
-		rarity = "Mitico",
+		rarity = "Mythic",
 		body = Color3.fromRGB(255, 255, 240),
 		fire = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 80, 200) },
 		face = { eyes = "normal", extra = "sunglasses" },
@@ -148,8 +148,8 @@ Meteors.Types = {
 		sellPrice = 6500,
 	},
 	{
-		id = "Cometa Blu",
-		rarity = "Epico",
+		id = "Blue Comet",
+		rarity = "Epic",
 		body = Color3.fromRGB(40, 90, 255),
 		fire = { Color3.fromRGB(120, 200, 255), Color3.fromRGB(20, 40, 200) },
 		face = { eyes = "normal", extra = "sunglasses" },
@@ -163,9 +163,9 @@ Meteors.Types = {
 
 -- Rolled once per fallen meteor. Checked in order, first success wins.
 Meteors.Mutations = {
-	{ id = "Eclissato", chance = 0.002, mult = 5, color = Color3.fromRGB(120, 40, 200) },
-	{ id = "Arcobaleno", chance = 0.008, mult = 3, color = Color3.fromRGB(255, 120, 200) },
-	{ id = "Dorato", chance = 0.04, mult = 2, color = Color3.fromRGB(255, 210, 60) },
+	{ id = "Eclipsed", chance = 0.002, mult = 5, color = Color3.fromRGB(120, 40, 200) },
+	{ id = "Rainbow", chance = 0.008, mult = 3, color = Color3.fromRGB(255, 120, 200) },
+	{ id = "Golden", chance = 0.04, mult = 2, color = Color3.fromRGB(255, 210, 60) },
 }
 
 Meteors.ByID = {}

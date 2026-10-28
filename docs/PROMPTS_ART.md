@@ -30,20 +30,20 @@ Crea queste tavole, salvale come PNG in art/concepts/<categoria>/ con nomi chiar
    un pianeta gigante sullo sfondo. Per ognuna: vista dall'alto + vista prospettica da un giocatore.
 
 2. METEORITI (art/concepts/meteors/): un foglio per ogni tipo in src/shared/Config/Meteors.lua
-   (Sassolino, Brace, Gelo, Scintilla, Veleno, Cristallo, Magma, Aurora, Solare, Cometa Regale, Vuoto,
-   Supernova, Cometa Blu). Ogni meteorite è una palla-roccia infuocata carina con faccia semplice
+   (Pebble, Ember, Frost, Spark, Venom, Crystal, Magma, Aurora, Solar, Royal Comet, Void,
+   Supernova, Blue Comet). Ogni meteorite è una palla-roccia infuocata carina con faccia semplice
    (occhi grandi, bocca, guance), capelli/aura di fiamme del colore dell'elemento, leggibile anche piccolissima.
    Per ognuno: 5 espressioni (assonnato, felice, arrabbiato, furioso, stordito con occhi a spirale)
    + versione "Dorata", "Arcobaleno", "Eclissata". La rarità deve vedersi dalla forma (comune = sasso semplice,
    mitico = forma unica e spettacolare).
 
 3. CASE DIVINE (art/concepts/houses/): il "Santuario" del giocatore in 6 livelli, uno per Evoluzione
-   (Spirito Stellare → Divinità Minore → Semidio → Titano → Dio Cosmico → Divinità Suprema):
+   (Star Spirit → Minor Deity → Demigod → Titan → Cosmic God → Supreme Deity):
    da piccolo altare di pietra a tempio fluttuante con anelli che orbitano. Ogni santuario ha 3-4 piedistalli
    dove fluttuano i meteoriti e un'insegna con il nome del giocatore. Ingombro massimo raggio 14 stud.
 
-4. PIANETI (art/concepts/planets/): Pianeta Roccioso, di Ghiaccio, di Lava, Caramella, Cristallo, Ombra
-   + Pianeta Leggendario dorato. Per ognuno: vista intera + spaccato con 3 strati (crosta a pezzi, mantello, nucleo luminoso).
+4. PIANETI (art/concepts/planets/): Rocky Planet, di Ghiaccio, di Lava, Caramella, Crystal, Ombra
+   + Legendary Planet dorato. Per ognuno: vista intera + spaccato con 3 strati (crosta a pezzi, mantello, nucleo luminoso).
 
 5. INTERFACCIA (art/concepts/ui/): un mockup dell'HUD in stile "+1 Venom Evolution" come STRUTTURA
    (bottoni grandi a griglia a sinistra, offerte a destra, barra del Potere in basso con bottoni di acquisto rapido,
@@ -72,7 +72,7 @@ Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
 1. Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (la faccia la disegna il gioco).
    Circa 1x1x1, pivot al centro, < 3000 triangoli.
 2. Houses/House1 … House6: i 6 santuari, con le Part/Empty Slot1..Slot4 e Sign come da contratto.
-3. Planets/<Nome>: un pianeta alla volta, iniziando da "Pianeta Roccioso". Crosta fratturata con Cell Fracture
+3. Planets/<Nome>: un pianeta alla volta, iniziando da "Rocky Planet". Crosta fratturata con Cell Fracture
    (30-60 pezzi, ognuno < 1500 triangoli) dentro una collection "Crust", poi Mantle e Core separati.
 4. Map/Citadel: la cittadella con i 4 ponti e TUTTI i marker (Spawn, House1-8, LaunchPad1-4, Return1-4, Planet).
 

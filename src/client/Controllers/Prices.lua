@@ -34,11 +34,11 @@ function Prices.Pass(key)
 	return p and fetch(p.id, Enum.InfoType.GamePass)
 end
 
--- "R$ 99", or "Presto" when the ID is not configured yet.
+-- "R$ 99", or "Soon" when the ID is not configured yet.
 function Prices.ProductText(key)
 	local p = Monetization.Products[key]
 	if not p or p.id == 0 then
-		return "Presto"
+		return "Soon"
 	end
 	return "R$ " .. (Prices.Product(key) or "?")
 end
@@ -46,10 +46,10 @@ end
 function Prices.PassText(key)
 	local p = Monetization.GamePasses[key]
 	if not p or p.id == 0 then
-		return "Presto"
+		return "Soon"
 	end
 	if Players.LocalPlayer:GetAttribute("Pass_" .. key) then
-		return "Posseduto"
+		return "Owned"
 	end
 	return "R$ " .. (Prices.Pass(key) or "?")
 end

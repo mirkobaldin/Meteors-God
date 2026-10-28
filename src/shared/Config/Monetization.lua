@@ -5,30 +5,30 @@
 local Monetization = {}
 
 Monetization.GamePasses = {
-	VIP = { id = 0, name = "VIP", desc = "+20% Potere al secondo e tag VIP" },
-	Power2x = { id = 0, name = "2x Potere", desc = "Potere al secondo raddoppiato per sempre" },
-	Shards2x = { id = 0, name = "2x Frammenti", desc = "Frammenti Stellari raddoppiati per sempre" },
-	ExtraAltar = { id = 0, name = "Altare Extra", desc = "+1 slot sull'altare" },
+	VIP = { id = 0, name = "VIP", desc = "+20% Power per second and VIP tag" },
+	Power2x = { id = 0, name = "2x Power", desc = "Power per second doubled forever" },
+	Shards2x = { id = 0, name = "2x Shards", desc = "Stellar Shards doubled forever" },
+	ExtraAltar = { id = 0, name = "Extra Altar", desc = "+1 altar slot" },
 }
 
 Monetization.Products = {
 	StarterPack = {
 		id = 0,
 		name = "Starter Pack",
-		desc = "Cometa Blu esclusiva + 5.000 Frammenti + 2x Potere per 1 ora",
+		desc = "Exclusive Blue Comet + 5,000 Shards + 2x Power for 1 hour",
 	},
-	PowerS = { id = 0, name = "Potere S", desc = "10 minuti di Potere istantaneo" },
-	PowerM = { id = 0, name = "Potere M", desc = "1 ora di Potere istantaneo" },
-	PowerL = { id = 0, name = "Potere L", desc = "6 ore di Potere istantaneo" },
-	Boost2x = { id = 0, name = "Boost 2x Potere", desc = "Potere x2 per 30 minuti" },
-	DivineWrath = { id = 0, name = "Ira Divina", desc = "Tutto il server fa danno x3 per 3 minuti" },
-	LegendaryPlanet = { id = 0, name = "Evoca Pianeta Leggendario", desc = "Arriva subito un pianeta leggendario" },
-	InstantRecharge = { id = 0, name = "Ricarica Istantanea", desc = "Tutti i tuoi meteoriti tornano pronti" },
-	EvolveNow = { id = 0, name = "Evolvi Subito", desc = "Passa subito all'Evoluzione successiva" },
+	PowerS = { id = 0, name = "Power S", desc = "10 minutes of instant Power" },
+	PowerM = { id = 0, name = "Power M", desc = "1 hour of instant Power" },
+	PowerL = { id = 0, name = "Power L", desc = "6 hours of instant Power" },
+	Boost2x = { id = 0, name = "2x Power Boost", desc = "x2 Power for 30 minutes" },
+	DivineWrath = { id = 0, name = "Divine Wrath", desc = "The whole server deals x3 damage for 3 minutes" },
+	LegendaryPlanet = { id = 0, name = "Summon Legendary Planet", desc = "A legendary planet arrives right now" },
+	InstantRecharge = { id = 0, name = "Instant Recharge", desc = "All your meteors are ready again" },
+	EvolveNow = { id = 0, name = "Evolve Now", desc = "Jump to the next Evolution right now" },
 }
 
 Monetization.StarterPack = {
-	meteor = "Cometa Blu",
+	meteor = "Blue Comet",
 	shards = 5000,
 	boostSeconds = 3600,
 }

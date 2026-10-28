@@ -405,9 +405,9 @@ local function spawnPlanet(def)
 	fxRemote:FireAllClients({ kind = "arrival", center = CENTER, radius = R, color = def.atmosphere or def.mantle })
 
 	if def.legendary then
-		Notify.Announce("⭐ È ARRIVATO IL " .. def.name .. "! Ricompense x3!", Color3.fromRGB(255, 210, 60))
+		Notify.Announce("⭐ THE " .. def.name .. " HAS ARRIVED! x3 rewards!", Color3.fromRGB(255, 210, 60))
 	else
-		Notify.Announce("Sta arrivando il " .. def.name .. "!", Color3.fromRGB(200, 220, 255))
+		Notify.Announce("Incoming: " .. def.name .. "!", Color3.fromRGB(200, 220, 255))
 	end
 
 	local custom = AssetLibrary.Clone("Planets", def.legendary and "Legendary" or def.name)
@@ -456,7 +456,7 @@ local function updateMantle(impact)
 			point = impact,
 		})
 		mantle:Destroy()
-		Notify.Announce("Il mantello del " .. state.def.name .. " è esploso! Colpite il NUCLEO!", state.def.core)
+		Notify.Announce("The mantle of " .. state.def.name .. " exploded! Hit the CORE!", state.def.core)
 	elseif f > 0 then
 		mantle.Size = state.mantleBaseSize * (1 - 0.25 * f)
 		mantle.Color = state.def.mantle:Lerp(Color3.fromRGB(40, 15, 10), 0.55 * f)
@@ -510,7 +510,7 @@ local function supernova()
 		end
 	end
 	Notify.Announce(
-		"💥 Il " .. s.def.name .. " è stato DISTRUTTO!" .. (mvpName and (" MVP: " .. mvpName) or ""),
+		"💥 The " .. s.def.name .. " was DESTROYED!" .. (mvpName and (" MVP: " .. mvpName) or ""),
 		Color3.fromRGB(255, 140, 60)
 	)
 

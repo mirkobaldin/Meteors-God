@@ -60,7 +60,7 @@ local function grab(player, model)
 		return
 	end
 	if services.MeteorService:Count(player) >= Game.Economy.InventoryCap then
-		Notify.Toast(player, "Deposito pieno! Vendi qualche meteorite.", "bad")
+		Notify.Toast(player, "Storage full! Sell some meteors.", "bad")
 		return
 	end
 	model:SetAttribute("Taken", true)
@@ -91,9 +91,9 @@ local function grab(player, model)
 
 	local def = Meteors.ByID[typeId]
 	local rarity = Meteors.RarityByID[def.rarity]
-	if rarity.order >= 5 or mutation == "Eclissato" then
+	if rarity.order >= 5 or mutation == "Eclipsed" then
 		local name = (mutation and (mutation .. " ") or "") .. def.id
-		Notify.Announce(player.DisplayName .. " ha trovato un " .. name .. " (" .. def.rarity .. ")!", rarity.color)
+		Notify.Announce(player.DisplayName .. " found a " .. name .. " (" .. def.rarity .. ")!", rarity.color)
 	end
 end
 
@@ -177,7 +177,7 @@ function ShowerService:SpawnOne(luck)
 		text.Parent = tag
 
 		local prompt = Instance.new("ProximityPrompt")
-		prompt.ActionText = "Raccogli"
+		prompt.ActionText = "Collect"
 		prompt.ObjectText = def.id .. " (" .. def.rarity .. ")"
 		prompt.HoldDuration = 0.25
 		prompt.MaxActivationDistance = 10

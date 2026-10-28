@@ -38,11 +38,11 @@ function CycleService:Start()
 		task.wait(3) -- let the world settle on server start
 		while true do
 			setPhase("Shower", Game.Cycle.ShowerDuration)
-			Notify.Announce("☄️ PIOGGIA DI METEORITI! Raccoglili!", Color3.fromRGB(255, 170, 80))
+			Notify.Announce("☄️ METEOR SHOWER! Collect them!", Color3.fromRGB(255, 170, 80))
 			task.wait(Game.Cycle.ShowerDuration)
 
 			setPhase("Bombard", Game.Cycle.BombardDuration)
-			Notify.Announce("🪐 BOMBARDAMENTO! Corri sui Ponti Stellari e lancia!", Color3.fromRGB(150, 200, 255))
+			Notify.Announce("🪐 BOMBARDMENT! Run across the Bifrost and throw!", Color3.fromRGB(150, 200, 255))
 			task.wait(Game.Cycle.BombardDuration)
 		end
 	end)

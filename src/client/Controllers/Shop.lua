@@ -165,7 +165,7 @@ local function offerStarterPack()
 	UI.Button({
 		Position = UDim2.new(0.5, 10, 1, -66),
 		Size = UDim2.new(0.5, -30, 0, 50),
-		Text = "Più tardi",
+		Text = "Later",
 		BackgroundColor3 = UI.Colors.PanelLight,
 		TextColor3 = Color3.fromRGB(255, 255, 255),
 		Parent = offer,
@@ -178,7 +178,7 @@ function Shop:Init()
 	gui = UI.Screen("Shop", 10)
 	local content
 	window, content = UI.Window(gui, {
-		Title = "Negozio",
+		Title = "Shop",
 		Emoji = "🛒",
 		Icon = Assets.Icons.Shop,
 		HeaderColor = Color3.fromRGB(60, 140, 80),
@@ -190,7 +190,7 @@ function Shop:Init()
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = tabs,
 	})
-	for i, tab in ipairs({ { "Offers", "🛍️ Offerte" }, { "Passes", "🎟️ Game Pass" } }) do
+	for i, tab in ipairs({ { "Offers", "🛍️ Offers" }, { "Passes", "🎟️ Game Pass" } }) do
 		tabButtons[tab[1]] = UI.Button({
 			Size = UDim2.fromOffset(180, 40),
 			Text = tab[2],

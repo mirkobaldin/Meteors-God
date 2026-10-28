@@ -58,6 +58,37 @@ local function reconcile(data, template)
 	return data
 end
 
+-- Meteor and mutation ids were renamed to English; convert old saves.
+local LEGACY_IDS = {
+	Sassolino = "Pebble",
+	Brace = "Ember",
+	Gelo = "Frost",
+	Scintilla = "Spark",
+	Veleno = "Venom",
+	Cristallo = "Crystal",
+	Solare = "Solar",
+	["Cometa Regale"] = "Royal Comet",
+	Vuoto = "Void",
+	["Cometa Blu"] = "Blue Comet",
+	Dorato = "Golden",
+	Arcobaleno = "Rainbow",
+	Eclissato = "Eclipsed",
+}
+
+local function migrate(data)
+	for _, m in pairs(data.meteors) do
+		m.t = LEGACY_IDS[m.t] or m.t
+		if m.m then
+			m.m = LEGACY_IDS[m.m] or m.m
+		end
+	end
+	local index = {}
+	for id, v in pairs(data.index) do
+		index[LEGACY_IDS[id] or id] = v
+	end
+	data.index = index
+end
+
 local function keyFor(player)
 	return "p_" .. player.UserId
 end
@@ -174,6 +205,7 @@ function DataService:Start()
 		end
 		data._lock = nil
 		reconcile(data, defaultData())
+		migrate(data)
 		profiles[player] = data
 		persistent[player] = isPersistent
 		loadedEvent:Fire(player, data)

@@ -111,8 +111,8 @@ function PlayerService:Sync(player)
 	end
 	local ls = player:FindFirstChild("leaderstats")
 	if ls then
-		ls.Potere.Value = Format.Number(data.power)
-		ls.Pianeti.Value = data.planetsDestroyed
+		ls.Power.Value = Format.Number(data.power)
+		ls.Planets.Value = data.planetsDestroyed
 	end
 end
 
@@ -140,15 +140,15 @@ function PlayerService:Evolve(player, force)
 	end
 	local nextEvo = Evolutions.Get(data.evolution + 1)
 	if not force and (data.power < nextEvo.power or data.planetsDestroyed < nextEvo.planets) then
-		Notify.Toast(player, "Non hai ancora i requisiti per evolverti", "bad")
+		Notify.Toast(player, "You don't meet the requirements to evolve yet", "bad")
 		return false
 	end
 	data.evolution += 1
 	PlayerService:RefreshCharacter(player)
 	PlayerService:Sync(player)
-	Notify.Toast(player, "Ti sei evoluto in " .. nextEvo.name .. "!", "good")
+	Notify.Toast(player, "You evolved into " .. nextEvo.name .. "!", "good")
 	if data.evolution >= 4 then
-		Notify.Announce(player.DisplayName .. " è diventato " .. nextEvo.name .. "!", nextEvo.aura)
+		Notify.Announce(player.DisplayName .. " became " .. nextEvo.name .. "!", nextEvo.aura)
 	end
 	return true
 end
@@ -159,7 +159,7 @@ function PlayerService:Ascend(player)
 		return false
 	end
 	if data.evolution < Evolutions.AscensionMinEvolution then
-		Notify.Toast(player, "Serve almeno l'Evoluzione " .. Evolutions.AscensionMinEvolution, "bad")
+		Notify.Toast(player, "Requires at least Evolution " .. Evolutions.AscensionMinEvolution, "bad")
 		return false
 	end
 	data.power = 0
@@ -168,7 +168,7 @@ function PlayerService:Ascend(player)
 	PlayerService:RefreshCharacter(player)
 	PlayerService:Sync(player)
 	Notify.Announce(
-		player.DisplayName .. " è ASCESO! (Ascensione " .. data.ascensions .. ")",
+		player.DisplayName .. " has ASCENDED! (Ascension " .. data.ascensions .. ")",
 		Color3.fromRGB(255, 120, 220)
 	)
 	return true
@@ -182,11 +182,11 @@ function PlayerService:BuyUpgrade(player, upgradeId)
 	local level = data.upgrades[upgradeId] or 0
 	local cost = Game.UpgradeCost(upgradeId, level)
 	if not cost then
-		Notify.Toast(player, "Livello massimo raggiunto", "info")
+		Notify.Toast(player, "Max level reached", "info")
 		return false
 	end
 	if data.shards < cost then
-		Notify.Toast(player, "Frammenti insufficienti", "bad")
+		Notify.Toast(player, "Not enough Shards", "bad")
 		return false
 	end
 	data.shards -= cost
@@ -217,10 +217,10 @@ local function onLoaded(player, data)
 	local ls = Instance.new("Folder")
 	ls.Name = "leaderstats"
 	local power = Instance.new("StringValue")
-	power.Name = "Potere"
+	power.Name = "Power"
 	power.Parent = ls
 	local planets = Instance.new("IntValue")
-	planets.Name = "Pianeti"
+	planets.Name = "Planets"
 	planets.Parent = ls
 	ls.Parent = player
 

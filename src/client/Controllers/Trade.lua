@@ -70,7 +70,7 @@ local function renderWindow()
 		return
 	end
 	window.Visible = true
-	refs.title.Text = "🤝 Scambio con " .. current.partnerName
+	refs.title.Text = "🤝 Trading with " .. current.partnerName
 
 	UI.Clear(refs.mine)
 	for _, v in ipairs(current.myOffer) do
@@ -103,16 +103,16 @@ local function renderWindow()
 	local status
 	if current.status == "countdown" then
 		local left = math.max(0, math.ceil((current.countdownEndsAt or 0) - workspace:GetServerTimeNow()))
-		status = "Scambio tra " .. left .. "..."
+		status = "Trading in " .. left .. "..."
 	elseif current.myConfirmed then
-		status = "Hai confermato. In attesa di " .. current.partnerName .. "..."
+		status = "You confirmed. Waiting for " .. current.partnerName .. "..."
 	elseif current.theirConfirmed then
-		status = current.partnerName .. " ha confermato!"
+		status = current.partnerName .. " confirmed!"
 	else
-		status = "Scegli i meteoriti dal Deposito e conferma"
+		status = "Pick meteors from your Storage and confirm"
 	end
 	refs.status.Text = status
-	refs.confirm.Text = current.myConfirmed and "Confermato ✓" or "CONFERMA"
+	refs.confirm.Text = current.myConfirmed and "Confirmed ✓" or "CONFIRM"
 	refs.confirm.BackgroundColor3 = current.myConfirmed and UI.Colors.Good or UI.Colors.Gold
 end
 
@@ -151,9 +151,9 @@ local function buildWindow()
 		}, 4)
 		return l
 	end
-	refs.storage = column(0, "Il tuo Deposito (clicca per offrire)")
-	refs.mine = column(0.34, "La tua offerta")
-	refs.theirs = column(0.68, "La sua offerta")
+	refs.storage = column(0, "Your Storage (click to offer)")
+	refs.mine = column(0.34, "Your offer")
+	refs.theirs = column(0.68, "Their offer")
 	refs.status = UI.Text({
 		Size = UDim2.new(1, -20, 0, 22),
 		Position = UDim2.new(0, 10, 1, -70),
@@ -165,7 +165,7 @@ local function buildWindow()
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(0.5, -8, 1, -10),
 		Size = UDim2.fromOffset(180, 42),
-		Text = "CONFERMA",
+		Text = "CONFIRM",
 		Parent = window,
 	}, function()
 		Remotes.Get("TradeConfirm"):FireServer()
@@ -174,7 +174,7 @@ local function buildWindow()
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0.5, 8, 1, -10),
 		Size = UDim2.fromOffset(180, 42),
-		Text = "ANNULLA",
+		Text = "CANCEL",
 		BackgroundColor3 = UI.Colors.Bad,
 		Parent = window,
 	}, function()
@@ -208,7 +208,7 @@ local function renderPlayerList()
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -6, 0.5, 0),
 				Size = UDim2.new(0.38, 0, 0, 34),
-				Text = "Scambia",
+				Text = "Trade",
 				BackgroundColor3 = UI.Colors.Blue,
 				Parent = rowFrame,
 			}, function()
@@ -220,7 +220,7 @@ local function renderPlayerList()
 	if not any then
 		UI.Text({
 			Size = UDim2.new(1, -8, 0, 40),
-			Text = "Nessun altro giocatore nel server",
+			Text = "No other players on this server",
 			TextColor3 = UI.Colors.Muted,
 			MaxTextSize = 18,
 			Parent = playerList,
@@ -238,14 +238,14 @@ local function showIncoming(fromUserId, fromName)
 	UI.Text({
 		Size = UDim2.new(1, -20, 0, 40),
 		Position = UDim2.fromOffset(10, 8),
-		Text = fromName .. " vuole scambiare con te!",
+		Text = fromName .. " wants to trade with you!",
 		MaxTextSize = 20,
 		Parent = popup,
 	})
 	UI.Button({
 		Position = UDim2.new(0, 10, 1, -50),
 		Size = UDim2.new(0.5, -15, 0, 40),
-		Text = "Accetta",
+		Text = "Accept",
 		BackgroundColor3 = UI.Colors.Good,
 		Parent = popup,
 	}, function()
@@ -255,7 +255,7 @@ local function showIncoming(fromUserId, fromName)
 	UI.Button({
 		Position = UDim2.new(0.5, 5, 1, -50),
 		Size = UDim2.new(0.5, -15, 0, 40),
-		Text = "Rifiuta",
+		Text = "Decline",
 		BackgroundColor3 = UI.Colors.Bad,
 		Parent = popup,
 	}, function()
@@ -273,7 +273,7 @@ function Trade:Init()
 	gui = UI.Screen("Trade", 15)
 	local content
 	playerListPanel, content = UI.Window(gui, {
-		Title = "Scambi",
+		Title = "Trade",
 		Emoji = "🤝",
 		Icon = Assets.Icons.Trade,
 		HeaderColor = Color3.fromRGB(60, 110, 170),
@@ -282,7 +282,7 @@ function Trade:Init()
 	})
 	UI.Text({
 		Size = UDim2.new(1, 0, 0, 22),
-		Text = "Scegli con chi scambiare  ·  serve l'Evoluzione " .. Game.Trade.MinEvolution,
+		Text = "Choose who to trade with  ·  requires Evolution " .. Game.Trade.MinEvolution,
 		TextColor3 = UI.Colors.Muted,
 		MaxTextSize = 18,
 		Parent = content,

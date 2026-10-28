@@ -112,12 +112,12 @@ local function execute(session)
 	local offerA, offerB = session.offers[a], session.offers[b]
 	local dataA, dataB = services.DataService:Get(a), services.DataService:Get(b)
 	if not dataA or not dataB or not validOffer(a, offerA) or not validOffer(b, offerB) then
-		close(session, "Scambio annullato: gli oggetti sono cambiati")
+		close(session, "Trade cancelled: the items changed")
 		return
 	end
 	local cap = Game.Economy.InventoryCap
 	if countMeteors(dataA) - #offerA + #offerB > cap or countMeteors(dataB) - #offerB + #offerA > cap then
-		close(session, "Scambio annullato: deposito pieno")
+		close(session, "Trade cancelled: storage full")
 		return
 	end
 
@@ -150,7 +150,7 @@ local function execute(session)
 	log(dataB, a, summaryB, summaryA)
 
 	session.status = "done"
-	close(session, "Scambio completato!")
+	close(session, "Trade completed!")
 	for _, player in ipairs({ a, b }) do
 		services.MeteorService:PushSnapshot(player)
 		task.spawn(function()
@@ -181,7 +181,7 @@ end
 
 local function onRequest(player, targetUserId)
 	if typeof(targetUserId) ~= "number" or not RateLimit.Allow(player, "TradeRequest", T.RequestCooldown) then
-		Notify.Toast(player, "Aspetta qualche secondo prima di un'altra richiesta", "info")
+		Notify.Toast(player, "Wait a few seconds before another request", "info")
 		return
 	end
 	local target = Players:GetPlayerByUserId(targetUserId)
@@ -189,21 +189,21 @@ local function onRequest(player, targetUserId)
 		return
 	end
 	if not canTrade(player) then
-		Notify.Toast(player, "Per scambiare serve l'Evoluzione " .. T.MinEvolution, "bad")
+		Notify.Toast(player, "Trading requires Evolution " .. T.MinEvolution, "bad")
 		return
 	end
 	if not canTrade(target) then
-		Notify.Toast(player, target.DisplayName .. " non può ancora scambiare", "bad")
+		Notify.Toast(player, target.DisplayName .. " can't trade yet", "bad")
 		return
 	end
 	if sessions[player] or sessions[target] then
-		Notify.Toast(player, "Uno dei due è già in uno scambio", "bad")
+		Notify.Toast(player, "One of you is already trading", "bad")
 		return
 	end
 	pending[target] = pending[target] or {}
 	pending[target][player.UserId] = os.clock()
 	incomingRemote:FireClient(target, player.UserId, player.DisplayName)
-	Notify.Toast(player, "Richiesta di scambio inviata a " .. target.DisplayName, "info")
+	Notify.Toast(player, "Trade request sent to " .. target.DisplayName, "info")
 end
 
 local function onRespond(player, fromUserId, accepted)
@@ -221,15 +221,15 @@ local function onRespond(player, fromUserId, accepted)
 		return
 	end
 	if not accepted then
-		Notify.Toast(from, player.DisplayName .. " ha rifiutato lo scambio", "info")
+		Notify.Toast(from, player.DisplayName .. " declined the trade", "info")
 		return
 	end
 	if os.clock() - at > REQUEST_EXPIRE then
-		Notify.Toast(player, "Richiesta scaduta", "info")
+		Notify.Toast(player, "Request expired", "info")
 		return
 	end
 	if sessions[player] or sessions[from] then
-		Notify.Toast(player, "Uno dei due è già in uno scambio", "bad")
+		Notify.Toast(player, "One of you is already trading", "bad")
 		return
 	end
 	startTrade(from, player)
@@ -254,7 +254,7 @@ local function onSetOffer(player, uids)
 		end
 	end
 	if not validOffer(player, clean) then
-		Notify.Toast(player, "Puoi offrire solo meteoriti del Deposito (non sull'altare, non esclusivi)", "bad")
+		Notify.Toast(player, "You can only offer meteors from Storage (not on the altar, not exclusive)", "bad")
 		return
 	end
 	session.offers[player] = clean
@@ -272,7 +272,7 @@ local function onConfirm(player)
 		return
 	end
 	if #session.offers[session.a] == 0 and #session.offers[session.b] == 0 then
-		Notify.Toast(player, "Lo scambio è vuoto", "info")
+		Notify.Toast(player, "The trade is empty", "info")
 		return
 	end
 	session.confirmed[player] = true
@@ -304,7 +304,7 @@ function TradeService:Start()
 	Remotes.Get("TradeCancel").OnServerEvent:Connect(function(player)
 		local session = sessions[player]
 		if session then
-			close(session, player.DisplayName .. " ha annullato lo scambio")
+			close(session, player.DisplayName .. " cancelled the trade")
 		end
 	end)
 
@@ -312,7 +312,7 @@ function TradeService:Start()
 		pending[player] = nil
 		local session = sessions[player]
 		if session then
-			close(session, "Scambio annullato: " .. player.DisplayName .. " è uscito")
+			close(session, "Trade cancelled: " .. player.DisplayName .. " left")
 		end
 	end)
 end

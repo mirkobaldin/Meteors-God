@@ -74,14 +74,14 @@ function Index:Refresh()
 			})
 		end
 	end
-	header.Text = "Scoperti " .. count .. " / " .. total
+	header.Text = "Discovered " .. count .. " / " .. total
 end
 
 function Index:Init()
 	local gui = UI.Screen("Index", 10)
 	local content
 	window, content = UI.Window(gui, {
-		Title = "Indice",
+		Title = "Index",
 		Emoji = "📖",
 		Icon = Assets.Icons.Index,
 		HeaderColor = Color3.fromRGB(150, 90, 60),

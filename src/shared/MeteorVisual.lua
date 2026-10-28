@@ -211,12 +211,12 @@ function MeteorVisual.DrawFace(gui, typeDef, expression)
 end
 
 local function applyMutation(core, fire, light, mutationId)
-	if mutationId == "Dorato" then
+	if mutationId == "Golden" then
 		core.Color = core.Color:Lerp(Color3.fromRGB(255, 210, 60), 0.6)
 		local s = Instance.new("Sparkles")
 		s.SparkleColor = Color3.fromRGB(255, 220, 90)
 		s.Parent = core
-	elseif mutationId == "Arcobaleno" then
+	elseif mutationId == "Rainbow" then
 		local p = Instance.new("ParticleEmitter")
 		p.Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 60)),
@@ -232,7 +232,7 @@ local function applyMutation(core, fire, light, mutationId)
 		p.SpreadAngle = Vector2.new(180, 180)
 		p.Size = NumberSequence.new(0.4, 0)
 		p.Parent = core
-	elseif mutationId == "Eclissato" then
+	elseif mutationId == "Eclipsed" then
 		core.Color = Color3.fromRGB(15, 5, 25)
 		fire.Color = Color3.fromRGB(160, 60, 255)
 		fire.SecondaryColor = Color3.fromRGB(10, 0, 20)

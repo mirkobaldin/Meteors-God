@@ -30,7 +30,7 @@ handlers.StarterPack = function(player, data)
 	services.MeteorService:AddMeteor(player, cfg.meteor, nil, { paid = true })
 	services.PlayerService:AddShards(player, cfg.shards, false)
 	services.PlayerService:AddBoost(player, cfg.boostSeconds)
-	Notify.Toast(player, "Starter Pack ricevuto! Benvenuto tra gli dei.", "good")
+	Notify.Toast(player, "Starter Pack received! Welcome among the gods.", "good")
 	return true
 end
 
@@ -39,7 +39,7 @@ local function powerPack(key)
 		local seconds = Monetization.PowerPackSeconds[key]
 		local amount = math.max(100, services.PlayerService:PowerRate(player) * seconds)
 		services.PlayerService:AddPower(player, amount)
-		Notify.Toast(player, "Potere aggiunto!", "good")
+		Notify.Toast(player, "Power added!", "good")
 		return true
 	end
 end
@@ -49,7 +49,7 @@ handlers.PowerL = powerPack("PowerL")
 
 handlers.Boost2x = function(player)
 	services.PlayerService:AddBoost(player, Monetization.Boost2xSeconds)
-	Notify.Toast(player, "Boost 2x Potere attivo!", "good")
+	Notify.Toast(player, "2x Power Boost active!", "good")
 	return true
 end
 
@@ -57,26 +57,26 @@ handlers.DivineWrath = function(player)
 	local now = workspace:GetServerTimeNow()
 	local current = math.max(workspace:GetAttribute("WrathUntil") or 0, now)
 	workspace:SetAttribute("WrathUntil", current + Monetization.DivineWrathSeconds)
-	Notify.Announce("⚡ " .. player.DisplayName .. " ha scatenato l'IRA DIVINA! Danno x3 per tutti!", Color3.fromRGB(255, 80, 80))
+	Notify.Announce("⚡ " .. player.DisplayName .. " unleashed DIVINE WRATH! x3 damage for everyone!", Color3.fromRGB(255, 80, 80))
 	return true
 end
 
 handlers.LegendaryPlanet = function(player)
-	Notify.Announce("⭐ " .. player.DisplayName .. " ha evocato un PIANETA LEGGENDARIO!", Color3.fromRGB(255, 210, 60))
+	Notify.Announce("⭐ " .. player.DisplayName .. " summoned a LEGENDARY PLANET!", Color3.fromRGB(255, 210, 60))
 	services.PlanetService:SummonLegendary()
 	return true
 end
 
 handlers.InstantRecharge = function(player)
 	services.MeteorService:ClearCooldowns(player)
-	Notify.Toast(player, "Meteoriti ricaricati!", "good")
+	Notify.Toast(player, "Meteors recharged!", "good")
 	return true
 end
 
 handlers.EvolveNow = function(player, data)
 	if data.evolution >= Evolutions.Max() then
 		services.PlayerService:AddPower(player, services.PlayerService:PowerRate(player) * 3600)
-		Notify.Toast(player, "Sei già al massimo: ricevi 1 ora di Potere", "good")
+		Notify.Toast(player, "You're already at the max: you get 1 hour of Power", "good")
 		return true
 	end
 	return services.PlayerService:Evolve(player, true)
@@ -132,7 +132,7 @@ function ShopService:Start()
 		local key = Monetization.PassKeyById(passId)
 		if key then
 			services.PlayerService:GrantPass(player, key)
-			Notify.Toast(player, "Grazie! " .. Monetization.GamePasses[key].name .. " attivo.", "good")
+			Notify.Toast(player, "Thanks! " .. Monetization.GamePasses[key].name .. " active.", "good")
 		end
 	end)
 end

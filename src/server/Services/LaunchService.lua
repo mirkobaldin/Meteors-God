@@ -90,20 +90,20 @@ local function beginLaunch(player)
 		return { ok = false }
 	end
 	if active[player] then
-		return { ok = false, reason = "Stai già lanciando!" }
+		return { ok = false, reason = "You're already throwing!" }
 	end
 	local data = services.DataService:Get(player)
 	if not data then
-		return { ok = false, reason = "Caricamento dati..." }
+		return { ok = false, reason = "Loading data..." }
 	end
 	if not services.CycleService:IsBombard() then
-		return { ok = false, reason = "Aspetta il Bombardamento per lanciare!" }
+		return { ok = false, reason = "Wait for the Bombardment to throw!" }
 	end
 	if not services.PlanetService:IsTargetable() then
-		return { ok = false, reason = "Il pianeta si sta formando..." }
+		return { ok = false, reason = "The planet is forming..." }
 	end
 	if services.TradeService:IsTrading(player) then
-		return { ok = false, reason = "Chiudi lo scambio prima di lanciare" }
+		return { ok = false, reason = "Close the trade before throwing" }
 	end
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -112,11 +112,11 @@ local function beginLaunch(player)
 	end
 	local pad = services.WorldService:PadAt(root.Position)
 	if not pad then
-		return { ok = false, reason = "Vai sul pad di LANCIO in fondo al ponte" }
+		return { ok = false, reason = "Go to a LAUNCH pad at the end of the bridge" }
 	end
 	local uid = services.MeteorService:BestReady(player)
 	if not uid then
-		return { ok = false, reason = "Nessun meteorite pronto! Aspetta la ricarica o raccogline altri." }
+		return { ok = false, reason = "No meteor ready! Wait for the recharge or collect more." }
 	end
 	local meteor = data.meteors[uid]
 	local size = MeteorMath.LaunchSize(meteor, os.time())

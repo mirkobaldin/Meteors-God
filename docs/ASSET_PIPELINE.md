@@ -20,12 +20,12 @@ La cartella ha `ignoreUnknownInstances = true`, quindi ci sono due modi equivale
 ## 2. Contratto dei nomi
 
 ### `Assets/Map/Citadel` — la mappa (Model)
-La mappa è divisa in 3 zone, come Asgard:
-1. **Città degli Dei** — isola centrale rialzata (raggio ~70, alta ~10) con le 8 case dei giocatori e il palazzo/guglia al centro.
-2. **Campo d'Impatto** — anello di roccia scura più in basso attorno alla città (raggio interno ~92, esterno ~190),
-   separato dalla città da un fossato di energia e collegato da 4 rampe. **Qui cadono i meteoriti.**
-3. **Bifrost** — un unico grande ponte arcobaleno (lungo ~280, largo ~26) che parte dal bordo del campo e porta
-   alla **Piattaforma di Lancio** circolare (raggio ~38) con 4 pad rivolti verso il pianeta.
+La mappa segue un unico asse verso il pianeta e, vista dall'alto, ha la forma di una **serratura** (non un cerchio):
+1. **Dietro — quartiere delle case**: grande mezzaluna di marmo e oro con le 8 case in arco e torri dorate affusolate.
+2. **Al centro — Campo dei Meteoriti**: altopiano rotondo di roccia scura (raggio ~115), un po' più alto e sovrapposto
+   al fronte del quartiere, con l'Altare del Cielo al centro. **Qui cadono i meteoriti.** Rampe verso le case.
+3. **Davanti — Bifrost**: lungo ponte dritto di vetro cosmico scuro con "glitch" di luce (~300 × 26), due torri dorate
+   all'ingresso, fino alla **Piattaforma di Lancio** con cupola dorata e 4 pad rivolti verso il pianeta.
 
 Marker richiesti (Part invisibili, `Anchored`, `CanCollide = false`, `Transparency = 1`) dentro `Markers/`:
 
@@ -33,7 +33,7 @@ Marker richiesti (Part invisibili, `Anchored`, `CanCollide = false`, `Transparen
 |---|---|
 | `Markers/Spawn` | punto di spawn nella città |
 | `Markers/House1` … `Markers/House8` | posizione e orientamento delle case (la faccia `-Z` guarda verso il centro della città) |
-| `Markers/Field` | centro del Campo d'Impatto, con **attributi** `InnerRadius` e `OuterRadius` (numeri, in stud) |
+| `Markers/Field` | centro del Campo dei Meteoriti, con **attributi** `InnerRadius` (altare centrale, niente meteoriti) e `OuterRadius` (numeri, in stud) |
 | `Markers/LaunchPad1` … `Markers/LaunchPad4` | centro dei pad sulla piattaforma di lancio |
 | `Markers/Return1` … `Markers/Return4` | dove torna il giocatore dopo il lancio (inizio del Bifrost, `-Z` verso il pianeta) |
 | `Markers/Planet` | centro del pianeta bersaglio (molto lontano, ~2.500 stud oltre la piattaforma) |
@@ -41,7 +41,7 @@ Marker richiesti (Part invisibili, `Anchored`, `CanCollide = false`, `Transparen
 Un personaggio Roblox è alto ~5 stud.
 
 ### `Assets/Houses/House1` … `House6` — le case divine dei giocatori (Model)
-Una casa per ogni Evoluzione (1 = Spirito Stellare … 6 = Divinità Suprema): la casa cresce con il giocatore.
+Una casa per ogni Evoluzione (1 = Star Spirit … 6 = Supreme Deity): la casa cresce con il giocatore.
 Se ne manca una si usa la più vicina disponibile.
 
 | Elemento | Cosa indica |
@@ -53,7 +53,7 @@ Se ne manca una si usa la più vicina disponibile.
 Ingombro massimo: cerchio di raggio 14 stud. Altezza libera.
 
 ### `Assets/Planets/<NomePianeta>` — i pianeti (Model)
-`<NomePianeta>` = il campo `name` in `src/shared/Config/Planets.lua` (es. `Pianeta Roccioso`), oppure `Legendary`.
+`<NomePianeta>` = il campo `name` in `src/shared/Config/Planets.lua` (es. `Rocky Planet`), oppure `Legendary`.
 Pivot al centro. Diametro esterno ~320 stud.
 
 | Elemento | Cosa indica |
@@ -64,7 +64,7 @@ Pivot al centro. Diametro esterno ~320 stud.
 | altro (anelli, lune) | decorazioni, esplodono alla fine |
 
 ### `Assets/Meteors/<TipoMeteorite>` — corpi dei meteoriti (MeshPart)
-`<TipoMeteorite>` = il campo `id` in `src/shared/Config/Meteors.lua` (es. `Sassolino`, `Gelo`, `Supernova`).
+`<TipoMeteorite>` = il campo `id` in `src/shared/Config/Meteors.lua` (es. `Pebble`, `Frost`, `Supernova`).
 Un singolo **MeshPart** chiamato come il tipo, roccia/forma del meteorite **senza faccia**:
 la faccia (occhi, bocca, espressioni) resta disegnata dal codice, così le espressioni cambiano.
 Dimensione 1×1×1 stud circa: il codice lo scala. Pivot al centro. Se manca, `Assets/Meteors/Default`.

@@ -525,7 +525,7 @@ local function buildUI()
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -40),
 		Size = UDim2.fromOffset(620, 30),
-		Text = "MIRA il pianeta  ·  TIENI PREMUTO per caricare  ·  RILASCIA nella zona dorata",
+		Text = "AIM at the planet  ·  HOLD to charge  ·  RELEASE in the golden zone",
 		TextStrokeTransparency = 0.2,
 		MaxTextSize = 22,
 		Visible = false,
@@ -535,7 +535,7 @@ local function buildUI()
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -20, 1, -30),
 		Size = UDim2.fromOffset(150, 44),
-		Text = "Annulla (Q)",
+		Text = "Cancel (Q)",
 		BackgroundColor3 = UI.Colors.PanelLight,
 		TextColor3 = Color3.new(1, 1, 1),
 		Visible = false,
@@ -547,7 +547,7 @@ local function buildUI()
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.3),
 		Size = UDim2.fromOffset(600, 90),
-		Text = "CRITICO!",
+		Text = "CRITICAL!",
 		TextColor3 = Color3.fromRGB(255, 210, 60),
 		TextTransparency = 1,
 		TextStrokeTransparency = 1,
@@ -654,7 +654,7 @@ function Launch:Start()
 					enterAim()
 				else
 					nextTryAt = os.clock() + 2.5
-					controllers.Notifications.Toast("Nessun meteorite pronto: aspetta la ricarica!", "bad")
+					controllers.Notifications.Toast("No meteor ready: wait for the recharge!", "bad")
 				end
 			end
 		elseif state == "aiming" then

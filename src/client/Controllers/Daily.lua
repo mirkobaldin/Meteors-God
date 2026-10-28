@@ -53,12 +53,12 @@ function Daily:Refresh()
 	local nextDay = math.min(pos + 1, #Rewards.Daily)
 	local reward = Rewards.Daily[nextDay]
 	if available then
-		detail.Text = "Oggi: Giorno " .. nextDay .. "  ·  " .. reward.label .. " " .. (reward.sub or "")
-		claimButton.Text = "RISCATTA"
+		detail.Text = "Today: Day " .. nextDay .. "  ·  " .. reward.label .. " " .. (reward.sub or "")
+		claimButton.Text = "CLAIM"
 		claimButton.BackgroundColor3 = UI.Colors.Gold
 	else
-		detail.Text = "Torna domani per il Giorno " .. (pos % #Rewards.Daily + 1)
-		claimButton.Text = "GIÀ RISCATTATO"
+		detail.Text = "Come back tomorrow for Day " .. (pos % #Rewards.Daily + 1)
+		claimButton.Text = "ALREADY CLAIMED"
 		claimButton.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 	end
 end
@@ -67,7 +67,7 @@ function Daily:Init()
 	local gui = UI.Screen("Daily", 10)
 	local content
 	window, content = UI.Window(gui, {
-		Title = "Premi giornalieri",
+		Title = "Daily rewards",
 		Emoji = "📅",
 		Icon = Assets.Icons.Daily,
 		HeaderColor = Color3.fromRGB(60, 120, 200),
@@ -137,7 +137,7 @@ function Daily:Init()
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(x, 0, y, size / 2 + 6),
 			Size = UDim2.fromOffset(120, 16),
-			Text = "GIORNO " .. day,
+			Text = "DAY " .. day,
 			Font = UI.TitleFont,
 			TextColor3 = big and UI.Colors.Gold or UI.Colors.Muted,
 			MaxTextSize = 13,
@@ -164,7 +164,7 @@ function Daily:Init()
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0.8, 0),
 		Size = UDim2.fromOffset(260, 46),
-		Text = "RISCATTA",
+		Text = "CLAIM",
 		MaxTextSize = 22,
 		Parent = content,
 	}, function()
@@ -174,7 +174,7 @@ function Daily:Init()
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, 0),
 		Size = UDim2.new(1, 0, 0, 16),
-		Text = "Saltare un giorno non azzera la costellazione: riprendi da dove eri.",
+		Text = "Missing a day doesn't reset your constellation: you continue where you left off.",
 		TextColor3 = UI.Colors.Muted,
 		MaxTextSize = 14,
 		Parent = content,

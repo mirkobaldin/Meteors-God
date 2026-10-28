@@ -8,7 +8,7 @@ local Planets = {}
 
 Planets.Sequence = {
 	{
-		name = "Pianeta Roccioso",
+		name = "Rocky Planet",
 		hp = 4000,
 		reward = 400,
 		crust = {
@@ -26,7 +26,7 @@ Planets.Sequence = {
 		atmosphere = Color3.fromRGB(255, 190, 130),
 	},
 	{
-		name = "Pianeta di Ghiaccio",
+		name = "Ice Planet",
 		hp = 9000,
 		reward = 900,
 		crust = {
@@ -44,7 +44,7 @@ Planets.Sequence = {
 		atmosphere = Color3.fromRGB(150, 220, 255),
 	},
 	{
-		name = "Pianeta di Lava",
+		name = "Lava Planet",
 		hp = 20000,
 		reward = 2000,
 		crust = {
@@ -61,7 +61,7 @@ Planets.Sequence = {
 		atmosphere = Color3.fromRGB(255, 110, 50),
 	},
 	{
-		name = "Pianeta Caramella",
+		name = "Candy Planet",
 		hp = 45000,
 		reward = 4500,
 		crust = {
@@ -79,7 +79,7 @@ Planets.Sequence = {
 		atmosphere = Color3.fromRGB(255, 170, 220),
 	},
 	{
-		name = "Pianeta Cristallo",
+		name = "Crystal Planet",
 		hp = 100000,
 		reward = 10000,
 		crust = {
@@ -96,7 +96,7 @@ Planets.Sequence = {
 		atmosphere = Color3.fromRGB(220, 130, 255),
 	},
 	{
-		name = "Pianeta Ombra",
+		name = "Shadow Planet",
 		hp = 220000,
 		reward = 22000,
 		crust = {
@@ -118,7 +118,7 @@ Planets.Sequence = {
 Planets.LoopMultiplier = 2.5
 
 Planets.Legendary = {
-	name = "PIANETA LEGGENDARIO",
+	name = "LEGENDARY PLANET",
 	hp = 60000,
 	reward = 15000,
 	crust = {
@@ -139,9 +139,9 @@ Planets.Legendary = {
 
 -- Layer split of total HP (must sum to 1).
 Planets.Layers = {
-	{ id = "Crosta", share = 0.55 },
-	{ id = "Mantello", share = 0.35 },
-	{ id = "Nucleo", share = 0.10 },
+	{ id = "Crust", share = 0.55 },
+	{ id = "Mantle", share = 0.35 },
+	{ id = "Core", share = 0.10 },
 }
 
 -- Icosphere subdivisions for the crust: 2 = 320 plates (640 parts). 3 would be 1280 plates.

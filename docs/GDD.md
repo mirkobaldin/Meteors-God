@@ -13,16 +13,16 @@
 4. **Il server distrugge insieme.** Un pianeta condiviso; quando esplode piove il bottino per tutti.
 5. **Produzione minima.** Tutto è generato da codice: mondo, pianeti, facce, effetti. Zero animazioni del personaggio custom, zero mesh obbligatorie.
 
-## 2. La mappa: il Bordo dell'Universo (3 zone, come Asgard)
+## 2. La mappa (stile Asgard, forma a serratura lungo l'asse del pianeta)
 
-1. **Città degli Dei** — isola centrale rialzata di marmo e oro: palazzo con guglia e sfera viola al centro,
-   spawn, e le **8 case dei giocatori** ad anello (crescono con l'Evoluzione).
-2. **Campo d'Impatto** — anello di roccia vulcanica scura più in basso, attorno alla città, separato da un fossato
-   di energia e collegato da 4 rampe. **Qui cadono i meteoriti** durante la pioggia.
-3. **Bifrost** — un unico grande ponte arcobaleno che parte dal bordo del campo e porta alla **Piattaforma di Lancio**
-   (4 pad) rivolta verso il pianeta, lontanissimo nel vuoto.
+1. **Dietro — quartiere delle case**: mezzaluna di marmo e oro con le 8 case dei giocatori in arco, torri dorate
+   affusolate e lo spawn.
+2. **Al centro — Campo dei Meteoriti**: altopiano rotondo di roccia vulcanica con crepe arancioni e crateri; al centro
+   l'Altare del Cielo con un raggio viola verso un vortice da cui piovono i meteoriti. Rampe verso le case.
+3. **Davanti — Bifrost**: lungo ponte di vetro cosmico scuro pieno di "glitch" di luce (ciano, magenta, oro) che
+   sfarfallano, con due torri dorate all'ingresso; finisce alla Piattaforma di Lancio (cupola dorata, 4 pad).
 
-Sotto tutto c'è solo il vuoto (cadere = respawn).
+Sotto c'è solo il vuoto (cadere = respawn). Tutto il testo del gioco è in inglese.
 
 ## 3. Ciclo di gioco (5 minuti)
 
@@ -80,19 +80,19 @@ danno = DannoBase(tipo)
 
 | Tipo | Rarità | Faccia | Danno base | Crescita |
 |---|---|---|---|---|
-| Sassolino | Comune | normale | 40 | 2 min |
-| Brace | Comune | normale | 45 | 2 min |
-| Gelo | Non comune | normale | 70 | 4 min |
-| Scintilla | Non comune | normale | 75 | 4 min |
-| Veleno | Raro | corna | 120 | 8 min |
-| Cristallo | Raro | normale | 130 | 8 min |
+| Pebble | Comune | normale | 40 | 2 min |
+| Ember | Comune | normale | 45 | 2 min |
+| Frost | Non comune | normale | 70 | 4 min |
+| Spark | Non comune | normale | 75 | 4 min |
+| Venom | Raro | corna | 120 | 8 min |
+| Crystal | Raro | normale | 130 | 8 min |
 | Magma | Epico | corna | 220 | 15 min |
 | Aurora | Epico | normale | 240 | 15 min |
-| Solare | Leggendario | corona | 450 | 30 min |
-| Cometa Regale | Leggendario | corona | 500 | 30 min |
-| Vuoto | Mitico | ciclope | 1000 | 60 min |
+| Solar | Leggendario | corona | 450 | 30 min |
+| Royal Comet | Leggendario | corona | 500 | 30 min |
+| Void | Mitico | ciclope | 1000 | 60 min |
 | Supernova | Mitico | occhiali da sole | 1100 | 60 min |
-| Cometa Blu | Epico (esclusivo Starter Pack, non scambiabile) | occhiali da sole | 260 | 15 min |
+| Blue Comet | Epico (esclusivo Starter Pack, non scambiabile) | occhiali da sole | 260 | 15 min |
 
 ### Mutazioni (tirate alla caduta)
 
@@ -119,12 +119,12 @@ danno = DannoBase(tipo)
 
 | # | Nome | Potere richiesto | Pianeti | Moltiplicatore | Aspetto |
 |---|---|---|---|---|---|
-| 1 | Spirito Stellare | 0 | 0 | x1 | aura bianca |
-| 2 | Divinità Minore | 500 | 1 | x1,5 | aureola |
-| 3 | Semidio | 5.000 | 5 | x2,5 | ali di luce |
-| 4 | Titano | 50.000 | 15 | x4 | corona, avatar x1,2 |
-| 5 | Dio Cosmico | 500.000 | 40 | x7 | anelli, avatar x1,3 |
-| 6 | Divinità Suprema | 5.000.000 | 100 | x12 | aura galattica, avatar x1,4 |
+| 1 | Star Spirit | 0 | 0 | x1 | aura bianca |
+| 2 | Minor Deity | 500 | 1 | x1,5 | aureola |
+| 3 | Demigod | 5.000 | 5 | x2,5 | ali di luce |
+| 4 | Titan | 50.000 | 15 | x4 | corona, avatar x1,2 |
+| 5 | Cosmic God | 500.000 | 40 | x7 | anelli, avatar x1,3 |
+| 6 | Supreme Deity | 5.000.000 | 100 | x12 | aura galattica, avatar x1,4 |
 
 ### Ascensione (rebirth)
 - Disponibile dall'Evoluzione 4.
@@ -150,16 +150,16 @@ Pianeti grandi (raggio 420 stud) e lontani (~2.300 stud dai ponti), generati da 
   Ogni impatto rimuove le placche più vicine (cratere vero) e scopre il mantello. Placche rimosse proporzionali alla vita persa.
 - **Mantello**: sfera incandescente che si rimpicciolisce e si scurisce, poi esplode in schegge.
 - **Nucleo**: pulsa; a zero → supernova con lampo accecante, onde d'urto e frammenti per tutto il server.
-- **Atmosfera**: alone luminoso (materiale ForceField). Il Pianeta Leggendario ha un anello.
+- **Atmosfera**: alone luminoso (materiale ForceField). Il Legendary Planet ha un anello.
 
-Sequenza: Roccioso → Ghiaccio → Lava → Caramella → Cristallo → Ombra; poi si ricomincia con vita ×2,5.
+Sequenza: Roccioso → Ghiaccio → Lava → Caramella → Crystal → Ombra; poi si ricomincia con vita ×2,5.
 Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Quota vita: crosta 55%, mantello 35%, nucleo 10%.
 Il server decide le placche rimosse; tutti gli effetti (detriti, esplosioni, voli) sono calcolati sui client.
 
 ## 8. Trading
 
 - **Scambiabili**: meteoriti nel Deposito (non sull'altare), ottenuti giocando.
-- **Non scambiabili**: Potere, Evoluzione, upgrade, meteoriti ottenuti con Robux (es. Cometa Blu).
+- **Non scambiabili**: Potere, Evoluzione, upgrade, meteoriti ottenuti con Robux (es. Blue Comet).
 - **Flusso**: richiesta → finestra con le due offerte (max 8 oggetti a testa) → entrambi confermano → 3 secondi di conto alla rovescia → il server rivalida e scambia tutto insieme o niente → salvataggio immediato dei due profili.
 - **Protezioni**: server autoritativo, cambio offerta = conferme annullate, richiesto almeno Evoluzione 2, cooldown tra richieste, cronologia ultimi 20 scambi nel profilo, session lock sul salvataggio.
 
@@ -176,11 +176,11 @@ Il server decide le placche rimosse; tutti gli effetti (detriti, esplosioni, vol
 ### Developer Products
 | Prodotto | Prezzo suggerito | Effetto |
 |---|---|---|
-| Starter Pack | 99 | Cometa Blu esclusiva + 5.000 Frammenti + Boost 2x Potere 1 h (una volta sola) |
+| Starter Pack | 99 | Blue Comet esclusiva + 5.000 Frammenti + Boost 2x Potere 1 h (una volta sola) |
 | Potere S / M / L | 49 / 199 / 799 | 10 min / 1 h / 6 h di Potere al ritmo attuale |
 | Boost 2x Potere 30 min | 79 | Potere ×2 per 30 minuti |
 | Ira Divina | 249 | Tutto il server fa danno ×3 per 3 minuti, compratore annunciato |
-| Evoca Pianeta Leggendario | 599 | Arriva subito un pianeta leggendario per tutto il server |
+| Evoca Legendary Planet | 599 | Arriva subito un pianeta leggendario per tutto il server |
 | Ricarica Istantanea | 29 | Tutti i tuoi meteoriti tornano pronti |
 | Evolvi Subito | 149 | Passi all'Evoluzione successiva |
 

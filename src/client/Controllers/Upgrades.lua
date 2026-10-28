@@ -102,7 +102,7 @@ function Upgrades:Init()
 	local gui = UI.Screen("Upgrades", 10)
 	local content
 	window, content = UI.Window(gui, {
-		Title = "Potenziamenti",
+		Title = "Upgrades",
 		Emoji = "⬆️",
 		Icon = Assets.Icons.Upgrades,
 		HeaderColor = Color3.fromRGB(60, 100, 160),

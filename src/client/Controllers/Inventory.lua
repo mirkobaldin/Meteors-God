@@ -28,8 +28,8 @@ local function sortedMeteors(snapshot)
 		if (a.m.altar ~= nil) ~= (b.m.altar ~= nil) then
 			return a.m.altar ~= nil
 		end
-		local ra = Meteors.RarityByID[Meteors.ByID[a.m.t] and Meteors.ByID[a.m.t].rarity or "Comune"]
-		local rb = Meteors.RarityByID[Meteors.ByID[b.m.t] and Meteors.ByID[b.m.t].rarity or "Comune"]
+		local ra = Meteors.RarityByID[Meteors.ByID[a.m.t] and Meteors.ByID[a.m.t].rarity or "Common"]
+		local rb = Meteors.RarityByID[Meteors.ByID[b.m.t] and Meteors.ByID[b.m.t].rarity or "Common"]
 		if ra.order ~= rb.order then
 			return ra.order > rb.order
 		end
@@ -79,21 +79,21 @@ local function row(entry, now)
 	})
 	local status
 	if cd > 0 then
-		status = "😵 Ricarica " .. math.ceil(cd) .. "s"
+		status = "😵 Recharging " .. math.ceil(cd) .. "s"
 	elseif m.altar then
-		status = "Sull'altare"
+		status = "On the altar"
 	else
-		status = "Deposito"
+		status = "Storage"
 	end
 	UI.Text({
 		Size = UDim2.new(0.45, -60, 0, 20),
 		Position = UDim2.fromOffset(58, 32),
 		Text = def.rarity
-			.. "  ·  Crescita "
+			.. "  ·  Growth "
 			.. math.floor(growth * 100)
 			.. "%  ·  "
 			.. status
-			.. (m.paid and "  ·  Esclusivo" or ""),
+			.. (m.paid and "  ·  Exclusive" or ""),
 		TextColor3 = rarity.color,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		MaxTextSize = 14,
@@ -112,7 +112,7 @@ local function row(entry, now)
 		UI.Button({
 			Size = UDim2.new(0.16, 0, 0, 38),
 			Position = UDim2.new(0.66, 0, 0, 10),
-			Text = "Togli",
+			Text = "Remove",
 			BackgroundColor3 = UI.Colors.Blue,
 			Parent = item,
 		}, function()
@@ -122,7 +122,7 @@ local function row(entry, now)
 		UI.Button({
 			Size = UDim2.new(0.16, 0, 0, 38),
 			Position = UDim2.new(0.66, 0, 0, 10),
-			Text = "Altare",
+			Text = "Altar",
 			Parent = item,
 		}, function()
 			Remotes.Get("PlaceOnAltar"):FireServer(entry.uid)
@@ -132,7 +132,7 @@ local function row(entry, now)
 			UI.Button({
 				Size = UDim2.new(0.16, 0, 0, 38),
 				Position = UDim2.new(0.83, 0, 0, 10),
-				Text = "Vendi " .. Format.Number(price),
+				Text = "Sell " .. Format.Number(price),
 				BackgroundColor3 = UI.Colors.Bad,
 				MaxTextSize = 16,
 				Parent = item,
@@ -161,7 +161,7 @@ function Inventory:Refresh()
 		indexed += 1
 	end
 	header.Text = string.format(
-		"Meteoriti %d/%d   ·   Altare %d/%d   ·   Indice %d/%d",
+		"Meteors %d/%d   ·   Altar %d/%d   ·   Index %d/%d",
 		total,
 		snap.inventoryCap,
 		onAltar,
@@ -181,7 +181,7 @@ function Inventory:Init()
 	local gui = UI.Screen("Inventory", 10)
 	local content
 	panel, content = UI.Window(gui, {
-		Title = "I tuoi Meteoriti",
+		Title = "Your Meteors",
 		Emoji = "☄️",
 		Icon = Assets.Icons.Meteors,
 		HeaderColor = Color3.fromRGB(150, 80, 50),

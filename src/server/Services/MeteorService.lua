@@ -50,7 +50,7 @@ function MeteorService:AddMeteor(player, typeId, mutation, opts)
 		return nil
 	end
 	if MeteorService:Count(player) >= Game.Economy.InventoryCap then
-		Notify.Toast(player, "Deposito pieno! Vendi qualche meteorite.", "bad")
+		Notify.Toast(player, "Storage full! Sell some meteors.", "bad")
 		return nil
 	end
 	local uid = tostring(player.UserId) .. "-" .. tostring(data.nextUid)
@@ -135,7 +135,7 @@ function MeteorService:PlaceOnAltar(player, uid, silent)
 		end
 	end
 	if not silent then
-		Notify.Toast(player, "Altare pieno! Togli un meteorite o sblocca uno slot.", "bad")
+		Notify.Toast(player, "Altar full! Remove a meteor or unlock a slot.", "bad")
 	end
 	return false
 end
@@ -164,11 +164,11 @@ function MeteorService:Sell(player, uid)
 		return false
 	end
 	if m.paid then
-		Notify.Toast(player, "Questo meteorite esclusivo non si può vendere", "bad")
+		Notify.Toast(player, "This exclusive meteor can't be sold", "bad")
 		return false
 	end
 	if m.altar then
-		Notify.Toast(player, "Togli prima il meteorite dall'altare", "bad")
+		Notify.Toast(player, "Remove the meteor from the altar first", "bad")
 		return false
 	end
 	local def = Meteors.ByID[m.t]
@@ -176,7 +176,7 @@ function MeteorService:Sell(player, uid)
 	MeteorService:TakeMeteor(player, uid)
 	services.PlayerService:AddShards(player, price, false)
 	MeteorService:PushSnapshot(player)
-	Notify.Toast(player, "Venduto per " .. price .. " Frammenti", "good")
+	Notify.Toast(player, "Sold for " .. price .. " Shards", "good")
 	return true
 end
 
@@ -361,13 +361,13 @@ function MeteorService:Start()
 	services.DataService.PlayerLoaded:Connect(function(player, data)
 		local altar = services.WorldService:AssignAltar(player)
 		if not altar then
-			Notify.Toast(player, "Nessun altare libero in questo server", "bad")
+			Notify.Toast(player, "No free altar on this server", "bad")
 		else
 			services.WorldService:UpdateHouse(player, data.evolution)
 		end
 		-- Every new god starts with one meteor so the first launch happens in minute one.
 		if next(data.meteors) == nil then
-			MeteorService:AddMeteor(player, "Sassolino", nil, { silent = true })
+			MeteorService:AddMeteor(player, "Pebble", nil, { silent = true })
 		end
 		-- Meteors that were on slots no longer available (e.g. pass lost) go back to storage.
 		local slots = MeteorService:AltarSlots(player)
@@ -402,7 +402,7 @@ function MeteorService:Start()
 	Remotes.Get("PlaceOnAltar").OnServerEvent:Connect(function(player, uid)
 		if typeof(uid) == "string" and RateLimit.Allow(player, "PlaceOnAltar", 0.15) then
 			if services.TradeService:IsTrading(player) then
-				Notify.Toast(player, "Non puoi spostare meteoriti durante uno scambio", "bad")
+				Notify.Toast(player, "You can't move meteors during a trade", "bad")
 				return
 			end
 			MeteorService:PlaceOnAltar(player, uid, false)
@@ -419,7 +419,7 @@ function MeteorService:Start()
 	Remotes.Get("SellMeteor").OnServerEvent:Connect(function(player, uid)
 		if typeof(uid) == "string" and RateLimit.Allow(player, "SellMeteor", 0.15) then
 			if services.TradeService:IsTrading(player) then
-				Notify.Toast(player, "Non puoi vendere durante uno scambio", "bad")
+				Notify.Toast(player, "You can't sell during a trade", "bad")
 				return
 			end
 			MeteorService:Sell(player, uid)

@@ -22,11 +22,11 @@ local rows = {}
 local refs = {}
 
 local VISUAL_NAMES = {
-	halo = "Aureola",
-	wings = "Ali di luce",
-	crown = "Corona",
-	rings = "Anelli planetari",
-	galaxy = "Aura galattica",
+	halo = "Halo",
+	wings = "Wings of light",
+	crown = "Crown",
+	rings = "Planetary rings",
+	galaxy = "Galactic aura",
 }
 
 local function looks(evo)
@@ -35,9 +35,9 @@ local function looks(evo)
 		table.insert(list, VISUAL_NAMES[v] or v)
 	end
 	if evo.scale and evo.scale > 1 then
-		table.insert(list, "Taglia x" .. evo.scale)
+		table.insert(list, "Size x" .. evo.scale)
 	end
-	return #list > 0 and table.concat(list, " · ") or "Aura stellare"
+	return #list > 0 and table.concat(list, " · ") or "Star aura"
 end
 
 local function buildRow(parent, index, evo)
@@ -74,7 +74,7 @@ local function buildRow(parent, index, evo)
 	UI.Text({
 		Position = UDim2.fromOffset(70, 36),
 		Size = UDim2.new(0.45, -70, 0, 18),
-		Text = "x" .. evo.mult .. " Potere e Danno  ·  " .. looks(evo),
+		Text = "x" .. evo.mult .. " Power and Damage  ·  " .. looks(evo),
 		TextColor3 = UI.Colors.Muted,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		MaxTextSize = 14,
@@ -103,17 +103,17 @@ function Evolution:Refresh()
 	for i, r in ipairs(rows) do
 		local evo = Evolutions.Get(i)
 		if i < index then
-			r.status.Text = "✓ RAGGIUNTA"
+			r.status.Text = "✓ REACHED"
 			r.status.TextColor3 = UI.Colors.Good
 			r.row.BackgroundTransparency = 0.5
 			r.stroke.Transparency = 0.7
 		elseif i == index then
-			r.status.Text = "★ FORMA ATTUALE"
+			r.status.Text = "★ CURRENT FORM"
 			r.status.TextColor3 = UI.Colors.Gold
 			r.row.BackgroundTransparency = 0.05
 			r.stroke.Transparency = 0
 		elseif i == index + 1 then
-			r.status.Text = "Potere " .. Format.Number(power) .. "/" .. Format.Number(evo.power) .. "  ·  Pianeti " .. planets .. "/" .. evo.planets
+			r.status.Text = "Power " .. Format.Number(power) .. "/" .. Format.Number(evo.power) .. "  ·  Planets " .. planets .. "/" .. evo.planets
 			r.status.TextColor3 = Color3.new(1, 1, 1)
 			r.row.BackgroundTransparency = 0.2
 			r.stroke.Transparency = 0.2
@@ -129,29 +129,29 @@ function Evolution:Refresh()
 	if index >= Evolutions.Max() then
 		refs.evolve.Visible = false
 		refs.skip.Visible = false
-		refs.info.Text = "Hai raggiunto la forma suprema. Ascendi per crescere ancora!"
+		refs.info.Text = "You reached the supreme form. Ascend to keep growing!"
 		return
 	end
 	local nextEvo = Evolutions.Get(index + 1)
 	local ready = power >= nextEvo.power and planets >= nextEvo.planets
 	refs.evolve.Visible = true
 	refs.skip.Visible = true
-	refs.skip.Text = "SALTA  " .. Prices.ProductText("EvolveNow")
+	refs.skip.Text = "SKIP  " .. Prices.ProductText("EvolveNow")
 	if ready then
-		refs.evolve.Text = "EVOLVI IN " .. string.upper(nextEvo.name)
+		refs.evolve.Text = "EVOLVE INTO " .. string.upper(nextEvo.name)
 		refs.evolve.BackgroundColor3 = UI.Colors.Gold
-		refs.info.Text = "Sei pronto!"
+		refs.info.Text = "You're ready!"
 	else
-		refs.evolve.Text = "NON ANCORA PRONTO"
+		refs.evolve.Text = "NOT READY YET"
 		refs.evolve.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 		local missing = {}
 		if power < nextEvo.power then
-			table.insert(missing, Format.Number(nextEvo.power - power) .. " Potere")
+			table.insert(missing, Format.Number(nextEvo.power - power) .. " Power")
 		end
 		if planets < nextEvo.planets then
-			table.insert(missing, (nextEvo.planets - planets) .. " pianeti distrutti")
+			table.insert(missing, (nextEvo.planets - planets) .. " planets destroyed")
 		end
-		refs.info.Text = "Ti mancano: " .. table.concat(missing, " e ")
+		refs.info.Text = "Still missing: " .. table.concat(missing, " and ")
 	end
 end
 
@@ -159,7 +159,7 @@ function Evolution:Init()
 	local gui = UI.Screen("Evolution", 10)
 	local content
 	window, content = UI.Window(gui, {
-		Title = "Scala della Divinità",
+		Title = "Ladder of Divinity",
 		Emoji = "🌟",
 		Icon = Assets.Icons.Evolution,
 		HeaderColor = Color3.fromRGB(150, 90, 220),
@@ -193,7 +193,7 @@ function Evolution:Init()
 	refs.skip = UI.Button({
 		Position = UDim2.new(0.62, 6, 1, -74),
 		Size = UDim2.new(0.38, -6, 0, 48),
-		Text = "SALTA",
+		Text = "SKIP",
 		BackgroundColor3 = UI.Colors.Cyan,
 		MaxTextSize = 18,
 		Parent = content,
@@ -203,7 +203,7 @@ function Evolution:Init()
 	refs.ascend = UI.Button({
 		Position = UDim2.new(0, 0, 1, -20),
 		Size = UDim2.new(1, 0, 0, 20),
-		Text = "✨ ASCENDI: +50% Potere per sempre (azzera Potere ed Evoluzione)",
+		Text = "✨ ASCEND: +50% Power forever (resets Power and Evolution)",
 		BackgroundColor3 = Color3.fromRGB(255, 130, 220),
 		MaxTextSize = 13,
 		Visible = false,

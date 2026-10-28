@@ -229,7 +229,7 @@ local function damageNumber(position, damage, crit, color)
 	t.TextColor3 = crit and Color3.fromRGB(255, 215, 60) or Color3.fromRGB(255, 255, 255)
 	t.TextStrokeColor3 = crit and Color3.fromRGB(150, 40, 0) or color:Lerp(Color3.new(0, 0, 0), 0.5)
 	t.TextStrokeTransparency = 0
-	t.Text = (crit and "CRITICO!\n" or "") .. Format.Number(damage)
+	t.Text = (crit and "CRITICAL!\n" or "") .. Format.Number(damage)
 	t.Parent = bb
 	local scale = Instance.new("UIScale")
 	scale.Scale = 0.3
@@ -483,6 +483,28 @@ function FX:Start()
 	end)
 	Remotes.Get("LaunchFX").OnClientEvent:Connect(function(p)
 		FX.Flight(p)
+	end)
+	-- The Bifrost's cosmic glitch: random glass fragments flicker and change color (local only).
+	task.spawn(function()
+		local CollectionService = game:GetService("CollectionService")
+		local colors = {
+			Color3.fromRGB(80, 220, 255),
+			Color3.fromRGB(255, 80, 200),
+			Color3.fromRGB(255, 200, 90),
+			Color3.fromRGB(150, 100, 255),
+			Color3.fromRGB(235, 245, 255),
+		}
+		while true do
+			local list = CollectionService:GetTagged("BifrostGlitch")
+			for _ = 1, math.min(24, #list) do
+				local p = list[rng:NextInteger(1, #list)]
+				p.Transparency = rng:NextNumber() < 0.3 and 1 or rng:NextNumber(0.05, 0.6)
+				if rng:NextNumber() < 0.4 then
+					p.Color = colors[rng:NextInteger(1, #colors)]
+				end
+			end
+			task.wait(0.07)
+		end
 	end)
 	-- Ambient shake for everyone (the Launch controller applies its own during cinematics).
 	RunService:BindToRenderStep("MeteorGodsShake", Enum.RenderPriority.Camera.Value + 1, function()

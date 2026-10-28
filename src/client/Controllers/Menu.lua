@@ -16,8 +16,8 @@ local player = Players.LocalPlayer
 
 -- Client-side preferences (stored as player attributes so other controllers can read them).
 Menu.Settings = {
-	{ key = "ShowDamageNumbers", label = "Mostra numeri di danno", default = true },
-	{ key = "CameraShake", label = "Tremolio della telecamera", default = true },
+	{ key = "ShowDamageNumbers", label = "Show damage numbers", default = true },
+	{ key = "CameraShake", label = "Camera shake", default = true },
 }
 
 function Menu.Get(key)
@@ -34,7 +34,7 @@ end
 
 local function buildCodes(gui)
 	local window, content = UI.Window(gui, {
-		Title = "Codici",
+		Title = "Codes",
 		Emoji = "🔑",
 		Icon = Assets.Icons.Codes,
 		Size = UDim2.fromOffset(520, 300),
@@ -42,7 +42,7 @@ local function buildCodes(gui)
 	})
 	UI.Text({
 		Size = UDim2.new(1, 0, 0, 30),
-		Text = "Inserisci un codice per ricevere premi gratis",
+		Text = "Enter a code to get free rewards",
 		TextColor3 = UI.Colors.Muted,
 		MaxTextSize = 20,
 		Parent = content,
@@ -52,7 +52,7 @@ local function buildCodes(gui)
 		Size = UDim2.new(1, 0, 0, 56),
 		BackgroundColor3 = Color3.fromRGB(30, 25, 55),
 		TextColor3 = Color3.fromRGB(255, 255, 255),
-		PlaceholderText = "CODICE",
+		PlaceholderText = "CODE",
 		PlaceholderColor3 = Color3.fromRGB(140, 130, 170),
 		Font = UI.Font,
 		TextScaled = true,
@@ -66,7 +66,7 @@ local function buildCodes(gui)
 	UI.Button({
 		Position = UDim2.fromOffset(0, 112),
 		Size = UDim2.new(1, 0, 0, 52),
-		Text = "Riscatta",
+		Text = "Redeem",
 		BackgroundColor3 = UI.Colors.Good,
 		TextColor3 = Color3.fromRGB(255, 255, 255),
 		MaxTextSize = 28,
@@ -82,7 +82,7 @@ end
 
 local function buildSettings(gui)
 	local window, content = UI.Window(gui, {
-		Title = "Impostazioni",
+		Title = "Settings",
 		Emoji = "⚙️",
 		Icon = Assets.Icons.Settings,
 		Size = UDim2.fromOffset(560, 360),

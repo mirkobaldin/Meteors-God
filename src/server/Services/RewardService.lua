@@ -33,22 +33,22 @@ local function grant(player, reward)
 	local parts = {}
 	if reward.kind == "shards" or reward.amount then
 		local n = services.PlayerService:AddShards(player, reward.amount or 0, false)
-		table.insert(parts, "+" .. Format.Number(n) .. " Frammenti")
+		table.insert(parts, "+" .. Format.Number(n) .. " Shards")
 	end
 	if reward.shards then
 		local n = services.PlayerService:AddShards(player, reward.shards, false)
-		table.insert(parts, "+" .. Format.Number(n) .. " Frammenti")
+		table.insert(parts, "+" .. Format.Number(n) .. " Shards")
 	end
 	local powerSeconds = reward.kind == "power" and reward.seconds or reward.powerSeconds
 	if powerSeconds then
 		local amount = math.max(100, services.PlayerService:PowerRate(player) * powerSeconds)
 		services.PlayerService:AddPower(player, amount)
-		table.insert(parts, "+" .. Format.Number(amount) .. " Potere")
+		table.insert(parts, "+" .. Format.Number(amount) .. " Power")
 	end
 	local boostSeconds = reward.kind == "boost" and reward.seconds or reward.boostSeconds
 	if boostSeconds then
 		services.PlayerService:AddBoost(player, boostSeconds)
-		table.insert(parts, "Boost 2x Potere")
+		table.insert(parts, "2x Power Boost")
 	end
 	local rarity = reward.kind == "meteor" and reward.rarity or reward.meteorRarity
 	if rarity and data then
@@ -67,7 +67,7 @@ local function claimDaily(player)
 	end
 	local today = Rewards.Today()
 	if today <= data.daily.lastDay then
-		Notify.Toast(player, "Hai già riscattato il premio di oggi. Torna domani!", "info")
+		Notify.Toast(player, "You already claimed today's reward. Come back tomorrow!", "info")
 		return
 	end
 	local index = (data.daily.streak % #Rewards.Daily) + 1
@@ -75,7 +75,7 @@ local function claimDaily(player)
 	data.daily.streak += 1
 	data.daily.lastDay = today
 	sync(player)
-	Notify.Toast(player, "Giorno " .. index .. ": " .. text, "good")
+	Notify.Toast(player, "Day " .. index .. ": " .. text, "good")
 end
 
 local giftReadyAt = {} -- [player] = server time
@@ -96,7 +96,7 @@ local function claimGift(player)
 	local shards = Rewards.GiftShards(data.evolution, data.ascensions)
 	local n = services.PlayerService:AddShards(player, shards, true)
 	resetGift(player)
-	Notify.Toast(player, "Regalo: +" .. Format.Number(n) .. " Frammenti!", "good")
+	Notify.Toast(player, "Gift: +" .. Format.Number(n) .. " Shards!", "good")
 end
 
 local function redeemCode(player, code)
@@ -107,16 +107,16 @@ local function redeemCode(player, code)
 	code = string.upper((code:gsub("%s+", "")))
 	local reward = Rewards.Codes[code]
 	if not reward then
-		Notify.Toast(player, "Codice non valido", "bad")
+		Notify.Toast(player, "Invalid code", "bad")
 		return
 	end
 	if data.codes[code] then
-		Notify.Toast(player, "Hai già usato questo codice", "info")
+		Notify.Toast(player, "You already used this code", "info")
 		return
 	end
 	data.codes[code] = true
 	local text = grant(player, reward)
-	Notify.Toast(player, "Codice riscattato: " .. text, "good")
+	Notify.Toast(player, "Code redeemed: " .. text, "good")
 end
 
 function RewardService:Init(s)

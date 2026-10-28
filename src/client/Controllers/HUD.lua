@@ -26,10 +26,10 @@ local refs = {}
 local gui
 
 local OFFERS = {
-	{ key = "StarterPack", kind = "product", title = "Pacchetto Iniziale", emoji = "🎁", icon = Icons.StarterPack },
-	{ key = "Power2x", kind = "pass", title = "2x Potere per sempre", emoji = "⚡", icon = Icons.Power },
-	{ key = "DivineWrath", kind = "product", title = "Ira Divina x3", emoji = "🔥", icon = Icons.Wrath },
-	{ key = "LegendaryPlanet", kind = "product", title = "Pianeta Leggendario", emoji = "⭐", icon = Icons.Planets },
+	{ key = "StarterPack", kind = "product", title = "Starter Pack", emoji = "🎁", icon = Icons.StarterPack },
+	{ key = "Power2x", kind = "pass", title = "2x Power forever", emoji = "⚡", icon = Icons.Power },
+	{ key = "DivineWrath", kind = "product", title = "Divine Wrath x3", emoji = "🔥", icon = Icons.Wrath },
+	{ key = "LegendaryPlanet", kind = "product", title = "Legendary Planet", emoji = "⭐", icon = Icons.Planets },
 }
 
 local function pill(parent, order, iconId, emoji, color)
@@ -105,10 +105,10 @@ local function buildTopLeft()
 end
 
 local function buildDock()
+	-- Starts below the currency pills so it never covers them.
 	local dock = UI.Panel({
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.52, 0),
-		Size = UDim2.fromOffset(100, 548),
+		Position = UDim2.fromOffset(14, 112),
+		Size = UDim2.fromOffset(88, 476),
 		BackgroundTransparency = 0.35,
 		Parent = gui,
 	})
@@ -120,27 +120,27 @@ local function buildDock()
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = dock,
 	})
-	local giftButton, giftCaption = UI.Orb(dock, { Text = "", Emoji = "🎁", Icon = Icons.Daily, LayoutOrder = 1, Ring = UI.Colors.Cyan }, function()
+	local giftButton, giftCaption = UI.Orb(dock, { Text = "", Emoji = "🎁", Icon = Icons.Daily, LayoutOrder = 1, Ring = UI.Colors.Cyan, Size = 54 }, function()
 		local readyAt = player:GetAttribute("GiftReadyAt") or math.huge
 		if workspace:GetServerTimeNow() >= readyAt then
 			Remotes.Get("ClaimGift"):FireServer()
 		end
 	end)
 	refs.giftButton, refs.giftCaption = giftButton, giftCaption
-	UI.Orb(dock, { Text = "Meteoriti", Emoji = "☄️", Icon = Icons.Meteors, LayoutOrder = 2 }, function()
+	UI.Orb(dock, { Text = "Meteors", Emoji = "☄️", Icon = Icons.Meteors, LayoutOrder = 2, Size = 54 }, function()
 		Panels.Toggle("Inventory")
 	end)
-	local evo = UI.Orb(dock, { Text = "Evoluzione", Emoji = "🌟", Icon = Icons.Evolution, LayoutOrder = 3 }, function()
+	local evo = UI.Orb(dock, { Text = "Evolution", Emoji = "🌟", Icon = Icons.Evolution, LayoutOrder = 3, Size = 54 }, function()
 		Panels.Toggle("Evolution")
 	end)
 	refs.evoBadge = UI.Badge(evo)
-	UI.Orb(dock, { Text = "Potenzia", Emoji = "⬆️", Icon = Icons.Upgrades, LayoutOrder = 4 }, function()
+	UI.Orb(dock, { Text = "Upgrade", Emoji = "⬆️", Icon = Icons.Upgrades, LayoutOrder = 4, Size = 54 }, function()
 		Panels.Toggle("Upgrades")
 	end)
-	UI.Orb(dock, { Text = "Indice", Emoji = "📖", Icon = Icons.Index, LayoutOrder = 5 }, function()
+	UI.Orb(dock, { Text = "Index", Emoji = "📖", Icon = Icons.Index, LayoutOrder = 5, Size = 54 }, function()
 		Panels.Toggle("Index")
 	end)
-	UI.Orb(dock, { Text = "Scambi", Emoji = "🤝", Icon = Icons.Trade, LayoutOrder = 6 }, function()
+	UI.Orb(dock, { Text = "Trade", Emoji = "🤝", Icon = Icons.Trade, LayoutOrder = 6, Size = 54 }, function()
 		Panels.Toggle("TradeList")
 	end)
 end
@@ -242,7 +242,7 @@ local function buildTopRight()
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = bar,
 	})
-	UI.Orb(bar, { Text = "Negozio", Emoji = "🛒", Icon = Icons.Shop, LayoutOrder = 1, Color = Color3.fromRGB(60, 120, 90) }, function()
+	UI.Orb(bar, { Text = "Shop", Emoji = "🛒", Icon = Icons.Shop, LayoutOrder = 1, Color = Color3.fromRGB(60, 120, 90) }, function()
 		Panels.Toggle("Shop")
 	end)
 	local menuButton = UI.Orb(bar, { Text = "Menu", Emoji = "☰", Icon = Icons.Menu, LayoutOrder = 2 }, function()
@@ -261,20 +261,20 @@ local function buildTopRight()
 	refs.dropdown = dropdown
 	UI.Padding(8).Parent = dropdown
 	UI.New("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = dropdown })
-	local daily = menuItem(dropdown, 1, "Premi giornalieri", "📅", Icons.Daily, function()
+	local daily = menuItem(dropdown, 1, "Daily rewards", "📅", Icons.Daily, function()
 		dropdown.Visible = false
 		Panels.Toggle("Daily")
 	end)
 	refs.dailyBadge = UI.Badge(daily)
-	menuItem(dropdown, 2, "Codici", "🔑", Icons.Codes, function()
+	menuItem(dropdown, 2, "Codes", "🔑", Icons.Codes, function()
 		dropdown.Visible = false
 		Panels.Toggle("Codes")
 	end)
-	menuItem(dropdown, 3, "Impostazioni", "⚙️", Icons.Settings, function()
+	menuItem(dropdown, 3, "Settings", "⚙️", Icons.Settings, function()
 		dropdown.Visible = false
 		Panels.Toggle("Settings")
 	end)
-	menuItem(dropdown, 4, "Nascondi interfaccia", "👁️", nil, function()
+	menuItem(dropdown, 4, "Hide interface", "👁️", nil, function()
 		dropdown.Visible = false
 		HUD.SetHidden(true)
 	end)
@@ -292,7 +292,7 @@ local function buildOffer()
 	UI.Text({
 		Position = UDim2.fromOffset(0, 8),
 		Size = UDim2.new(1, 0, 0, 16),
-		Text = "OFFERTA CELESTE",
+		Text = "CELESTIAL OFFER",
 		Font = UI.TitleFont,
 		TextColor3 = UI.Colors.Gold,
 		MaxTextSize = 13,
@@ -375,7 +375,7 @@ local function showNextOffer()
 	refs.offerTitle.Text = o.title
 	local cfg = o.kind == "pass" and Monetization.GamePasses[o.key] or Monetization.Products[o.key]
 	refs.offerButton.Text = cfg and cfg.id ~= 0 and (o.kind == "pass" and Prices.PassText(o.key) or Prices.ProductText(o.key))
-		or "Presto"
+		or "Soon"
 	UI.Clear(refs.offerDots)
 	for i = 1, #list do
 		local dot = UI.New("Frame", {
@@ -452,7 +452,7 @@ local function buildShowButton()
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -12, 0, 8),
 		Size = UDim2.fromOffset(170, 40),
-		Text = "Mostra interfaccia",
+		Text = "Show interface",
 		BackgroundColor3 = UI.Colors.PanelLight,
 		TextColor3 = Color3.new(1, 1, 1),
 		MaxTextSize = 16,
@@ -482,11 +482,11 @@ local function update()
 	local phase = workspace:GetAttribute("CyclePhase")
 	local left = math.max(0, (workspace:GetAttribute("PhaseEndsAt") or 0) - now)
 	if phase == "Bombard" then
-		refs.phase.Text = "BOMBARDAMENTO  " .. Format.Time(left)
+		refs.phase.Text = "BOMBARDMENT  " .. Format.Time(left)
 		refs.phase.TextColor3 = Color3.fromRGB(150, 210, 255)
 		refs.phaseStroke.Color = Color3.fromRGB(110, 180, 255)
 	else
-		refs.phase.Text = "PIOGGIA DI METEORITI  " .. Format.Time(left)
+		refs.phase.Text = "METEOR SHOWER  " .. Format.Time(left)
 		refs.phase.TextColor3 = Color3.fromRGB(255, 200, 120)
 		refs.phaseStroke.Color = UI.Colors.Gold
 	end
@@ -501,7 +501,7 @@ local function update()
 		.. " / "
 		.. Format.Number(maxHP)
 	local wrathLeft = (workspace:GetAttribute("WrathUntil") or 0) - now
-	refs.wrath.Text = wrathLeft > 0 and ("IRA DIVINA · DANNO x3 · " .. Format.Time(wrathLeft)) or ""
+	refs.wrath.Text = wrathLeft > 0 and ("DIVINE WRATH · x3 DAMAGE · " .. Format.Time(wrathLeft)) or ""
 
 	local power = player:GetAttribute("Power") or 0
 	local planets = player:GetAttribute("Planets") or 0
@@ -511,7 +511,7 @@ local function update()
 	local boostLeft = (player:GetAttribute("Boost2xUntil") or 0) - os.time()
 	refs.rate.Text = "+"
 		.. Format.Number(player:GetAttribute("PowerRate") or 0)
-		.. " Potere/s"
+		.. " Power/s"
 		.. (boostLeft > 0 and ("   ·   Boost x2 " .. Format.Time(boostLeft)) or "")
 
 	local evoIndex = player:GetAttribute("Evolution") or 1
@@ -521,7 +521,7 @@ local function update()
 	local ready = false
 	if evoIndex >= Evolutions.Max() then
 		refs.evoFill.Size = UDim2.fromScale(1, 1)
-		refs.evoText.Text = string.upper(evo.name) .. (asc > 0 and ("  ·  ASCENSIONE " .. asc) or "") .. "  ·  MAX"
+		refs.evoText.Text = string.upper(evo.name) .. (asc > 0 and ("  ·  ASCENSION " .. asc) or "") .. "  ·  MAX"
 	else
 		local nextEvo = Evolutions.Get(evoIndex + 1)
 		local pPower = nextEvo.power > 0 and math.clamp(power / nextEvo.power, 0, 1) or 1
@@ -533,13 +533,13 @@ local function update()
 			.. "  →  "
 			.. string.upper(nextEvo.name)
 			.. "   "
-			.. (ready and "PRONTO!" or (math.floor(progress * 100) .. "%"))
+			.. (ready and "READY!" or (math.floor(progress * 100) .. "%"))
 	end
 	refs.evoText.TextColor3 = ready and UI.Colors.Gold or Color3.new(1, 1, 1)
 	refs.evoBadge.Visible = ready
 
 	local giftLeft = (player:GetAttribute("GiftReadyAt") or now + 1) - now
-	refs.giftCaption.Text = giftLeft <= 0 and "RISCATTA!" or Format.Time(giftLeft)
+	refs.giftCaption.Text = giftLeft <= 0 and "CLAIM!" or Format.Time(giftLeft)
 	refs.giftCaption.TextColor3 = giftLeft <= 0 and UI.Colors.Gold or Color3.new(1, 1, 1)
 
 	local dailyAvailable = player:GetAttribute("DailyAvailable") == true

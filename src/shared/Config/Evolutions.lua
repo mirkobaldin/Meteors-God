@@ -4,7 +4,7 @@ local Evolutions = {}
 
 Evolutions.List = {
 	{
-		name = "Spirito Stellare",
+		name = "Star Spirit",
 		power = 0,
 		planets = 0,
 		mult = 1,
@@ -13,7 +13,7 @@ Evolutions.List = {
 		visuals = {},
 	},
 	{
-		name = "Divinità Minore",
+		name = "Minor Deity",
 		power = 500,
 		planets = 1,
 		mult = 1.5,
@@ -22,7 +22,7 @@ Evolutions.List = {
 		visuals = { "halo" },
 	},
 	{
-		name = "Semidio",
+		name = "Demigod",
 		power = 5000,
 		planets = 5,
 		mult = 2.5,
@@ -31,7 +31,7 @@ Evolutions.List = {
 		visuals = { "halo", "wings" },
 	},
 	{
-		name = "Titano",
+		name = "Titan",
 		power = 50000,
 		planets = 15,
 		mult = 4,
@@ -40,7 +40,7 @@ Evolutions.List = {
 		visuals = { "crown", "wings" },
 	},
 	{
-		name = "Dio Cosmico",
+		name = "Cosmic God",
 		power = 500000,
 		planets = 40,
 		mult = 7,
@@ -49,7 +49,7 @@ Evolutions.List = {
 		visuals = { "crown", "wings", "rings" },
 	},
 	{
-		name = "Divinità Suprema",
+		name = "Supreme Deity",
 		power = 5000000,
 		planets = 100,
 		mult = 12,
