@@ -13,27 +13,28 @@
 4. **Il server distrugge insieme.** Un pianeta condiviso; quando esplode piove il bottino per tutti.
 5. **Produzione minima.** Tutto è generato da codice: mondo, pianeti, facce, effetti. Zero animazioni del personaggio custom, zero mesh obbligatorie.
 
-## 2. La mappa (dallo schizzo del proprietario)
+## 2. La mappa (dallo schizzo del proprietario, scala ×3)
 
-Vista dall'alto, i pianeti sono davanti (+Z). Altezze: case 32 > isolette delle comete 16 > tutto il resto 0.
-1. **Isola Centrale** (grande, raggio 170): in mezzo il **Campo dei Meteoriti** di roccia scura con piccoli crateri
-   e bordo luminoso; sopra, il vortice da cui piovono. Spawn sul retro dell'isola, rivolto verso il ponte.
-2. **Dietro — i lotti dei giocatori** (6, a ventaglio): per ognuno un ponte porta all'**Isoletta delle Comete**
-   (4 piedistalli di marmo e oro dove fluttuano i meteoriti dell'altare, girati verso il centro), poi un altro ponte
-   sale all'**Isola della Casa** (tempio segnaposto finché non ci sono i modelli `Assets/Houses`).
+Vista dall'alto, i pianeti sono davanti (+Z). Altezze: case 88 > isolette delle comete 40 > tutto il resto 0.
+1. **Isola Centrale** (raggio 480): in mezzo il **Campo dei Meteoriti** (raggio 220) di roccia scura con crateri e
+   bordo luminoso; sopra, il vortice da cui piovono. Spawn sul retro, rivolto verso i ponti.
+2. **Dietro — 6 lotti a ventaglio**: ponte → **Isoletta delle Comete** (raggio 75, 4 piedistalli dove fluttuano i
+   meteoriti dell'altare) → ponte → **Isola della Casa** (raggio 120, tempio segnaposto finché non ci sono i modelli).
    **Imposta Max Players del server = 6** (`Game.World.HouseCount`).
-3. **Davanti ai lati**: a sinistra l'**isola dello Shop** (bancarella con prompt "Open Shop" + montagna), a destra
-   l'**isola della Classifica** (tabellone + montagna).
-4. **Davanti — il Bifrost a 3 corsie** di vetro cosmico con glitch: ogni corsia ha un portale con il suo **Tier**
-   e il requisito, e si ricongiunge alla **Piattaforma di Lancio** con 9 pad (3 per tier), ognuno rivolto al suo pianeta.
+3. **Davanti ai lati**: isola dello **Shop** a sinistra e della **Classifica** a destra (raggio 200), ognuna con una
+   **montagna alta 420** con cime secondarie e neve.
+4. **Davanti — tre Bifrost separati** (a −32°, 0°, +32°), lunghi ~650, larghi 30, con portale e requisito del tier.
+   Ognuno finisce sulla **sua Piattaforma di Lancio** (raggio 110) con **4 pad** grandi con colonna di luce,
+   rivolti al pianeta di quel tier. Sui ponti si corre ×2,2 (velocità base 30).
 
-Le isole sono **Terrain** (erba sopra, roccia sotto, coste ondulate), con ~22 isolotti decorativi intorno.
-`Game.World.GenerateTerrain = false` se vuoi scolpire tu il terreno nel Terrain Editor di Studio: il codice genera
-solo le parti (ponti, piedistalli, case, pad). I colori dei materiali sono in `Config/Terrain.lua`.
+Le isole sono **Terrain** (erba sopra, roccia sotto, coste ondulate), con ~26 isolotti decorativi intorno.
+`Game.World.GenerateTerrain = false` se vuoi scolpire tu il terreno nel Terrain Editor di Studio.
+I colori dei materiali sono in `Config/Terrain.lua`.
 
-- **Cielo**: si usa lo Sky messo in `Lighting` (es. "Purple Nebula"); il codice lo lascia com'è.
+- **Cielo**: il codice cerca lo Sky "Purple Nebula" ovunque l'hai messo (Lighting, Workspace, dentro un modello) e lo
+  rende attivo in Lighting. In Output scrive `using skybox: <nome>`, oppure un avviso se non lo trova.
+- **Luce**: luce diurna (ClockTime 14,5, sole nascosto) per vedere bene tutto sotto lo skybox.
 - **Classifica**: top 10 pianeti distrutti (tutti i server, OrderedDataStore, ogni 2 minuti).
-- Sotto c'è il vuoto (cadere = respawn). Tutto il testo del gioco è in inglese.
 
 ## 3. Ciclo di gioco (5 minuti)
 
@@ -170,16 +171,16 @@ Tre pianeti in cielo insieme, uno per corsia del Bifrost (`Config/Planets.lua �
 
 | Tier | Requisito | Raggio | Sequenza |
 |---|---|---|---|
-| I (sinistra) | tutti | 430 | Rocky → Ice → Candy |
-| II (centro) | Demigod | 500 | Lava → Crystal |
-| III (destra) | Cosmic God | 570 | Shadow |
+| I (sinistra) | tutti | 520 | Rocky → Ice → Candy |
+| II (centro) | Demigod | 600 | Lava → Crystal |
+| III (destra) | Cosmic God | 680 | Shadow |
 
 Dopo l'ultimo pianeta di un tier si ricomincia con vita e premi ×2,5.
 - **Fatti di Terrain**: crosta con i materiali del pianeta e "continenti" di altri materiali, calotte polari, e
   dettagli: **vulcani** con lava e fumo (Lava), **spuntoni di ghiaccio** (Ice), **cristalli** (Crystal), montagne
   innevate e crateri (Rocky), colline alla menta e limone (Candy), spuntoni scuri (Shadow).
 - **Strati veri**: sotto la crosta il **mantello** di lava (CrackedLava), al centro una cavità con il **nucleo** al neon.
-- **Crateri**: ogni colpo scava una sfera d'aria. Raggio = R × (quota danno × 1,3)^(1/3) tra 5% e 42% di R: la somma
+- **Crateri**: ogni colpo scava una sfera d'aria. Raggio = R × (quota danno × 1,3)^(1/3) tra 5% e 30% di R: la somma
   dei crateri svuota il pianeta. Il bordo viene "bruciato" e resta il **segno dell'elemento**:
   Frost/Royal/Blue Comet → ghiaccio e spuntoni di cristallo; Magma/Ember → lava; Venom → melma tossica;
   Crystal → cristalli rosa; Solar → vetro dorato; Void → buco nero più grande; Supernova → cratere più grande con lava.
@@ -187,6 +188,8 @@ Dopo l'ultimo pianeta di un tier si ricomincia con vita e premi ×2,5.
   schegge di cristallo, nastri d'aurora, raggi solari, implosione nera, onde arcobaleno.
 - **Arrivo**: si apre una **spaccatura spazio-temporale** (crepa luminosa a zig-zag + disco nero), il pianeta esce
   in un lampo, la spaccatura si richiude.
+- Pianeti a ~1.750 stud dalla loro piattaforma (grandi ~40° nel campo visivo). Il terreno del pianeta viene
+  creato e cancellato a fette su più frame, così l'esplosione non blocca più il gioco.
 - **Fine**: supernova, il pianeta si frantuma in pezzi di crosta e lava; annuncio con chi ha dato il **colpo finale** e l'MVP.
 
 Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Il Legendary Planet (prodotto) sostituisce il pianeta del Tier I.
@@ -283,6 +286,7 @@ Casa. Con i modelli in `Assets/Houses/House1..6` la casa **cresce con l'Evoluzio
 - **v0.1 (questa)**: cittadella, ponti, ciclo, pioggia, altari e crescita, lancio, pianeti a strati, Potere +1, evoluzioni, ascensione, upgrade, negozio, trading, salvataggi.
 - **Prossimo**: suoni e animazioni (ID in `Config/Assets.lua`), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
 - **v0.2 (fatto)**: nuova interfaccia, premi giornalieri, regalo a tempo, codici, indice, hook per modelli/animazioni/suoni.
+- **v0.7**: mappa ×3, tre ponti separati con piattaforme da 4 pad, pianeti più grandi e vicini, luce diurna e skybox del proprietario, accessori non più al neon, fine del blocco all'esplosione.
 - **v0.6**: mappa dallo schizzo, pianeti di Terrain a 3 tier con crateri e spaccatura, lancio rifatto, VFX per elemento, facce 3D, pet, titoli, fusione, eventi cosmici.
 - **v0.5**: terreno, cielo con pianeti/galassie/nebulose, classifica globale, upgrade infiniti (8 tipi).
 - **v0.3**: forziere gruppo, negozio facce a rotazione, Auto-Lancio, Pioggia di Meteoriti acquistabile.

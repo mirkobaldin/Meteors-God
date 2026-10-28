@@ -195,7 +195,9 @@ function PlayerService:RefreshCharacter(player)
 	end
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
-		humanoid.WalkSpeed = 16 + Game.UpgradeEffect(data, "speed")
+		local speed = Game.World.WalkSpeed + Game.UpgradeEffect(data, "speed")
+		humanoid.WalkSpeed = speed
+		player:SetAttribute("BaseWalkSpeed", speed)
 	end
 	EvolutionVisuals.Apply(character, data.evolution, PlayerService:HasPass(player, "VIP"))
 	updateOverhead(player, data)

@@ -104,24 +104,27 @@ Planets.Tiers = {
 		name = "Tier I",
 		color = Color3.fromRGB(120, 220, 255),
 		requiredEvolution = 1,
-		position = Vector3.new(-1700, 350, 3000),
-		radius = 430,
+		laneAngle = -32, -- degrees from +Z of this tier's bridge
+		position = Vector3.new(-1563, 450, 2502),
+		radius = 520,
 		sequence = { "Rocky Planet", "Ice Planet", "Candy Planet" },
 	},
 	{
 		name = "Tier II",
 		color = Color3.fromRGB(255, 150, 60),
 		requiredEvolution = 3, -- Demigod
-		position = Vector3.new(0, 480, 3400),
-		radius = 500,
+		laneAngle = 0,
+		position = Vector3.new(0, 500, 2950),
+		radius = 600,
 		sequence = { "Lava Planet", "Crystal Planet" },
 	},
 	{
 		name = "Tier III",
 		color = Color3.fromRGB(200, 110, 255),
 		requiredEvolution = 5, -- Cosmic God
-		position = Vector3.new(1700, 350, 3000),
-		radius = 570,
+		laneAngle = 32,
+		position = Vector3.new(1563, 450, 2502),
+		radius = 680,
 		sequence = { "Shadow Planet" },
 	},
 }
@@ -146,7 +149,7 @@ Planets.CoreRadius = 0.28 -- neon core floating in the cavity
 -- where share = damage / planet max HP. The sum of the craters roughly empties the planet.
 Planets.CraterScale = 1.3
 Planets.CraterMin = 0.05
-Planets.CraterMax = 0.42
+Planets.CraterMax = 0.3
 
 function Planets.Get(tierIndex, index)
 	local tier = Planets.Tiers[tierIndex]

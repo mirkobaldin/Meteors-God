@@ -45,7 +45,8 @@ local function buildBoard()
 	local board = Instance.new("Part")
 	board.Name = "Leaderboard"
 	board.Anchored = true
-	board.Size = Vector3.new(26, 34, 1.5)
+	local scale = cfg.Scale or 1
+	board.Size = Vector3.new(26, 34, 1.5) * scale
 	board.CFrame = CFrame.lookAt(cfg.Position, Vector3.new(cfg.LookAt.X, cfg.Position.Y, cfg.LookAt.Z))
 	board.Material = Enum.Material.Glass
 	board.Color = Color3.fromRGB(20, 16, 40)
@@ -55,7 +56,7 @@ local function buildBoard()
 	frame.Name = "LeaderboardFrame"
 	frame.Anchored = true
 	frame.CanCollide = false
-	frame.Size = board.Size + Vector3.new(1.6, 1.6, -0.6)
+	frame.Size = board.Size + Vector3.new(1.6 * scale, 1.6 * scale, -0.6)
 	frame.CFrame = board.CFrame * CFrame.new(0, 0, 0.4)
 	frame.Material = Enum.Material.Neon
 	frame.Color = Color3.fromRGB(255, 195, 100)
@@ -64,7 +65,7 @@ local function buildBoard()
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Front
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = 25
+	gui.PixelsPerStud = 25 / scale
 	gui.LightInfluence = 0
 	gui.Brightness = 1.5
 	gui.Parent = board

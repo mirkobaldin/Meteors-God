@@ -102,6 +102,27 @@ local function cone(s, dir, height, radius, material)
 	return base + dir * height
 end
 
+-- Fills (or empties, with Air) a sphere as a stack of thin discs spread over several frames.
+-- One giant FillBall freezes the server and every client for a moment; slices don't.
+local SLICE = 4
+local SLICES_PER_FRAME = 14
+local function sphereSlices(center, radius, material)
+	local count = 0
+	local y = -radius
+	while y < radius do
+		local mid = y + SLICE / 2
+		local r = math.sqrt(math.max(radius * radius - mid * mid, 0))
+		if r > 1 then
+			terrain:FillCylinder(CFrame.new(center + Vector3.new(0, mid, 0)), SLICE, r, material)
+		end
+		y += SLICE
+		count += 1
+		if count % SLICES_PER_FRAME == 0 then
+			task.wait()
+		end
+	end
+end
+
 -- Planet building --------------------------------------------------------------------------
 
 local function addFeatures(s)
@@ -174,10 +195,10 @@ end
 
 local function buildPlanet(s)
 	local R = s.R
-	terrain:FillBall(s.center, R, s.def.crust.material)
+	sphereSlices(s.center, R, s.def.crust.material)
 	addFeatures(s)
-	terrain:FillBall(s.center, R * Planets.MantleRadius, Enum.Material.CrackedLava)
-	terrain:FillBall(s.center, R * Planets.CavityRadius, Enum.Material.Air)
+	sphereSlices(s.center, R * Planets.MantleRadius, Enum.Material.CrackedLava)
+	sphereSlices(s.center, R * Planets.CavityRadius, Enum.Material.Air)
 
 	local core = Instance.new("Part")
 	core.Name = "Core"
@@ -218,8 +239,8 @@ local function buildPlanet(s)
 end
 
 local function clearPlanet(s)
-	terrain:FillBall(s.center, s.R * 1.45, Enum.Material.Air)
 	s.folder:ClearAllChildren()
+	sphereSlices(s.center, s.R * 1.25, Enum.Material.Air)
 end
 
 -- State --------------------------------------------------------------------------------------
@@ -388,7 +409,7 @@ local function supernova(s)
 		color = s.def.core,
 		crustColor = crustColor(s.def),
 	})
-	task.delay(0.25, clearPlanet, s)
+	task.spawn(clearPlanet, s)
 
 	local total = 0
 	for _, dmg in pairs(s.contributions) do

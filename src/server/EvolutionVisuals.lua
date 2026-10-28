@@ -15,7 +15,8 @@ local function fxPart(props)
 	p.CanTouch = false
 	p.Massless = true
 	p.CastShadow = false
-	p.Material = Enum.Material.Neon
+	-- Solid materials (gold metal, glass) instead of Neon: accessories should read, not glow.
+	p.Material = Enum.Material.SmoothPlastic
 	-- Shape first: changing Shape after Size can resize the part.
 	if props.Shape then
 		p.Shape = props.Shape
@@ -44,9 +45,9 @@ local function addAura(root, color, folder, strength)
 	local p = Instance.new("ParticleEmitter")
 	p.Name = "Aura"
 	p.Color = ColorSequence.new(color)
-	p.LightEmission = 1
-	p.LightInfluence = 0
-	p.Rate = 8 + strength * 6
+	p.LightEmission = 0.3
+	p.LightInfluence = 0.6
+	p.Rate = 4 + strength * 3
 	p.Lifetime = NumberRange.new(0.8, 1.4)
 	p.Speed = NumberRange.new(1, 3)
 	p.SpreadAngle = Vector2.new(180, 180)
@@ -54,7 +55,7 @@ local function addAura(root, color, folder, strength)
 		NumberSequenceKeypoint.new(0, 0.4 + strength * 0.15),
 		NumberSequenceKeypoint.new(1, 0),
 	})
-	p.Transparency = NumberSequence.new(0.2, 1)
+	p.Transparency = NumberSequence.new(0.45, 1)
 	p.Parent = att
 	-- Track for cleanup together with the parts.
 	local tag = Instance.new("ObjectValue")
@@ -104,18 +105,20 @@ function EvolutionVisuals.Apply(character, evolutionIndex, isVIP)
 			Name = "Halo",
 			Shape = Enum.PartType.Cylinder,
 			Size = Vector3.new(0.2, 2.6, 2.6),
-			Color = Color3.fromRGB(255, 240, 150),
+			Color = Color3.fromRGB(240, 200, 90),
+			Material = Enum.Material.Foil,
+			Reflectance = 0.2,
 		})
 		weldTo(halo, head, CFrame.new(0, 1.4, 0) * CFrame.Angles(0, 0, math.rad(90)), folder)
 	end
 
 	if has.crown then
 		local gold = Color3.fromRGB(255, 200, 40)
-		local band = fxPart({ Name = "Crown", Size = Vector3.new(1.4, 0.35, 1.4), Color = gold })
+		local band = fxPart({ Name = "Crown", Size = Vector3.new(1.4, 0.35, 1.4), Color = gold, Material = Enum.Material.Foil, Reflectance = 0.2 })
 		weldTo(band, head, CFrame.new(0, 0.85, 0), folder)
 		for i = 0, 4 do
 			local a = i / 5 * math.pi * 2
-			local spike = fxPart({ Name = "CrownSpike", Size = Vector3.new(0.25, 0.6, 0.25), Color = gold })
+			local spike = fxPart({ Name = "CrownSpike", Size = Vector3.new(0.25, 0.6, 0.25), Color = gold, Material = Enum.Material.Foil, Reflectance = 0.2 })
 			weldTo(spike, head, CFrame.new(math.sin(a) * 0.6, 1.25, math.cos(a) * 0.6), folder)
 		end
 	end
@@ -125,8 +128,9 @@ function EvolutionVisuals.Apply(character, evolutionIndex, isVIP)
 			local wing = fxPart({
 				Name = "Wing",
 				Size = Vector3.new(0.2, 3.2, 1.6),
-				Color = evo.aura,
-				Transparency = 0.25,
+				Color = evo.aura:Lerp(Color3.new(1, 1, 1), 0.4),
+				Material = Enum.Material.Glass,
+				Transparency = 0.45,
 			})
 			weldTo(
 				wing,
@@ -137,8 +141,9 @@ function EvolutionVisuals.Apply(character, evolutionIndex, isVIP)
 			local tip = fxPart({
 				Name = "WingTip",
 				Size = Vector3.new(0.2, 2.2, 1.2),
-				Color = evo.aura,
-				Transparency = 0.35,
+				Color = evo.aura:Lerp(Color3.new(1, 1, 1), 0.4),
+				Material = Enum.Material.Glass,
+				Transparency = 0.55,
 			})
 			weldTo(
 				tip,
@@ -155,8 +160,9 @@ function EvolutionVisuals.Apply(character, evolutionIndex, isVIP)
 				Name = "Ring" .. i,
 				Shape = Enum.PartType.Cylinder,
 				Size = Vector3.new(0.15, 6 + i, 6 + i),
-				Color = i == 1 and Color3.fromRGB(255, 220, 120) or evo.aura,
-				Transparency = 0.5,
+				Color = i == 1 and Color3.fromRGB(240, 200, 100) or evo.aura,
+				Material = Enum.Material.Glass,
+				Transparency = 0.6,
 			})
 			weldTo(ring, root, CFrame.Angles(math.rad(tilt), 0, math.rad(90)), folder)
 		end
@@ -172,8 +178,8 @@ function EvolutionVisuals.Apply(character, evolutionIndex, isVIP)
 			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 80, 255)),
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 220, 255)),
 		})
-		p.LightEmission = 1
-		p.Rate = 40
+		p.LightEmission = 0.4
+		p.Rate = 14
 		p.Lifetime = NumberRange.new(1.5, 2.5)
 		p.Speed = NumberRange.new(0.5, 1.5)
 		p.SpreadAngle = Vector2.new(180, 180)

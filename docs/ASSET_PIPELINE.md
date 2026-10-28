@@ -28,7 +28,7 @@ il codice genera solo le parti (ponti, piedistalli, case segnaposto, pad). I pia
 ### `Assets/Map/Citadel` — decorazioni della mappa (Model, opzionale)
 Pezzi Blender **sopra** il terreno: torri dorate, archi, l'Altare/vortice del campo, rifiniture del Bifrost, rocce
 decorative. Viene messo in `workspace.World` così com'è (coordinate del mondo, vedi `Game.World` per le posizioni:
-isola centrale in 0,0,0 raggio 170; lotti dietro; Shop a −240,0,140; Classifica a 240,0,140; piattaforma a 0,0,470).
+isola centrale in 0,0,0 raggio 480; lotti dietro; Shop a −720,0,420; Classifica a 720,0,420; tre piattaforme a 1.250 stud dal centro a −32°, 0°, +32°).
 Il gameplay (lotti, piedistalli, pad, campo) è sempre generato dal codice, quindi non servono marker.
 
 ### `Assets/Houses/House1` … `House6` — le case divine dei giocatori (Model)
@@ -40,7 +40,7 @@ il tempio segnaposto sull'Isola della Casa. Se ne manca una si usa la più vicin
 | `PrimaryPart` | base della casa, pivot al centro del pavimento; il fronte (−Z) guarda verso l'isola centrale |
 | `Sign` (Part, opzionale) | dove appare il nome del proprietario |
 
-Ingombro massimo: cerchio di raggio 38 stud (l'isola ha raggio 46). Altezza libera.
+Ingombro massimo: cerchio di raggio 100 stud (l'isola ha raggio 120). Altezza libera.
 I meteoriti non stanno più nella casa: fluttuano sui piedistalli dell'Isoletta delle Comete.
 
 ### `Assets/Meteors/<TipoMeteorite>` — corpi dei meteoriti (MeshPart)

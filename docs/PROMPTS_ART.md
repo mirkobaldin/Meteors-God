@@ -72,7 +72,7 @@ Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
 1. Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (occhi, bocca e sopracciglia sono
    parti 3D aggiunte dal codice sul lato -Z: lascia quel lato liscio e tondo). Circa 1x1x1, pivot al centro,
    < 3000 triangoli. Ogni rarità ha una silhouette diversa (vedi i fogli in art/concepts/meteors).
-2. Houses/House1 … House6: le 6 case, ingombro max raggio 38 stud, fronte -Z verso l'isola centrale,
+2. Houses/House1 … House6: le 6 case, ingombro max raggio 100 stud, fronte -Z verso l'isola centrale,
    Part "Sign" opzionale per il nome. Niente slot: i meteoriti stanno sui piedistalli dell'isoletta.
 3. Map/Citadel (opzionale): SOLO decorazioni sopra il terreno (torri dorate, archi, rifiniture del Bifrost,
    rocce decorative) alle coordinate di Game.World. Le isole e i PIANETI sono Terrain generato dal codice:

@@ -643,6 +643,21 @@ local function buildUI()
 	end
 end
 
+-- The map is big: running on a Bifrost bridge is much faster.
+local floorParams = RaycastParams.new()
+floorParams.FilterType = Enum.RaycastFilterType.Exclude
+local function updateBridgeBoost()
+	local root, humanoid = getRoot()
+	local base = player:GetAttribute("BaseWalkSpeed")
+	if not root or not humanoid or not base then
+		return
+	end
+	floorParams.FilterDescendantsInstances = { player.Character }
+	local hit = workspace:Raycast(root.Position, Vector3.new(0, -8, 0), floorParams)
+	local onBridge = hit and hit.Instance and hit.Instance.Name == "Bifrost"
+	humanoid.WalkSpeed = onBridge and base * Game.World.BridgeSpeedMultiplier or base
+end
+
 -- Lifecycle -----------------------------------------------------------------------------
 
 local CHARGE_KEYS = {
@@ -730,6 +745,7 @@ function Launch:Start()
 
 	RunService.RenderStepped:Connect(function(dt)
 		if state == "idle" then
+			updateBridgeBoost()
 			if os.clock() < nextTryAt then
 				return
 			end

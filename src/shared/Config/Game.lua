@@ -7,60 +7,64 @@ local IS_STUDIO = RunService:IsStudio()
 local Game = {}
 
 -- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
-Game.Version = "0.6.0"
+Game.Version = "0.7.0"
 
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
 	ShowerDuration = IS_STUDIO and 20 or 60,
 	BombardDuration = IS_STUDIO and 60 or 240,
-	ShowerSpawnInterval = 1.2, -- seconds between meteors during a shower
-	MaxMeteorsOnGround = 30,
+	ShowerSpawnInterval = 0.8, -- seconds between meteors during a shower
+	MaxMeteorsOnGround = 50,
 	GroundMeteorLifetime = 90,
 	PlanetDestroyedBonusMeteors = 12,
 	PlanetDestroyedBonusLuck = 3,
 	NextPlanetDelay = 8,
 }
 
--- Map layout (top view, the planets are towards +Z), following the owner's sketch:
+-- Map layout (top view, the planets are towards +Z), following the owner's sketch, 3x scale:
 --   center: the big Central Island, meteors fall on the Meteor Field in its middle;
 --   behind: one plot per player = a Comet Islet (meteors on pedestals) + a higher House Island,
 --           linked by bridges and fanned out in an arc;
---   front sides: Shop island and Leaderboard island, each with a mountain;
---   front: the Bifrost with 3 lanes (one per planet tier) joining the Launch Platform.
--- Heights: houses 32 > comet islets 16 > everything else 0 (multiples of 4 = terrain voxels).
+--   front sides: Shop island and Leaderboard island, each with a big mountain;
+--   front: three separate Bifrost bridges (one per planet tier, angles in Config/Planets), each
+--          ending at its own Launch Platform with 4 pads.
+-- Heights: houses 88 > comet islets 40 > everything else 0 (multiples of 4 = terrain voxels).
 Game.World = {
-	CenterRadius = 170,
+	CenterRadius = 480,
 	FieldCenter = Vector3.new(0, 0, 0),
-	FieldRadius = 85,
+	FieldRadius = 220,
 	FieldInner = 0,
-	SpawnPosition = Vector3.new(0, 0, -125),
+	SpawnPosition = Vector3.new(0, 0, -360),
 
 	HouseCount = 6, -- set the server's Max Players to the same number
 	PlotArc = 150, -- degrees covered by the plots behind the central island
-	CometIsletDistance = 255,
-	CometIsletRadius = 30,
-	CometIsletHeight = 16,
-	HouseIslandDistance = 390,
-	HouseIslandRadius = 46,
-	HouseIslandHeight = 32,
+	CometIsletDistance = 760,
+	CometIsletRadius = 75,
+	CometIsletHeight = 40,
+	HouseIslandDistance = 1100,
+	HouseIslandRadius = 120,
+	HouseIslandHeight = 88,
 	AltarSlotsBase = 3,
 
-	ShopIsland = { center = Vector3.new(-240, 0, 140), radius = 80 },
-	LeaderboardIsland = { center = Vector3.new(240, 0, 140), radius = 80 },
+	ShopIsland = { center = Vector3.new(-720, 0, 420), radius = 200 },
+	LeaderboardIsland = { center = Vector3.new(720, 0, 420), radius = 200 },
+	MountainHeight = 420,
 
-	BridgeStartZ = 160,
-	LaneOffset = 26, -- x distance between the 3 lanes
-	LaneWidth = 17,
-	PlatformCenter = Vector3.new(0, 0, 470),
-	PlatformRadius = 80,
-	PadRingRadius = 60,
-	LaunchPadRadius = 8,
+	LaneWidth = 30,
+	PlatformDistance = 1250, -- from the map center to each Launch Platform
+	PlatformRadius = 110,
+	PadRingRadius = 70,
+	LaunchPadRadius = 11,
+
+	-- The big map is crossed fast: base walk speed and the boost while on a Bifrost bridge.
+	WalkSpeed = 30,
+	BridgeSpeedMultiplier = 2.2,
 
 	-- false = the place has its own hand-made terrain (Studio Terrain Editor): no islands are
 	-- generated, only the parts (bridges, pedestals, houses, pads). Planets are always terrain.
 	GenerateTerrain = true,
 	-- Floating islets of terrain around the map (decoration).
-	IsletCount = 22,
+	IsletCount = 26,
 }
 
 Game.Launch = {
@@ -176,8 +180,9 @@ Game.Leaderboard = {
 	Size = 10,
 	RefreshInterval = 120, -- seconds (OrderedDataStore limits)
 	-- Beside the spawn in the Houses district, facing the players.
-	Position = Vector3.new(225, 17, 115), -- on the Leaderboard island
+	Position = Vector3.new(640, 34, 340), -- on the Leaderboard island
 	LookAt = Vector3.new(0, 0, 0),
+	Scale = 2,
 }
 
 -- Cosmic events: rolled at the start of a Meteor Shower, they last for that shower.
