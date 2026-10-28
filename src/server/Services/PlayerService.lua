@@ -49,6 +49,7 @@ function PlayerService:PowerRate(player)
 	local rate = Game.Economy.BasePowerPerSecond * evo.mult
 	rate *= 1 + Game.Economy.AscensionPowerBonus * data.ascensions
 	rate *= 1 + MeteorMath.AltarPowerBonus(data.meteors, os.time())
+	rate *= 1 + Game.UpgradeEffect(data, "altar")
 	if PlayerService:HasPass(player, "Power2x") then
 		rate *= 2
 	end
@@ -124,7 +125,7 @@ function PlayerService:RefreshCharacter(player)
 	end
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
-		humanoid.WalkSpeed = 16 + 2 * (data.upgrades.speed or 0)
+		humanoid.WalkSpeed = 16 + Game.UpgradeEffect(data, "speed")
 	end
 	EvolutionVisuals.Apply(character, data.evolution, PlayerService:HasPass(player, "VIP"))
 	-- The player's house grows with their evolution (only if house models exist).
@@ -174,23 +175,31 @@ function PlayerService:Ascend(player)
 	return true
 end
 
-function PlayerService:BuyUpgrade(player, upgradeId)
+-- Buys up to `count` levels in a row, stopping when shards run out.
+function PlayerService:BuyUpgrade(player, upgradeId, count)
 	local data = services.DataService:Get(player)
 	if not data or not Game.UpgradeByID[upgradeId] then
 		return false
 	end
-	local level = data.upgrades[upgradeId] or 0
-	local cost = Game.UpgradeCost(upgradeId, level)
-	if not cost then
-		Notify.Toast(player, "Max level reached", "info")
+	local bought = 0
+	for _ = 1, count do
+		local level = data.upgrades[upgradeId] or 0
+		local cost = Game.UpgradeCost(upgradeId, level)
+		if not cost or data.shards < cost then
+			break
+		end
+		data.shards -= cost
+		data.upgrades[upgradeId] = level + 1
+		bought += 1
+	end
+	if bought == 0 then
+		local cost = Game.UpgradeCost(upgradeId, data.upgrades[upgradeId] or 0)
+		Notify.Toast(player, cost and "Not enough Shards" or "Max level reached", cost and "bad" or "info")
 		return false
 	end
-	if data.shards < cost then
-		Notify.Toast(player, "Not enough Shards", "bad")
-		return false
+	if upgradeId == "storage" then
+		services.MeteorService:PushSnapshot(player)
 	end
-	data.shards -= cost
-	data.upgrades[upgradeId] = level + 1
 	if upgradeId == "speed" then
 		PlayerService:RefreshCharacter(player)
 	end
@@ -284,9 +293,10 @@ function PlayerService:Start()
 			PlayerService:Ascend(player)
 		end
 	end)
-	Remotes.Get("BuyUpgrade").OnServerEvent:Connect(function(player, upgradeId)
+	Remotes.Get("BuyUpgrade").OnServerEvent:Connect(function(player, upgradeId, count)
 		if typeof(upgradeId) == "string" and RateLimit.Allow(player, "BuyUpgrade", 0.2) then
-			PlayerService:BuyUpgrade(player, upgradeId)
+			count = typeof(count) == "number" and math.clamp(math.floor(count), 1, 100) or 1
+			PlayerService:BuyUpgrade(player, upgradeId, count)
 		end
 	end)
 end

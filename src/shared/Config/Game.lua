@@ -7,7 +7,7 @@ local IS_STUDIO = RunService:IsStudio()
 local Game = {}
 
 -- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
-Game.Version = "0.4.0"
+Game.Version = "0.5.0"
 
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
@@ -40,6 +40,9 @@ Game.World = {
 	LaunchPadRadius = 8,
 	PlanetPosition = Vector3.new(0, 380, 2750),
 	PlanetRadius = 420,
+	-- Island rock bodies and floating islets made of Terrain (skipped if the place has its own terrain).
+	GenerateTerrain = true,
+	IsletCount = 22,
 }
 
 Game.Launch = {
@@ -67,11 +70,61 @@ Game.Economy = {
 	MinContributionShare = 0.01, -- needed to count a planet as destroyed
 }
 
+-- Upgrades have no level cap (except Storage): costs grow smoothly, effects keep stacking.
+-- effect(level) returns the total bonus at that level; fmt turns it into text for the UI.
+local function pct(v)
+	return string.format("%d%%", math.floor(v * 100 + 0.5))
+end
+
 Game.Upgrades = {
-	{ id = "speed", name = "Speed", desc = "+2 running speed", max = 10, baseCost = 50, growth = 1.8 },
-	{ id = "power", name = "Power", desc = "+10% damage", max = 10, baseCost = 80, growth = 1.9 },
-	{ id = "recharge", name = "Recharge", desc = "-8% recharge time", max = 10, baseCost = 60, growth = 1.85 },
-	{ id = "luck", name = "Luck", desc = "+2% chance of a rarer meteor on pickup", max = 10, baseCost = 120, growth = 2 },
+	{
+		id = "speed", name = "Swiftness", desc = "Running speed",
+		baseCost = 40, growth = 1.13,
+		effect = function(l) return 30 * (1 - 0.95 ^ l) end, -- walk speed bonus, approaches +30
+		fmt = function(v) return string.format("+%.1f speed", v) end,
+	},
+	{
+		id = "power", name = "Might", desc = "Damage to planets",
+		baseCost = 60, growth = 1.14,
+		effect = function(l) return 0.08 * l end, -- linear, never stops
+		fmt = function(v) return "+" .. pct(v) .. " damage" end,
+	},
+	{
+		id = "crit", name = "Precision", desc = "Critical hit damage",
+		baseCost = 90, growth = 1.15,
+		effect = function(l) return 0.1 * l end, -- added to Launch.CritMultiplier
+		fmt = function(v) return string.format("Crit x%.1f", 2 + v) end,
+	},
+	{
+		id = "recharge", name = "Recharge", desc = "Meteor recharge time",
+		baseCost = 50, growth = 1.14,
+		effect = function(l) return 1 - 0.75 * (1 - 0.96 ^ l) end, -- cooldown multiplier, down to 25%
+		fmt = function(v) return "-" .. pct(1 - v) .. " recharge" end,
+	},
+	{
+		id = "luck", name = "Luck", desc = "Chance of a rarer meteor on pickup",
+		baseCost = 100, growth = 1.16,
+		effect = function(l) return 0.5 * (1 - 0.97 ^ l) end, -- approaches 50%
+		fmt = function(v) return pct(v) .. " rarer" end,
+	},
+	{
+		id = "greed", name = "Greed", desc = "Stellar Shards earned",
+		baseCost = 80, growth = 1.15,
+		effect = function(l) return 0.06 * l end,
+		fmt = function(v) return "+" .. pct(v) .. " shards" end,
+	},
+	{
+		id = "altar", name = "Altar Energy", desc = "Power per second",
+		baseCost = 120, growth = 1.16,
+		effect = function(l) return 0.05 * l end,
+		fmt = function(v) return "+" .. pct(v) .. " power/s" end,
+	},
+	{
+		id = "storage", name = "Storage", desc = "Meteor storage space",
+		baseCost = 150, growth = 1.25, max = 40,
+		effect = function(l) return 5 * l end,
+		fmt = function(v) return "+" .. v .. " slots" end,
+	},
 }
 
 Game.UpgradeByID = {}
@@ -81,11 +134,37 @@ end
 
 function Game.UpgradeCost(upgradeId, level)
 	local u = Game.UpgradeByID[upgradeId]
-	if not u or level >= u.max then
+	if not u or (u.max and level >= u.max) then
 		return nil
 	end
 	return math.floor(u.baseCost * u.growth ^ level)
 end
+
+-- Total bonus of an upgrade for a player's data (0 / neutral at level 0).
+function Game.UpgradeEffect(data, upgradeId)
+	local u = Game.UpgradeByID[upgradeId]
+	return u.effect(data and data.upgrades and data.upgrades[upgradeId] or 0)
+end
+
+function Game.InventoryCap(data)
+	return Game.Economy.InventoryCap + Game.UpgradeEffect(data, "storage")
+end
+
+-- Space backdrop (client): distances from the map center, in studs. The target planet is ~2750 away.
+Game.Sky = {
+	PlanetDistance = 4200,
+	NebulaDistance = 6000,
+	GalaxyDistance = 6500,
+}
+
+Game.Leaderboard = {
+	StoreName = "MeteorGods_Planets_v1",
+	Size = 10,
+	RefreshInterval = 120, -- seconds (OrderedDataStore limits)
+	-- Beside the spawn in the Houses district, facing the players.
+	Position = Vector3.new(-30, 17, -165),
+	LookAt = Vector3.new(0, 0, -120),
+}
 
 Game.Trade = {
 	MinEvolution = 2,

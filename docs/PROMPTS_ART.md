@@ -74,7 +74,9 @@ Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
 2. Houses/House1 … House6: i 6 santuari, con le Part/Empty Slot1..Slot4 e Sign come da contratto.
 3. Planets/<Nome>: un pianeta alla volta, iniziando da "Rocky Planet". Crosta fratturata con Cell Fracture
    (30-60 pezzi, ognuno < 1500 triangoli) dentro una collection "Crust", poi Mantle e Core separati.
-4. Map/Citadel: la cittadella con i 4 ponti e TUTTI i marker (Spawn, House1-8, LaunchPad1-4, Return1-4, Planet).
+4. Map/Citadel: SOLO i pezzi sopra il terreno (pavimenti, torri dorate, Altare del Cielo, Bifrost, piattaforma di lancio)
+   con TUTTI i marker (Spawn, House1-8, Field, LaunchPad1-4, Return1-4, Planet). Le rocce sotto le isole sono Terrain:
+   non modellarle (vedi "Terreno" in docs/ASSET_PIPELINE.md).
 
 Regole: 1 unità Blender = 1 stud, Apply All Transforms prima di esportare, fronte verso -Z di Roblox,
 max 20.000 triangoli per mesh, texture palette unica 1024x1024 stile toon, nomi ESATTI come nel contratto.

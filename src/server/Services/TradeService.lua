@@ -115,8 +115,7 @@ local function execute(session)
 		close(session, "Trade cancelled: the items changed")
 		return
 	end
-	local cap = Game.Economy.InventoryCap
-	if countMeteors(dataA) - #offerA + #offerB > cap or countMeteors(dataB) - #offerB + #offerA > cap then
+	if countMeteors(dataA) - #offerA + #offerB > Game.InventoryCap(dataA) or countMeteors(dataB) - #offerB + #offerA > Game.InventoryCap(dataB) then
 		close(session, "Trade cancelled: storage full")
 		return
 	end

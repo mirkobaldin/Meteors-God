@@ -49,7 +49,7 @@ function MeteorService:AddMeteor(player, typeId, mutation, opts)
 	if not data or not Meteors.ByID[typeId] then
 		return nil
 	end
-	if MeteorService:Count(player) >= Game.Economy.InventoryCap then
+	if MeteorService:Count(player) >= Game.InventoryCap(data) then
 		Notify.Toast(player, "Storage full! Sell some meteors.", "bad")
 		return nil
 	end
@@ -251,7 +251,7 @@ function MeteorService:Snapshot(player)
 		cooldowns = cd,
 		index = data.index,
 		indexSize = Meteors.IndexSize(),
-		inventoryCap = Game.Economy.InventoryCap,
+		inventoryCap = Game.InventoryCap(data),
 		tradeHistory = data.tradeHistory,
 	}
 end

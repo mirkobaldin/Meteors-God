@@ -23,7 +23,7 @@ local EVENTS = {
 	"SellMeteor", -- (uid)
 	"Evolve", -- ()
 	"Ascend", -- ()
-	"BuyUpgrade", -- (upgradeId)
+	"BuyUpgrade", -- (upgradeId, count 1..100)
 	"TradeRequest", -- (targetUserId)
 	"TradeRespond", -- (fromUserId, accepted)
 	"TradeSetOffer", -- ({uid})

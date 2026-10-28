@@ -185,8 +185,73 @@ local function ramp(from, to, width, props)
 	return part(props)
 end
 
+-- Terrain: the islands' rock bodies and the floating islets around the map are Roblox Terrain,
+-- so Blender models (houses, towers, altar) can be placed on top later. If the place already
+-- has hand-made terrain (Studio Terrain Editor), it is kept and nothing is generated.
+local terrain = workspace.Terrain
+local useTerrain = false
+local terrainRng = Random.new(7)
+
+local function setupTerrain()
+	if not W.GenerateTerrain or terrain:CountCells() > 0 then
+		return
+	end
+	useTerrain = true
+	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(105, 88, 125))
+	terrain:SetMaterialColor(Enum.Material.Basalt, Color3.fromRGB(58, 48, 70))
+	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(70, 150, 120))
+	terrain:SetMaterialColor(Enum.Material.Slate, Color3.fromRGB(80, 70, 105))
+	terrain:SetMaterialColor(Enum.Material.Glacier, Color3.fromRGB(150, 200, 255))
+end
+
+-- Organic floating island body: a cone of shrinking cylinders plus random boulders and a
+-- hanging tip. `top` is the material of the ring that peeks out around the island's edge.
+local function terrainIsland(pos, radius, depth, top)
+	-- Everything stays below pos.Y so the terrain never covers the walkable floor parts.
+	local steps = 6
+	local h = depth / steps + 4
+	for i = 0, steps - 1 do
+		local t = i / steps
+		local r = radius * (1 - t * 0.82) * terrainRng:NextNumber(0.92, 1.0)
+		terrain:FillCylinder(CFrame.new(pos - Vector3.new(0, depth * t + h / 2, 0)), h, r,
+			t < 0.5 and Enum.Material.Rock or Enum.Material.Slate)
+	end
+	for _ = 1, math.floor(radius / 6) do
+		local a = terrainRng:NextNumber(0, math.pi * 2)
+		local size = radius * terrainRng:NextNumber(0.08, 0.16)
+		local t = math.max(terrainRng:NextNumber(0.2, 0.7), (size + 4) / depth)
+		local r = radius * (1 - t * 0.82) * 0.85
+		terrain:FillBall(pos + Vector3.new(math.cos(a) * r, -depth * t, math.sin(a) * r), size, Enum.Material.Rock)
+	end
+	terrain:FillBall(pos - Vector3.new(0, depth * 1.05, 0), radius * 0.16, Enum.Material.Basalt)
+	if top then
+		terrain:FillCylinder(CFrame.new(pos - Vector3.new(0, 2, 0)), 4, radius + 7, top)
+	end
+end
+
+-- Small rocky islets floating around the map (never on the Bifrost line towards the planet).
+local function terrainIslets()
+	local placed = 0
+	while placed < W.IsletCount do
+		local a = terrainRng:NextNumber(0, math.pi * 2)
+		local d = terrainRng:NextNumber(260, 650)
+		local pos = Vector3.new(math.sin(a) * d, terrainRng:NextNumber(-120, 90), -95 + math.cos(a) * d)
+		if math.abs(pos.X) > 70 or pos.Z < 0 then
+			local r = terrainRng:NextNumber(10, 34)
+			terrainIsland(pos, r, r * 1.8, nil)
+			local mat = terrainRng:NextNumber() < 0.25 and Enum.Material.Glacier or Enum.Material.Grass
+			terrain:FillCylinder(CFrame.new(pos + Vector3.new(0, 2, 0)), 4, r, mat)
+			placed += 1
+		end
+	end
+end
+
 -- Floating rock underside: stacked shrinking discs give a cone of rock under an island.
-local function underside(pos, radius, depth, color)
+local function underside(pos, radius, depth, color, top)
+	if useTerrain then
+		terrainIsland(pos, radius, depth * 1.4, top)
+		return
+	end
 	local steps = 4
 	for i = 1, steps do
 		local t = i / steps
@@ -261,7 +326,7 @@ local function buildHouses()
 		Color = GOLD_LIGHT,
 		CanCollide = false,
 	})
-	underside(c - Vector3.new(0, 4, 0), W.HousesRadius, 90, Color3.fromRGB(110, 90, 130))
+	underside(c - Vector3.new(0, 4, 0), W.HousesRadius, 90, Color3.fromRGB(110, 90, 130), Enum.Material.Grass)
 	-- Golden towers along the back rim, between the houses.
 	for i = 0, 8 do
 		local a = math.rad(-120 + i * 30)
@@ -695,11 +760,15 @@ function WorldService:Init()
 	worldFolder.Parent = workspace
 
 	setupLighting()
+	setupTerrain()
 	if not buildCustomMap() then
 		buildHouses()
 		buildAltars(defaultAltarCenters())
 		buildField()
 		buildBifrost()
+	end
+	if useTerrain then
+		terrainIslets()
 	end
 end
 

@@ -18,7 +18,7 @@ local player = Players.LocalPlayer
 local window
 local rows = {}
 
-local EMOJI = { speed = "👟", power = "💥", recharge = "⏱️", luck = "🍀" }
+local EMOJI = { speed = "👟", power = "💥", crit = "🎯", recharge = "⏱️", luck = "🍀", greed = "💎", altar = "🔆", storage = "📦" }
 
 local function buildRow(parent, u, order)
 	local f = UI.New("Frame", {
@@ -32,49 +32,41 @@ local function buildRow(parent, u, order)
 	UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = f
 	UI.Text({ Size = UDim2.fromOffset(70, 70), Position = UDim2.fromOffset(8, 7), Text = EMOJI[u.id] or "⬆️", MaxTextSize = 48, Parent = f })
 	local title = UI.Text({
-		Size = UDim2.new(0.55, -90, 0, 34),
+		Size = UDim2.new(0.6, -90, 0, 34),
 		Position = UDim2.fromOffset(86, 8),
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextStrokeTransparency = 0,
-		MaxTextSize = 28,
 		Parent = f,
 	})
-	UI.Text({
-		Size = UDim2.new(0.55, -90, 0, 24),
+	local effect = UI.Text({
+		Size = UDim2.new(0.6, -90, 0, 24),
 		Position = UDim2.fromOffset(86, 46),
 		Text = u.desc,
 		TextColor3 = UI.Colors.Muted,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		MaxTextSize = 20,
 		Parent = f,
 	})
-	local levelBack = UI.New("Frame", {
-		Position = UDim2.new(0.55, 0, 0.5, -8),
-		Size = UDim2.new(0.18, 0, 0, 16),
-		BackgroundColor3 = Color3.fromRGB(15, 10, 25),
-		BorderSizePixel = 0,
-		Parent = f,
-	})
-	UI.Corner(UDim.new(1, 0)).Parent = levelBack
-	local levelFill = UI.New("Frame", {
-		Size = UDim2.fromScale(0, 1),
-		BackgroundColor3 = UI.Colors.Blue,
-		BorderSizePixel = 0,
-		Parent = levelBack,
-	})
-	UI.Corner(UDim.new(1, 0)).Parent = levelFill
 	local buy = UI.Button({
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -10, 0.5, 0),
+		Position = UDim2.new(1, -86, 0.5, 0),
 		Size = UDim2.new(0.24, 0, 0, 56),
 		Text = "",
-		MaxTextSize = 24,
 		Parent = f,
 	}, function()
-		Remotes.Get("BuyUpgrade"):FireServer(u.id)
+		Remotes.Get("BuyUpgrade"):FireServer(u.id, 1)
 	end)
-	rows[u.id] = { title = title, fill = levelFill, buy = buy }
+	local max = UI.Button({
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(70, 56),
+		Text = "MAX",
+		BackgroundColor3 = UI.Colors.Blue,
+		Parent = f,
+	}, function()
+		Remotes.Get("BuyUpgrade"):FireServer(u.id, 100)
+	end)
+	rows[u.id] = { title = title, effect = effect, buy = buy, max = max }
 end
 
 function Upgrades:Refresh()
@@ -86,14 +78,17 @@ function Upgrades:Refresh()
 		local r = rows[u.id]
 		local level = player:GetAttribute("Upgrade_" .. u.id) or 0
 		local cost = Game.UpgradeCost(u.id, level)
-		r.title.Text = u.name .. "  Lv " .. level .. "/" .. u.max
-		r.fill.Size = UDim2.fromScale(level / u.max, 1)
+		r.title.Text = u.name .. "  Lv " .. level .. (u.max and ("/" .. u.max) or "")
 		if cost then
+			r.effect.Text = u.fmt(u.effect(level)) .. "  ➜  " .. u.fmt(u.effect(level + 1))
 			r.buy.Text = "💎 " .. Format.Number(cost)
 			r.buy.BackgroundColor3 = shards >= cost and UI.Colors.Gold or Color3.fromRGB(90, 80, 110)
+			r.max.Visible = true
 		else
-			r.buy.Text = "MAX"
+			r.effect.Text = u.fmt(u.effect(level))
+			r.buy.Text = "MAXED"
 			r.buy.BackgroundColor3 = UI.Colors.Good
+			r.max.Visible = false
 		end
 	end
 end

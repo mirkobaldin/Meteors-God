@@ -59,7 +59,7 @@ local function grab(player, model)
 	if not data then
 		return
 	end
-	if services.MeteorService:Count(player) >= Game.Economy.InventoryCap then
+	if services.MeteorService:Count(player) >= Game.InventoryCap(data) then
 		Notify.Toast(player, "Storage full! Sell some meteors.", "bad")
 		return
 	end
@@ -70,8 +70,7 @@ local function grab(player, model)
 	local upgraded = false
 
 	-- Personal luck: chance to bump the meteor up one rarity.
-	local luckLevel = data.upgrades.luck or 0
-	if luckLevel > 0 and rng:NextNumber() < 0.02 * luckLevel then
+	if rng:NextNumber() < Game.UpgradeEffect(data, "luck") then
 		local def = Meteors.ByID[typeId]
 		local nextRarity = def and Meteors.NextRarity(def.rarity)
 		if nextRarity then

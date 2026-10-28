@@ -24,6 +24,15 @@
 
 Sotto c'è solo il vuoto (cadere = respawn). Tutto il testo del gioco è in inglese.
 
+- **Terreno**: le isole (la roccia sotto case, campo e piattaforma) e ~22 isolotti fluttuanti intorno sono **Terrain**
+  generato dal codice (`Game.World.GenerateTerrain`). Se nel place c'è già del terreno fatto a mano (Terrain Editor
+  di Studio) il codice non genera niente e tiene quello. I modelli Blender (case, torri, altare, ponte) vanno sopra.
+- **Cielo**: intorno alla mappa, lontano, pianeti con anelli e atmosfera, una galassia a spirale e tre nebulose
+  luminose (una dietro il pianeta bersaglio). Generato sul client (`Controllers/Sky.lua`). Skybox opzionale con
+  6 immagini in `Config/Assets.lua → Assets.Sky`.
+- **Classifica**: tabellone accanto allo spawn con i 10 giocatori che hanno distrutto più pianeti (tutti i server,
+  OrderedDataStore, aggiornato ogni 2 minuti).
+
 ## 3. Ciclo di gioco (5 minuti)
 
 | Fase | Durata | Cosa succede |
@@ -56,9 +65,9 @@ danno = DannoBase(tipo)
       × (0,4 + 0,6 × crescita)          -- crescita 0..1 sull'altare
       × Moltiplicatore mutazione
       × (0,5 + carica)                   -- carica 0..1
-      × (2 se critico)
+      × (2 + 0,1 × livello Precisione, se critico)
       × (1 + √Potere / 25)
-      × (1 + 0,10 × livello upgrade Potenza)
+      × (1 + 0,08 × livello Forza)
       × Moltiplicatore Evoluzione
       × (3 se Ira Divina attiva)
 ```
@@ -132,12 +141,20 @@ danno = DannoBase(tipo)
 
 ### Upgrade (con i Frammenti Stellari)
 
-| Upgrade | Effetto per livello | Max |
+Nessun livello massimo (tranne Magazzino): il costo cresce piano (`base × crescita^livello`, crescita 1,13–1,25)
+e l'effetto continua a salire. Quelli che romperebbero il gioco (velocità, ricarica, fortuna) si avvicinano a un
+limite senza mai arrivarci. Bottone **MAX** = compra quanti livelli puoi. Tutto in `Config/Game.lua → Game.Upgrades`.
+
+| Upgrade (nome in gioco) | Effetto totale al livello L | Max |
 |---|---|---|
-| Velocità | +2 velocità di corsa | 10 |
-| Potenza | +10% danno | 10 |
-| Ricarica | −8% tempo di ricarica | 10 |
-| Fortuna | +2% probabilità che un meteorite raccolto salga di rarità | 10 |
+| Swiftness | +30 × (1 − 0,95^L) velocità | — |
+| Might | +8% danno × L | — |
+| Precision | critico ×(2 + 0,1 × L) | — |
+| Recharge | ricarica × (1 − 0,75 × (1 − 0,96^L)), fino a −75% | — |
+| Luck | 50% × (1 − 0,97^L) di salire di rarità | — |
+| Greed | +6% Frammenti × L | — |
+| Altar Energy | +5% Potere/s × L | — |
+| Storage | +5 posti × L | 40 |
 
 ### Valute
 - **Potere**: statistica che cresce sempre, non si spende.
@@ -214,10 +231,36 @@ Il server decide le placche rimosse; tutti gli effetti (detriti, esplosioni, vol
 Ogni giocatore ha un Santuario sul suo spot. Con i modelli in `Assets/Houses/House1..6` il santuario
 **cresce con l'Evoluzione** e i meteoriti fluttuano sugli slot del modello. Vedi `docs/ASSET_PIPELINE.md`.
 
-## 13. Roadmap
+## 13. Proposte (da decidere)
+
+### Modalità per sfoggiare le comete
+1. **Arena dei Meteoriti (1v1 / 4 giocatori)**: ognuno porta 3 comete, a turno si lanciano su uno scudo-pianeta
+   avversario. Vince chi lo rompe prima. Rarità e crescita contano, ma mira e critici di più (skill > soldi).
+2. **Gara di Distruzione (evento ogni 30 min)**: un PIANETA BOSS gigante per tutto il server, 3 minuti.
+   Classifica del danno in diretta; i primi 3 ottengono una mutazione rara garantita.
+3. **Sfilata / Concorso di Bellezza**: passerella sul Bifrost, ognuno mette la sua cometa migliore, gli altri
+   votano. Premio: titolo "Most Beautiful Comet" e cornice dorata sul profilo. Sfoggio puro, zero potere.
+4. **Torre dei Mondi (PvE infinito)**: piani con pianeti sempre più duri, si sale finché si riesce.
+   Classifica per piano raggiunto. Ottima per far valere gli upgrade infiniti.
+5. **Museo personale**: la casa mostra le comete più rare in vetrine; gli altri possono visitarla e "mettere
+   una stella". Classifica delle case più stellate.
+
+### Per renderlo più figo
+- **Cometa che cresce in modo visibile**: diventa più grande e cambia faccia man mano che cresce sull'altare.
+- **Fusione**: 3 comete uguali → 1 di rarità superiore con animazione di fusione all'Altare del Cielo.
+- **Eventi cosmici**: Eclissi (mutazioni ×5), Pioggia d'Oro, Buco Nero che risucchia le comete a terra:
+  vanno prese al volo prima che spariscano.
+- **Colpo finale**: chi dà l'ultimo colpo al pianeta ha un replay al rallentatore sul maxischermo dell'hub.
+- **Titoli e aure** sopra la testa ("Planet Eater", "Star Breaker") per pianeti distrutti / livelli.
+- **Pet-cometa che ti segue** (la tua migliore), visibile a tutti: è lo sfoggio più forte nei simulator.
+- **Stelle degli upgrade**: ogni 25 livelli di un upgrade una "stella" con un piccolo effetto visivo sul personaggio.
+- **Sistema solare**: ogni 10 pianeti distrutti si sblocca una nuova "galassia" bersaglio con skybox diverso.
+
+## 14. Roadmap
 
 - **v0.1 (questa)**: cittadella, ponti, ciclo, pioggia, altari e crescita, lancio, pianeti a strati, Potere +1, evoluzioni, ascensione, upgrade, negozio, trading, salvataggi.
 - **Prossimo**: suoni e animazioni (ID in `Config/Assets.lua`), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
 - **v0.2 (fatto)**: nuova interfaccia, premi giornalieri, regalo a tempo, codici, indice, hook per modelli/animazioni/suoni.
+- **v0.5**: terreno, cielo con pianeti/galassie/nebulose, classifica globale, upgrade infiniti (8 tipi).
 - **v0.3**: forziere gruppo, negozio facce a rotazione, Auto-Lancio, Pioggia di Meteoriti acquistabile.
 - **Settimanale**: un pianeta nuovo + 1–2 meteoriti nuovi.

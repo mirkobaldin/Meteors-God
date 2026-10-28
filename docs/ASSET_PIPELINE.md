@@ -19,6 +19,12 @@ La cartella ha `ignoreUnknownInstances = true`, quindi ci sono due modi equivale
 
 ## 2. Contratto dei nomi
 
+### Terreno (Roblox Terrain)
+Le rocce delle isole e gli isolotti fluttuanti sono **Terrain**. Il codice li genera da solo
+(`Game.World.GenerateTerrain = true`). Se preferisci scolpirlo tu con il **Terrain Editor** di Studio
+(Generate / Add / Smooth), salvalo nel place: quando il terreno non è vuoto il codice non genera niente.
+I modelli Blender vanno **sopra** il terreno: non serve modellare le rocce sotto le isole.
+
 ### `Assets/Map/Citadel` — la mappa (Model)
 La mappa segue un unico asse verso il pianeta e, vista dall'alto, ha la forma di una **serratura** (non un cerchio):
 1. **Dietro — quartiere delle case**: grande mezzaluna di marmo e oro con le 8 case in arco e torri dorate affusolate.

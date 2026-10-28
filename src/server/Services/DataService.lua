@@ -33,7 +33,7 @@ local function defaultData()
 		totalDamage = 0,
 		meteors = {},
 		nextUid = 1,
-		upgrades = { speed = 0, power = 0, recharge = 0, luck = 0 },
+		upgrades = { speed = 0, power = 0, crit = 0, recharge = 0, luck = 0, greed = 0, altar = 0, storage = 0 },
 		index = {},
 		starterPackBought = false,
 		receipts = {},

@@ -56,8 +56,8 @@ function MeteorMath.PowerMultiplier(power)
 	return 1 + math.sqrt(math.max(0, power)) / 25
 end
 
-function MeteorMath.Cooldown(rechargeLevel)
-	return Game.Launch.BaseCooldown * (0.92 ^ (rechargeLevel or 0))
+function MeteorMath.Cooldown(data)
+	return Game.Launch.BaseCooldown * Game.UpgradeEffect(data, "recharge")
 end
 
 -- Sum of the power-rate bonus given by meteors on the altar.

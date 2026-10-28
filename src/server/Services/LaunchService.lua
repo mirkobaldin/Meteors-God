@@ -74,10 +74,10 @@ local function computeDamage(player, meteor, charge, crit)
 	local dmg = MeteorMath.MeteorDamage(meteor, os.time())
 	dmg *= 0.5 + charge
 	if crit then
-		dmg *= L.CritMultiplier
+		dmg *= L.CritMultiplier + Game.UpgradeEffect(data, "crit")
 	end
 	dmg *= MeteorMath.PowerMultiplier(data.power)
-	dmg *= 1 + 0.1 * (data.upgrades.power or 0)
+	dmg *= 1 + Game.UpgradeEffect(data, "power")
 	dmg *= evo.mult
 	if wrathActive() then
 		dmg *= L.WrathMultiplier
@@ -224,7 +224,7 @@ local function fireLaunch(player, charge, aim)
 			launchFxRemote:FireClient(other, fx)
 		end
 	end
-	services.MeteorService:SetCooldown(player, a.uid, flightTime + MeteorMath.Cooldown(data.upgrades.recharge))
+	services.MeteorService:SetCooldown(player, a.uid, flightTime + MeteorMath.Cooldown(data))
 
 	task.delay(flightTime, function()
 		local dealt = services.PlanetService:ApplyHit(player, damage, impact, normal, crit, color)
@@ -234,7 +234,7 @@ local function fireLaunch(player, charge, aim)
 		local d = services.DataService:Get(player)
 		if d and dealt > 0 then
 			d.totalDamage += dealt
-			services.PlayerService:AddShards(player, dealt * Game.Economy.ShardsPerDamage, true)
+			services.PlayerService:AddShards(player, dealt * Game.Economy.ShardsPerDamage * (1 + Game.UpgradeEffect(d, "greed")), true)
 		end
 	end)
 end
