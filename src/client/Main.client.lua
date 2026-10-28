@@ -7,6 +7,7 @@ local ORDER = {
 	"Notifications",
 	"FX",
 	"Pets",
+	"MeteorAnim",
 	"HUD",
 	"Inventory",
 	"Evolution",

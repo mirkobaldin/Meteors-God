@@ -18,6 +18,11 @@ Meteors.Rarities = {
 --   damage (+x damage) | burn (+x damage over 3s) | mark (planet takes +x from everyone, 8s)
 --   chain (second strike +x) | critBoost (+x crit multiplier) | shards (+x shards) | recharge (-x recharge)
 -- face.eyes: "normal" (every meteor has two eyes)
+-- Optional, for the Blender meshes (Assets/Meteors/<id>):
+--   rockMaterial = Enum.Material.Basalt  -- material of the rock shell and jaw (e.g. Basalt, Slate, Rock,
+--                                          Granite, Marble, Glacier, CrackedLava, Foil); nil = only the texture
+--   glowColor = Color3.fromRGB(...)      -- color of the glowing core seen through cracks, eyes and mouth
+--                                          (nil = fire[1])
 -- face.extra: nil | "crest" | "fins" | "horns" (rock features of the body, never accessories)
 Meteors.Types = {
 	{

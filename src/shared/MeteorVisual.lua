@@ -213,6 +213,124 @@ end
 		anchored = bool (default true),
 	}
 ]]
+-- Rig for the Blender meshes (art/blender/meteors_build.py): Body (rock shell with the carved face),
+-- Jaw (hinged, opened by the MeteorAnim controller), two pupils (balls in the eye holes that look
+-- around) and InnerGlow (a neon ball inside the rock, seen through the cracks and the face).
+-- Config.MeteorMeshes has the sizes/offsets in units of the meteor's diameter.
+
+local function rigPart(part, name)
+	part.Name = name
+	part.Anchored = false
+	part.Massless = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	return part
+end
+
+local function weldTo(core, part, name)
+	local weld = Instance.new("Weld")
+	weld.Name = name
+	weld.Part0 = core
+	weld.Part1 = part
+	weld.Parent = core
+	return weld
+end
+
+-- Places every rig part for the meteor's current size, jaw opening (radians) and pupil offset.
+-- posesOnly = true (animation, every frame): only moves the jaw and the pupils, no resizing.
+function MeteorVisual.LayoutRig(model, jawOpen, look, posesOnly)
+	local core = model.PrimaryPart
+	local info = MeteorMeshes[model:GetAttribute("MeteorType") or ""]
+	if not core then
+		return
+	end
+	local size = core.Size.X
+	local body = model:FindFirstChild("Body")
+	local bodyWeld = core:FindFirstChild("BodyWeld")
+	if body and bodyWeld and not posesOnly then
+		body.Size = body:GetAttribute("Unit") * size
+		bodyWeld.C0 = CFrame.new(body:GetAttribute("UnitOffset") * size)
+	end
+	local jaw = model:FindFirstChild("Jaw")
+	local jawWeld = core:FindFirstChild("JawWeld")
+	if jaw and jawWeld and info and info.jaw then
+		if not posesOnly then
+			jaw.Size = info.jaw.size * size
+		end
+		local hinge = info.hinge * size
+		jawWeld.C0 = CFrame.new(hinge) * CFrame.Angles(-(jawOpen or 0), 0, 0) * CFrame.new(info.jaw.center * size - hinge)
+	end
+	if info and info.eyes then
+		look = look or Vector3.zero
+		for i, name in ipairs({ "PupilL", "PupilR" }) do
+			local pupil = model:FindFirstChild(name)
+			local weld = core:FindFirstChild(name .. "Weld")
+			if pupil and weld then
+				if not posesOnly then
+					pupil.Size = Vector3.one * info.pupil * size
+				end
+				weld.C0 = CFrame.new((info.eyes[i] + look) * size)
+			end
+		end
+	end
+	local glow = model:FindFirstChild("InnerGlow")
+	if glow and not posesOnly then
+		glow.Size = Vector3.one * size * 0.86
+	end
+end
+
+local function buildRig(model, core, def, body, jaw, size)
+	local info = MeteorMeshes[def.id]
+	local s = body.Size
+	local maxDim = math.max(s.X, s.Y, s.Z, 0.01)
+	rigPart(body, "Body")
+	body:SetAttribute("Unit", info and info.size or (s / maxDim) * 1.1)
+	body:SetAttribute("UnitOffset", info and info.center or Vector3.zero)
+	if def.rockMaterial then -- pick the rock's material from Config.Meteors
+		body.Material = def.rockMaterial
+	end
+	body.CFrame = core.CFrame
+	body.Parent = model
+	weldTo(core, body, "BodyWeld")
+	if jaw and info and info.jaw then
+		rigPart(jaw, "Jaw")
+		if def.rockMaterial then
+			jaw.Material = def.rockMaterial
+		end
+		jaw.CFrame = core.CFrame
+		jaw.Parent = model
+		weldTo(core, jaw, "JawWeld")
+	elseif jaw then
+		jaw:Destroy()
+	end
+	if info and info.eyes then
+		for _, name in ipairs({ "PupilL", "PupilR" }) do
+			local pupil = rigPart(Instance.new("Part"), name)
+			pupil.Shape = Enum.PartType.Ball
+			pupil.Material = Enum.Material.SmoothPlastic
+			pupil.Color = Color3.fromRGB(8, 8, 10)
+			pupil.Reflectance = 0.15
+			pupil.CastShadow = false
+			pupil.CFrame = core.CFrame
+			pupil.Parent = model
+			weldTo(core, pupil, name .. "Weld")
+		end
+	end
+	core.Transparency = 1
+	local glow = rigPart(Instance.new("Part"), "InnerGlow")
+	glow.Shape = Enum.PartType.Ball
+	glow.Material = Enum.Material.Neon
+	glow.Color = def.glowColor or def.fire[1]
+	glow.CastShadow = false
+	glow.CFrame = core.CFrame
+	glow.Parent = model
+	weldTo(core, glow, "GlowWeld")
+	model:SetAttribute("Rigged", true)
+	game:GetService("CollectionService"):AddTag(model, "LivingMeteor") -- animated by Controllers/MeteorAnim
+	MeteorVisual.LayoutRig(model, 0.05, Vector3.zero)
+end
+
 function MeteorVisual.Build(typeId, opts)
 	opts = opts or {}
 	local def = Meteors.ByID[typeId] or Meteors.Types[1]
@@ -257,51 +375,10 @@ function MeteorVisual.Build(typeId, opts)
 	weld.Parent = core
 
 	-- Custom rock mesh from ReplicatedStorage.Assets.Meteors replaces the generated ball.
-	local body = AssetLibrary.MeteorBody(def.id)
+	local body, jaw = AssetLibrary.MeteorParts(def.id)
 	if body then
 		shell:Destroy()
-		-- Config.MeteorMeshes (written by art/blender/meteors_build.py) has the mesh's bounding box
-		-- in units of its sphere's diameter, so the sphere matches the core and the face sits on it.
-		local info = MeteorMeshes[def.id]
-		local s = body.Size
-		local maxDim = math.max(s.X, s.Y, s.Z, 0.01)
-		body.Name = "Body"
-		body:SetAttribute("Unit", info and info.size or s / maxDim)
-		body:SetAttribute("UnitScale", info and 1 or 1.1)
-		body:SetAttribute("UnitOffset", info and info.center or Vector3.zero)
-		body.Size = body:GetAttribute("Unit") * size * body:GetAttribute("UnitScale")
-		body.Anchored = false
-		body.Massless = true
-		body.CanCollide = false
-		body.CanQuery = false
-		body.CanTouch = false
-		body.CFrame = core.CFrame
-		body.Parent = model
-		local bodyWeld = Instance.new("Weld")
-		bodyWeld.Name = "BodyWeld"
-		bodyWeld.Part0 = core
-		bodyWeld.Part1 = body
-		bodyWeld.C0 = CFrame.new(body:GetAttribute("UnitOffset") * size)
-		bodyWeld.Parent = core
-		core.Transparency = 1
-		-- Glowing ball inside the rock: it shows through the carved eyes, mouth and craters.
-		local glow = Instance.new("Part")
-		glow.Name = "InnerGlow"
-		glow.Shape = Enum.PartType.Ball
-		glow.Material = Enum.Material.Neon
-		glow.Color = def.fire[1]
-		glow.Size = Vector3.one * size * 0.86
-		glow.Massless = true
-		glow.CanCollide = false
-		glow.CanQuery = false
-		glow.CanTouch = false
-		glow.CastShadow = false
-		glow.CFrame = core.CFrame
-		glow.Parent = model
-		local glowWeld = Instance.new("WeldConstraint")
-		glowWeld.Part0 = core
-		glowWeld.Part1 = glow
-		glowWeld.Parent = core
+		buildRig(model, core, def, body, jaw, size)
 	end
 
 	local fire = Instance.new("Fire")
@@ -349,17 +426,8 @@ function MeteorVisual.SetSize(model, size)
 	if shell then
 		shell.Size = Vector3.new(size * 1.04, size * 1.04, size * 1.04)
 	end
-	local body = model:FindFirstChild("Body")
-	if body and body:GetAttribute("Unit") then
-		body.Size = body:GetAttribute("Unit") * size * (body:GetAttribute("UnitScale") or 1.1)
-		local glow = model:FindFirstChild("InnerGlow")
-		if glow then
-			glow.Size = Vector3.one * size * 0.86
-		end
-		local bodyWeld = core:FindFirstChild("BodyWeld")
-		if bodyWeld then
-			bodyWeld.C0 = CFrame.new((body:GetAttribute("UnitOffset") or Vector3.zero) * size)
-		end
+	if model:GetAttribute("Rigged") then
+		MeteorVisual.LayoutRig(model, model:GetAttribute("JawOpen") or 0.05, Vector3.zero)
 	end
 	local fire = core:FindFirstChildOfClass("Fire")
 	if fire then

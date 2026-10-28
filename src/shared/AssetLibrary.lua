@@ -30,6 +30,29 @@ function AssetLibrary.MeteorBody(typeId)
 	return nil
 end
 
+-- Meteor mesh parts: Assets/Meteors/<id> is a Model with MeshParts "Body" and "Jaw" (from the
+-- Blender script), or a single MeshPart (body only). Returns body, jaw (clones) or nil.
+function AssetLibrary.MeteorParts(typeId)
+	local t = AssetLibrary.Get("Meteors", typeId) or AssetLibrary.Get("Meteors", "Default")
+	if not t then
+		return nil
+	end
+	if t:IsA("BasePart") then
+		return t:Clone(), nil
+	end
+	local body = t:FindFirstChild("Body", true)
+	if not body then
+		for _, d in ipairs(t:GetDescendants()) do
+			if d:IsA("MeshPart") and d.Name ~= "Jaw" then
+				body = d
+				break
+			end
+		end
+	end
+	local jaw = t:FindFirstChild("Jaw", true)
+	return body and body:Clone() or nil, jaw and jaw:IsA("BasePart") and jaw:Clone() or nil
+end
+
 -- House for an evolution tier: exact tier, otherwise the closest lower one, otherwise any.
 function AssetLibrary.House(tier)
 	for t = tier, 1, -1 do

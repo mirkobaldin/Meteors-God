@@ -724,10 +724,62 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
+# Rig: the jaw is a separate piece hinged behind the mouth; the pupils are balls in the eye holes.
+HINGE = Vector((0, -0.08, -0.16))  # Blender coords
+JAW_TOP = -0.17  # the jaw is the front of the shell below this height (mid mouth)
+PUPIL_R = 0.055
+PUPIL_DEPTH = 0.445  # distance of the pupils' centers from the middle (just in front of the core)
+
+
+def eye_center(side):
+    xs = [p[0] for p in EYE]
+    zs = [p[1] for p in EYE]
+    x, z = sum(xs) / len(xs) * side, sum(zs) / len(zs)
+    return Vector((x, -math.sqrt(max(0.25 - x * x - z * z, 0)), z)).normalized() * PUPIL_DEPTH
+
+
+def split_jaw(shell):
+    bpy.ops.object.select_all(action="DESELECT")
+    shell.select_set(True)
+    bpy.context.view_layer.objects.active = shell
+    for p in shell.data.polygons:
+        c = p.center
+        p.select = (JAW_TOP > c.z > -0.47 and abs(c.x) < 0.34 and c.normalized().dot(FRONT) > 0.3)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.separate(type="SELECTED")
+    bpy.ops.object.mode_set(mode="OBJECT")
+    jaw = [o for o in bpy.context.selected_objects if o != shell][0]
+    jaw.name = shell.name.replace("_Body", "") + "_Jaw"
+    return jaw
+
+
+def build_pupils(d):
+    mat = new_material(d["id"] + "_Pupil", (0.01, 0.01, 0.012), rough=0.12)
+    out = []
+    for side in (-1, 1):
+        bm = bmesh.new()
+        bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=16, radius=PUPIL_R)
+        bmesh.ops.translate(bm, vec=eye_center(side), verts=bm.verts)
+        o = mesh_object(d["id"] + ("_PupilL" if side < 0 else "_PupilR"), bm, mat, smooth=True)
+        fill_feature_colors(o, (0.01, 0.01, 0.012))
+        out.append(o)
+    return out
+
+
+def open_jaw(jaw, degrees):
+    import mathutils
+    m = mathutils.Matrix.Translation(HINGE) @ mathutils.Matrix.Rotation(math.radians(degrees), 4, "X") \
+        @ mathutils.Matrix.Translation(-HINGE)
+    jaw.matrix_world = m @ jaw.matrix_world
+
+
 def build(d, subdiv=6, with_face=True, with_core=True, budget=None):
     rng = random.Random(d["seed"])
     body = build_body(d, subdiv, budget)
-    parts = [body]
+    jaw = split_jaw(body)
+    if with_face:  # renders: show the rig (pupils looking at you, jaw a little open)
+        open_jaw(jaw, 9)
+    parts = [body, jaw] + (build_pupils(d) if with_face else [])
     if with_core:
         parts.append(build_core(d))
     for f in d["features"]:
@@ -749,7 +801,8 @@ def setup_render(scene, res, samples):
     bg.inputs["Color"].default_value = (0.004, 0.003, 0.012, 1)
     bg.inputs["Strength"].default_value = 1
     scene.world = world
-    scene.view_settings.view_transform = "Standard"
+    scene.view_settings.view_transform = "Standard"  # saturated colors (AgX washed the glow out)
+    scene.view_settings.look = "Medium High Contrast"
 
 
 def add_light(scene, name, kind, loc, energy, color=(1, 1, 1), size=1.0):
@@ -847,40 +900,30 @@ def join(parts, name):
     return obj
 
 
-def export_fbx(d, path, max_tris=16000, tex_size=2048):
-    """Low-poly mesh with the high-poly colors (cracks included) baked into one texture."""
-    global BAKING
-    reset()
+def bake_low(high, name, budget, tex_size, tex_path):
+    """Decimated copy of `high` with its colors baked into one texture."""
     scene = bpy.context.scene
-    BAKING = True
-    try:
-        high = join(build(d, subdiv=6, with_face=False, with_core=False)[0], d["id"] + "_High")  # max detail, baked onto the low one
-    finally:
-        BAKING = False
     low = high.copy()
     low.data = high.data.copy()
     scene.collection.objects.link(low)
-    low.name = d["id"]
-    low.data.name = d["id"]
-    tris = sum(len(p.vertices) - 2 for p in low.data.polygons)
+    low.name = name
+    low.data.name = name
     bpy.ops.object.select_all(action="DESELECT")
     low.select_set(True)
     bpy.context.view_layer.objects.active = low
-    if tris > max_tris:
+    tris = sum(len(p.vertices) - 2 for p in low.data.polygons)
+    if tris > budget:
         mod = low.modifiers.new("Decimate", "DECIMATE")
-        mod.ratio = max_tris / tris
+        mod.ratio = budget / tris
         bpy.ops.object.modifier_apply(modifier=mod.name)
-    for name in [a.name for a in low.data.color_attributes]:
-        low.data.color_attributes.remove(low.data.color_attributes[name])
+    for attr in [a.name for a in low.data.color_attributes]:
+        low.data.color_attributes.remove(low.data.color_attributes[attr])
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.01)
     bpy.ops.object.mode_set(mode="OBJECT")
-
-    # Bake the high-poly base color onto the low-poly UVs.
-    file = os.path.splitext(os.path.basename(path))[0]
-    image = bpy.data.images.new(file, tex_size, tex_size)
-    mat = bpy.data.materials.new(d["id"] + "_Baked")
+    image = bpy.data.images.new(name, tex_size, tex_size)
+    mat = bpy.data.materials.new(name + "_Baked")
     mat.use_nodes = True
     node = mat.node_tree.nodes.new("ShaderNodeTexImage")
     node.image = image
@@ -895,39 +938,77 @@ def export_fbx(d, path, max_tris=16000, tex_size=2048):
     bpy.context.view_layer.objects.active = low
     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"COLOR"}, use_selected_to_active=True,
                         cage_extrusion=0.04, max_ray_distance=0.15, margin=6)
-    tex_path = os.path.join(os.path.dirname(path), file + ".png")
     image.filepath_raw = tex_path
     image.file_format = "PNG"
     image.save()
     mat.node_tree.links.new(node.outputs["Color"], mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
-    bpy.data.objects.remove(high)
+    return low
 
-    tris = sum(len(p.vertices) - 2 for p in low.data.polygons)
-    xs = [v.co.x for v in low.data.vertices]
-    ys = [v.co.y for v in low.data.vertices]
-    zs = [v.co.z for v in low.data.vertices]
-    # Bounding box in Roblox axes (X = -x, Y = z, Z = y), in units of the sphere's diameter (1).
-    box = dict(size=(max(xs) - min(xs), max(zs) - min(zs), max(ys) - min(ys)),
-               center=(-(max(xs) + min(xs)) / 2, (max(zs) + min(zs)) / 2, (max(ys) + min(ys)) / 2))
+
+def roblox_box(obj):
+    """Bounding box in Roblox axes (X = -x, Y = z, Z = y), in units of the sphere's diameter (1)."""
+    xs = [v.co.x for v in obj.data.vertices]
+    ys = [v.co.y for v in obj.data.vertices]
+    zs = [v.co.z for v in obj.data.vertices]
+    return dict(size=(max(xs) - min(xs), max(zs) - min(zs), max(ys) - min(ys)),
+                center=(-(max(xs) + min(xs)) / 2, (max(zs) + min(zs)) / 2, (max(ys) + min(ys)) / 2))
+
+
+def to_roblox(v):
+    return (-v.x, v.z, v.y)
+
+
+def export_fbx(d, path, max_tris=16000, tex_size=2048):
+    """One FBX per meteor with two meshes: "Body" (rock shell + horns/crystals) and "Jaw" (hinged),
+    each with its colors (cracks included) baked into a texture. The core and the pupils are made
+    in Roblox (neon ball + balls moved by the code)."""
+    global BAKING
+    reset()
+    BAKING = True
+    try:
+        parts, _ = build(d, subdiv=6, with_face=False, with_core=False)
+    finally:
+        BAKING = False
+    body_parts = [p for p in parts if not p.name.endswith("_Jaw")]
+    jaw_high = [p for p in parts if p.name.endswith("_Jaw")][0]
+    body_high = join(body_parts, d["id"] + "_High")
+    jaw_high.name = d["id"] + "_JawHigh"
+    folder = os.path.dirname(path)
+    file = os.path.splitext(os.path.basename(path))[0]
+    body = bake_low(body_high, "Body", max_tris - 2500, tex_size, os.path.join(folder, file + ".png"))
+    jaw = bake_low(jaw_high, "Jaw", 2500, tex_size // 2, os.path.join(folder, file + "_Jaw.png"))
+    bpy.data.objects.remove(body_high)
+    bpy.data.objects.remove(jaw_high)
+    tris = sum(len(p.vertices) - 2 for o in (body, jaw) for p in o.data.polygons)
+    info = dict(body=roblox_box(body), jaw=roblox_box(jaw), hinge=to_roblox(HINGE),
+                eyes=(to_roblox(eye_center(-1)), to_roblox(eye_center(1))), pupil=PUPIL_R * 2)
     bpy.ops.object.select_all(action="DESELECT")
-    low.select_set(True)
+    body.select_set(True)
+    jaw.select_set(True)
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, axis_forward="Z", axis_up="Y",
                              apply_scale_options="FBX_SCALE_UNITS", mesh_smooth_type="FACE",
                              object_types={"MESH"}, path_mode="COPY", embed_textures=True)
-    return tris, box
+    return tris, info
 
 
-def write_config(path, boxes):
+def write_config(path, infos):
+    v = lambda t: "Vector3.new(%.4f, %.4f, %.4f)" % tuple(t)
     lines = [
         "-- Generated by art/blender/meteors_build.py: do not edit by hand.",
-        "-- Bounding box of each meteor mesh (Assets/Meteors/<id>) in units of its rock sphere's diameter,",
-        "-- so MeteorVisual can size the mesh to match the core (the face sits on the sphere).",
+        "-- Meteor meshes (Assets/Meteors/<id>: a Model with MeshParts \"Body\" and \"Jaw\"), in units of the",
+        "-- rock sphere's diameter: bounding boxes (MeshParts are centered on them), the jaw hinge, the",
+        "-- centers of the eye holes (where the pupils go) and the pupil diameter.",
         "",
         "return {",
     ]
-    for name, b in boxes.items():
-        v = lambda t: "Vector3.new(%.4f, %.4f, %.4f)" % t
-        lines.append('\t["%s"] = { size = %s, center = %s },' % (name, v(b["size"]), v(b["center"])))
+    for name, i in infos.items():
+        lines.append('\t["%s"] = {' % name)
+        lines.append("\t\tsize = %s, center = %s," % (v(i["body"]["size"]), v(i["body"]["center"])))
+        lines.append("\t\tjaw = { size = %s, center = %s }," % (v(i["jaw"]["size"]), v(i["jaw"]["center"])))
+        lines.append("\t\thinge = %s," % v(i["hinge"]))
+        lines.append("\t\teyes = { %s, %s }," % (v(i["eyes"][0]), v(i["eyes"][1])))
+        lines.append("\t\tpupil = %.4f," % i["pupil"])
+        lines.append("\t},")
     lines.append("}")
     with open(path, "w") as f:
         f.write("\n".join(lines) + "\n")
