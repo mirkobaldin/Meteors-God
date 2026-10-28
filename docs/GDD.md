@@ -13,25 +13,27 @@
 4. **Il server distrugge insieme.** Un pianeta condiviso; quando esplode piove il bottino per tutti.
 5. **Produzione minima.** Tutto è generato da codice: mondo, pianeti, facce, effetti. Zero animazioni del personaggio custom, zero mesh obbligatorie.
 
-## 2. La mappa (stile Asgard, forma a serratura lungo l'asse del pianeta)
+## 2. La mappa (dallo schizzo del proprietario)
 
-1. **Dietro — quartiere delle case**: mezzaluna di marmo e oro con le 8 case dei giocatori in arco, torri dorate
-   affusolate e lo spawn.
-2. **Al centro — Campo dei Meteoriti**: altopiano rotondo di roccia vulcanica con crepe arancioni e crateri; al centro
-   l'Altare del Cielo con un raggio viola verso un vortice da cui piovono i meteoriti. Rampe verso le case.
-3. **Davanti — Bifrost**: lungo ponte di vetro cosmico scuro pieno di "glitch" di luce (ciano, magenta, oro) che
-   sfarfallano, con due torri dorate all'ingresso; finisce alla Piattaforma di Lancio (cupola dorata, 4 pad).
+Vista dall'alto, i pianeti sono davanti (+Z). Altezze: case 32 > isolette delle comete 16 > tutto il resto 0.
+1. **Isola Centrale** (grande, raggio 170): in mezzo il **Campo dei Meteoriti** di roccia scura con piccoli crateri
+   e bordo luminoso; sopra, il vortice da cui piovono. Spawn sul retro dell'isola, rivolto verso il ponte.
+2. **Dietro — i lotti dei giocatori** (6, a ventaglio): per ognuno un ponte porta all'**Isoletta delle Comete**
+   (4 piedistalli di marmo e oro dove fluttuano i meteoriti dell'altare, girati verso il centro), poi un altro ponte
+   sale all'**Isola della Casa** (tempio segnaposto finché non ci sono i modelli `Assets/Houses`).
+   **Imposta Max Players del server = 6** (`Game.World.HouseCount`).
+3. **Davanti ai lati**: a sinistra l'**isola dello Shop** (bancarella con prompt "Open Shop" + montagna), a destra
+   l'**isola della Classifica** (tabellone + montagna).
+4. **Davanti — il Bifrost a 3 corsie** di vetro cosmico con glitch: ogni corsia ha un portale con il suo **Tier**
+   e il requisito, e si ricongiunge alla **Piattaforma di Lancio** con 9 pad (3 per tier), ognuno rivolto al suo pianeta.
 
-Sotto c'è solo il vuoto (cadere = respawn). Tutto il testo del gioco è in inglese.
+Le isole sono **Terrain** (erba sopra, roccia sotto, coste ondulate), con ~22 isolotti decorativi intorno.
+`Game.World.GenerateTerrain = false` se vuoi scolpire tu il terreno nel Terrain Editor di Studio: il codice genera
+solo le parti (ponti, piedistalli, case, pad). I colori dei materiali sono in `Config/Terrain.lua`.
 
-- **Terreno**: le isole (la roccia sotto case, campo e piattaforma) e ~22 isolotti fluttuanti intorno sono **Terrain**
-  generato dal codice (`Game.World.GenerateTerrain`). Se nel place c'è già del terreno fatto a mano (Terrain Editor
-  di Studio) il codice non genera niente e tiene quello. I modelli Blender (case, torri, altare, ponte) vanno sopra.
-- **Cielo**: intorno alla mappa, lontano, pianeti con anelli e atmosfera, una galassia a spirale e tre nebulose
-  luminose (una dietro il pianeta bersaglio). Generato sul client (`Controllers/Sky.lua`). Skybox opzionale con
-  6 immagini in `Config/Assets.lua → Assets.Sky`.
-- **Classifica**: tabellone accanto allo spawn con i 10 giocatori che hanno distrutto più pianeti (tutti i server,
-  OrderedDataStore, aggiornato ogni 2 minuti).
+- **Cielo**: si usa lo Sky messo in `Lighting` (es. "Purple Nebula"); il codice lo lascia com'è.
+- **Classifica**: top 10 pianeti distrutti (tutti i server, OrderedDataStore, ogni 2 minuti).
+- Sotto c'è il vuoto (cadere = respawn). Tutto il testo del gioco è in inglese.
 
 ## 3. Ciclo di gioco (5 minuti)
 
@@ -46,17 +48,19 @@ Sotto c'è solo il vuoto (cadere = respawn). Tutto il testo del gioco è in ingl
 
 ## 4. Il lancio
 
-1. Il giocatore entra sul Pad di Lancio in fondo a un Ponte Stellare durante il Bombardamento.
-2. **Decollo istantaneo** (0,3 s): si solleva sopra il vuoto, la camera inquadra il pianeta da sopra la spalla,
-   il personaggio alza le braccia (posa procedurale visibile a tutti) e il meteorite appare sopra la testa.
-3. **Mira**: un mirino segue il mouse (o il dito); una scia di puntini mostra la traiettoria. Il meteorite va
-   esattamente dove miri; se manchi il pianeta finisce sul bordo più vicino.
-4. **Carica**: tenendo premuto, l'anello attorno al mirino si riempie avanti e indietro. Rilasciare nei segmenti
-   dorati (≥ 88%) = **CRITICO** (x2). Il meteorite si gonfia, la camera trema e stringe lo zoom.
-5. **Volo**: camera che insegue il meteorite, poi inquadratura laterale cinematografica dell'impatto (click per saltarla).
-6. **Impatto**: lampo, doppia onda d'urto sulla superficie, fuoco, fumo, scintille, rocce e le **placche della crosta
-   che volano nello spazio** scoprendo il mantello incandescente. Numero di danno gigante.
-7. Il giocatore torna all'inizio del ponte; il meteorite torna all'altare stordito (ricarica). `Q` annulla il lancio.
+1. Durante il Bombardamento il giocatore sale su un pad del suo **tier** (Tier II richiede Demigod, Tier III Cosmic God;
+   se non ce l'ha appare un avviso).
+2. **Decollo** (0,3 s): si solleva sopra il vuoto. La camera è dietro e di lato, il dio si vede piccolo in basso a
+   sinistra, ondeggia, **si gira verso dove miri** e si inclina mentre carica.
+3. **Mira**: un **marker rosso 3D sulla superficie del pianeta** mostra esattamente dove cadrà il meteorite (segue
+   anche i crateri), con un arco di puntini 3D. Se manchi, il colpo finisce sul bordo più vicino.
+4. **Carica**: tieni premuto, l'ago corre avanti e indietro sull'anello. La **zona dorata è stretta (7%) e cambia
+   posizione a ogni lancio**: rilasciare lì = **CRITICO**. Se stai già tenendo premuto quando sali sul pad, la carica
+   parte subito (prima restavi bloccato).
+5. **Volo**: camera che insegue la cometa (che ti guarda urlando), poi inquadratura larga dell'area d'impatto.
+6. **Impatto**: lampo, onde d'urto, polvere del colore della crosta, pezzi di pianeta, e **l'effetto dell'elemento**
+   (vedi §7). Il server scava un **cratere vero** nel terreno. La camera resta 2,5 s sul cratere (click per saltare).
+7. Il giocatore torna al centro della piattaforma; il meteorite torna al piedistallo stordito (ricarica). `Q` annulla.
 
 ### Formula del danno
 
@@ -160,18 +164,32 @@ limite senza mai arrivarci. Bottone **MAX** = compra quanti livelli puoi. Tutto 
 - **Potere**: statistica che cresce sempre, non si spende.
 - **Frammenti Stellari**: guadagnati colpendo e distruggendo pianeti e vendendo meteoriti. Si spendono negli upgrade.
 
-## 7. Pianeti
+## 7. Pianeti (Terrain)
 
-Pianeti grandi (raggio 420 stud) e lontani (~2.300 stud dai ponti), generati da codice:
-- **Crosta**: icosfera di 320 placche tettoniche colorate per bioma (rumore + calotte polari + venature/lava al neon).
-  Ogni impatto rimuove le placche più vicine (cratere vero) e scopre il mantello. Placche rimosse proporzionali alla vita persa.
-- **Mantello**: sfera incandescente che si rimpicciolisce e si scurisce, poi esplode in schegge.
-- **Nucleo**: pulsa; a zero → supernova con lampo accecante, onde d'urto e frammenti per tutto il server.
-- **Atmosfera**: alone luminoso (materiale ForceField). Il Legendary Planet ha un anello.
+Tre pianeti in cielo insieme, uno per corsia del Bifrost (`Config/Planets.lua → Tiers`):
 
-Sequenza: Roccioso → Ghiaccio → Lava → Caramella → Crystal → Ombra; poi si ricomincia con vita ×2,5.
-Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Quota vita: crosta 55%, mantello 35%, nucleo 10%.
-Il server decide le placche rimosse; tutti gli effetti (detriti, esplosioni, voli) sono calcolati sui client.
+| Tier | Requisito | Raggio | Sequenza |
+|---|---|---|---|
+| I (sinistra) | tutti | 430 | Rocky → Ice → Candy |
+| II (centro) | Demigod | 500 | Lava → Crystal |
+| III (destra) | Cosmic God | 570 | Shadow |
+
+Dopo l'ultimo pianeta di un tier si ricomincia con vita e premi ×2,5.
+- **Fatti di Terrain**: crosta con i materiali del pianeta e "continenti" di altri materiali, calotte polari, e
+  dettagli: **vulcani** con lava e fumo (Lava), **spuntoni di ghiaccio** (Ice), **cristalli** (Crystal), montagne
+  innevate e crateri (Rocky), colline alla menta e limone (Candy), spuntoni scuri (Shadow).
+- **Strati veri**: sotto la crosta il **mantello** di lava (CrackedLava), al centro una cavità con il **nucleo** al neon.
+- **Crateri**: ogni colpo scava una sfera d'aria. Raggio = R × (quota danno × 1,3)^(1/3) tra 5% e 42% di R: la somma
+  dei crateri svuota il pianeta. Il bordo viene "bruciato" e resta il **segno dell'elemento**:
+  Frost/Royal/Blue Comet → ghiaccio e spuntoni di cristallo; Magma/Ember → lava; Venom → melma tossica;
+  Crystal → cristalli rosa; Solar → vetro dorato; Void → buco nero più grande; Supernova → cratere più grande con lava.
+- **VFX per elemento** (client): ghiaccio che spunta, schizzi di lava ad arco, fulmini, nube tossica con bolle,
+  schegge di cristallo, nastri d'aurora, raggi solari, implosione nera, onde arcobaleno.
+- **Arrivo**: si apre una **spaccatura spazio-temporale** (crepa luminosa a zig-zag + disco nero), il pianeta esce
+  in un lampo, la spaccatura si richiude.
+- **Fine**: supernova, il pianeta si frantuma in pezzi di crosta e lava; annuncio con chi ha dato il **colpo finale** e l'MVP.
+
+Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Il Legendary Planet (prodotto) sostituisce il pianeta del Tier I.
 
 ## 8. Trading
 
@@ -226,10 +244,20 @@ Il server decide le placche rimosse; tutti gli effetti (detriti, esplosioni, vol
 - **Regalo a tempo**: ogni 10 minuti di gioco (45 s in Studio) un regalo di Frammenti.
 - **Codici**: in `src/shared/Config/Rewards.lua` (RELEASE, METEORGODS).
 
-## 12. Case dei giocatori
+## 12. Lotti dei giocatori
 
-Ogni giocatore ha un Santuario sul suo spot. Con i modelli in `Assets/Houses/House1..6` il santuario
-**cresce con l'Evoluzione** e i meteoriti fluttuano sugli slot del modello. Vedi `docs/ASSET_PIPELINE.md`.
+Ogni giocatore ha un lotto: Isoletta delle Comete (i meteoriti dell'altare fluttuano sui piedistalli) + Isola della
+Casa. Con i modelli in `Assets/Houses/House1..6` la casa **cresce con l'Evoluzione** al posto del tempio segnaposto.
+
+## 12b. Extra (fatti)
+
+- **Pet**: la tua cometa migliore ti fluttua accanto, visibile a tutti e girata verso la camera di chi guarda.
+- **Titoli** sopra la testa per pianeti distrutti (Planet Cracker 1, Breaker 10, Star Breaker 50, Planet Eater 200,
+  World Ender 1000), ✦ per ogni Ascensione e ★ ogni 25 livelli di upgrade.
+- **Fusione**: 3 meteoriti dello stesso tipo in magazzino → 1 della rarità successiva (bottone "Fuse x3").
+- **Eventi cosmici** (35% delle piogge): Eclipse (mutazioni ×5), Golden Rain, Meteor Frenzy (doppi meteoriti),
+  Lucky Stars (fortuna ×3). Il mondo si colora un po' durante l'evento.
+- **Facce 3D**: occhi, pupille, sopracciglia, bocca, guance e accessori sono parti del corpo (non più adesivi).
 
 ## 13. Proposte (da decidere)
 
@@ -245,22 +273,17 @@ Ogni giocatore ha un Santuario sul suo spot. Con i modelli in `Assets/Houses/Hou
 5. **Museo personale**: la casa mostra le comete più rare in vetrine; gli altri possono visitarla e "mettere
    una stella". Classifica delle case più stellate.
 
-### Per renderlo più figo
-- **Cometa che cresce in modo visibile**: diventa più grande e cambia faccia man mano che cresce sull'altare.
-- **Fusione**: 3 comete uguali → 1 di rarità superiore con animazione di fusione all'Altare del Cielo.
-- **Eventi cosmici**: Eclissi (mutazioni ×5), Pioggia d'Oro, Buco Nero che risucchia le comete a terra:
-  vanno prese al volo prima che spariscano.
-- **Colpo finale**: chi dà l'ultimo colpo al pianeta ha un replay al rallentatore sul maxischermo dell'hub.
-- **Titoli e aure** sopra la testa ("Planet Eater", "Star Breaker") per pianeti distrutti / livelli.
-- **Pet-cometa che ti segue** (la tua migliore), visibile a tutti: è lo sfoggio più forte nei simulator.
-- **Stelle degli upgrade**: ogni 25 livelli di un upgrade una "stella" con un piccolo effetto visivo sul personaggio.
-- **Sistema solare**: ogni 10 pianeti distrutti si sblocca una nuova "galassia" bersaglio con skybox diverso.
+### Ancora da fare (dalla lista "più figo")
+- Replay al rallentatore del colpo finale su un maxischermo nell'isola centrale.
+- Evento Buco Nero che risucchia le comete a terra.
+- Effetto visivo sul personaggio per le stelle degli upgrade.
 
 ## 14. Roadmap
 
 - **v0.1 (questa)**: cittadella, ponti, ciclo, pioggia, altari e crescita, lancio, pianeti a strati, Potere +1, evoluzioni, ascensione, upgrade, negozio, trading, salvataggi.
 - **Prossimo**: suoni e animazioni (ID in `Config/Assets.lua`), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
 - **v0.2 (fatto)**: nuova interfaccia, premi giornalieri, regalo a tempo, codici, indice, hook per modelli/animazioni/suoni.
+- **v0.6**: mappa dallo schizzo, pianeti di Terrain a 3 tier con crateri e spaccatura, lancio rifatto, VFX per elemento, facce 3D, pet, titoli, fusione, eventi cosmici.
 - **v0.5**: terreno, cielo con pianeti/galassie/nebulose, classifica globale, upgrade infiniti (8 tipi).
 - **v0.3**: forziere gruppo, negozio facce a rotazione, Auto-Lancio, Pioggia di Meteoriti acquistabile.
 - **Settimanale**: un pianeta nuovo + 1–2 meteoriti nuovi.

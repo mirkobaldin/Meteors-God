@@ -20,59 +20,34 @@ La cartella ha `ignoreUnknownInstances = true`, quindi ci sono due modi equivale
 ## 2. Contratto dei nomi
 
 ### Terreno (Roblox Terrain)
-Le rocce delle isole e gli isolotti fluttuanti sono **Terrain**. Il codice li genera da solo
-(`Game.World.GenerateTerrain = true`). Se preferisci scolpirlo tu con il **Terrain Editor** di Studio
-(Generate / Add / Smooth), salvalo nel place: quando il terreno non è vuoto il codice non genera niente.
-I modelli Blender vanno **sopra** il terreno: non serve modellare le rocce sotto le isole.
+Le isole, gli isolotti e **i pianeti** sono **Terrain** generato dal codice. Colori dei materiali in
+`src/shared/Config/Terrain.lua` (ogni materiale ha un solo uso, perché Roblox colora un materiale uguale ovunque).
+Se vuoi scolpire tu le isole con il **Terrain Editor** di Studio, metti `Game.World.GenerateTerrain = false`:
+il codice genera solo le parti (ponti, piedistalli, case segnaposto, pad). I pianeti restano sempre generati.
 
-### `Assets/Map/Citadel` — la mappa (Model)
-La mappa segue un unico asse verso il pianeta e, vista dall'alto, ha la forma di una **serratura** (non un cerchio):
-1. **Dietro — quartiere delle case**: grande mezzaluna di marmo e oro con le 8 case in arco e torri dorate affusolate.
-2. **Al centro — Campo dei Meteoriti**: altopiano rotondo di roccia scura (raggio ~115), un po' più alto e sovrapposto
-   al fronte del quartiere, con l'Altare del Cielo al centro. **Qui cadono i meteoriti.** Rampe verso le case.
-3. **Davanti — Bifrost**: lungo ponte dritto di vetro cosmico scuro con "glitch" di luce (~300 × 26), due torri dorate
-   all'ingresso, fino alla **Piattaforma di Lancio** con cupola dorata e 4 pad rivolti verso il pianeta.
-
-Marker richiesti (Part invisibili, `Anchored`, `CanCollide = false`, `Transparency = 1`) dentro `Markers/`:
-
-| Marker | Cosa indica |
-|---|---|
-| `Markers/Spawn` | punto di spawn nella città |
-| `Markers/House1` … `Markers/House8` | posizione e orientamento delle case (la faccia `-Z` guarda verso il centro della città) |
-| `Markers/Field` | centro del Campo dei Meteoriti, con **attributi** `InnerRadius` (altare centrale, niente meteoriti) e `OuterRadius` (numeri, in stud) |
-| `Markers/LaunchPad1` … `Markers/LaunchPad4` | centro dei pad sulla piattaforma di lancio |
-| `Markers/Return1` … `Markers/Return4` | dove torna il giocatore dopo il lancio (inizio del Bifrost, `-Z` verso il pianeta) |
-| `Markers/Planet` | centro del pianeta bersaglio (molto lontano, ~2.500 stud oltre la piattaforma) |
-
-Un personaggio Roblox è alto ~5 stud.
+### `Assets/Map/Citadel` — decorazioni della mappa (Model, opzionale)
+Pezzi Blender **sopra** il terreno: torri dorate, archi, l'Altare/vortice del campo, rifiniture del Bifrost, rocce
+decorative. Viene messo in `workspace.World` così com'è (coordinate del mondo, vedi `Game.World` per le posizioni:
+isola centrale in 0,0,0 raggio 170; lotti dietro; Shop a −240,0,140; Classifica a 240,0,140; piattaforma a 0,0,470).
+Il gameplay (lotti, piedistalli, pad, campo) è sempre generato dal codice, quindi non servono marker.
 
 ### `Assets/Houses/House1` … `House6` — le case divine dei giocatori (Model)
-Una casa per ogni Evoluzione (1 = Star Spirit … 6 = Supreme Deity): la casa cresce con il giocatore.
-Se ne manca una si usa la più vicina disponibile.
+Una casa per ogni Evoluzione (1 = Star Spirit … 6 = Supreme Deity): la casa cresce con il giocatore e sostituisce
+il tempio segnaposto sull'Isola della Casa. Se ne manca una si usa la più vicina disponibile.
 
 | Elemento | Cosa indica |
 |---|---|
-| `PrimaryPart` | base della casa, pivot al centro del pavimento |
-| `Slot1` … `Slot4` (Part o Attachment) | dove fluttuano i meteoriti dell'altare |
-| `Sign` (Part) | dove appare il nome del proprietario |
+| `PrimaryPart` | base della casa, pivot al centro del pavimento; il fronte (−Z) guarda verso l'isola centrale |
+| `Sign` (Part, opzionale) | dove appare il nome del proprietario |
 
-Ingombro massimo: cerchio di raggio 14 stud. Altezza libera.
-
-### `Assets/Planets/<NomePianeta>` — i pianeti (Model)
-`<NomePianeta>` = il campo `name` in `src/shared/Config/Planets.lua` (es. `Rocky Planet`), oppure `Legendary`.
-Pivot al centro. Diametro esterno ~320 stud.
-
-| Elemento | Cosa indica |
-|---|---|
-| `Crust` (Folder) | 30–60 pezzi della crosta **già fratturati** (Blender: Cell Fracture). Si staccano agli impatti |
-| `Mantle` (MeshPart o Part) | strato intermedio, diametro ~250 |
-| `Core` (MeshPart o Part) | nucleo luminoso, diametro ~100 |
-| altro (anelli, lune) | decorazioni, esplodono alla fine |
+Ingombro massimo: cerchio di raggio 38 stud (l'isola ha raggio 46). Altezza libera.
+I meteoriti non stanno più nella casa: fluttuano sui piedistalli dell'Isoletta delle Comete.
 
 ### `Assets/Meteors/<TipoMeteorite>` — corpi dei meteoriti (MeshPart)
 `<TipoMeteorite>` = il campo `id` in `src/shared/Config/Meteors.lua` (es. `Pebble`, `Frost`, `Supernova`).
 Un singolo **MeshPart** chiamato come il tipo, roccia/forma del meteorite **senza faccia**:
-la faccia (occhi, bocca, espressioni) resta disegnata dal codice, così le espressioni cambiano.
+la faccia (occhi, pupille, sopracciglia, bocca, guance) è fatta di **parti 3D saldate al corpo** dal codice sul lato
+−Z, così le espressioni cambiano. Lascia il fronte (−Z) abbastanza liscio e tondo per ospitarla.
 Dimensione 1×1×1 stud circa: il codice lo scala. Pivot al centro. Se manca, `Assets/Meteors/Default`.
 
 ## 3. Regole tecniche per i modelli (Blender → Roblox)

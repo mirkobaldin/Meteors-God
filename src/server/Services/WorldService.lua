@@ -306,12 +306,14 @@ local function buildCenter()
 	island(Vector3.zero, W.CenterRadius, 130)
 	-- Meteor Field: dark scorched rock with small craters, a glowing rim.
 	local f = W.FieldCenter
-	terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 4, 0)), 8, W.FieldRadius, Enum.Material.Basalt)
-	for _ = 1, 16 do
-		local a = trng:NextNumber(0, math.pi * 2)
-		local d = trng:NextNumber(10, W.FieldRadius - 12)
-		local cr = trng:NextNumber(4, 8)
-		terrain:FillBall(f + Vector3.new(math.cos(a) * d, cr * 0.75, math.sin(a) * d), cr, Enum.Material.Air)
+	if W.GenerateTerrain then
+		terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 4, 0)), 8, W.FieldRadius, Enum.Material.Basalt)
+		for _ = 1, 16 do
+			local a = trng:NextNumber(0, math.pi * 2)
+			local d = trng:NextNumber(10, W.FieldRadius - 12)
+			local cr = trng:NextNumber(4, 8)
+			terrain:FillBall(f + Vector3.new(math.cos(a) * d, cr * 0.75, math.sin(a) * d), cr, Enum.Material.Air)
+		end
 	end
 	disc(f + Vector3.new(0, 0.1, 0), W.FieldRadius + 2, 0.3, {
 		Name = "FieldRim",

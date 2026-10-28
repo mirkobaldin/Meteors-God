@@ -69,14 +69,14 @@ Usa Blender (tramite il Blender MCP se è collegato, altrimenti scrivimi gli scr
 File sorgente in art/blender/*.blend, export FBX in art/export/<categoria>/.
 
 Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
-1. Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (la faccia la disegna il gioco).
-   Circa 1x1x1, pivot al centro, < 3000 triangoli.
-2. Houses/House1 … House6: i 6 santuari, con le Part/Empty Slot1..Slot4 e Sign come da contratto.
-3. Planets/<Nome>: un pianeta alla volta, iniziando da "Rocky Planet". Crosta fratturata con Cell Fracture
-   (30-60 pezzi, ognuno < 1500 triangoli) dentro una collection "Crust", poi Mantle e Core separati.
-4. Map/Citadel: SOLO i pezzi sopra il terreno (pavimenti, torri dorate, Altare del Cielo, Bifrost, piattaforma di lancio)
-   con TUTTI i marker (Spawn, House1-8, Field, LaunchPad1-4, Return1-4, Planet). Le rocce sotto le isole sono Terrain:
-   non modellarle (vedi "Terreno" in docs/ASSET_PIPELINE.md).
+1. Meteors/Default + i 13 meteoriti: SOLO il corpo roccioso, SENZA faccia (occhi, bocca e sopracciglia sono
+   parti 3D aggiunte dal codice sul lato -Z: lascia quel lato liscio e tondo). Circa 1x1x1, pivot al centro,
+   < 3000 triangoli. Ogni rarità ha una silhouette diversa (vedi i fogli in art/concepts/meteors).
+2. Houses/House1 … House6: le 6 case, ingombro max raggio 38 stud, fronte -Z verso l'isola centrale,
+   Part "Sign" opzionale per il nome. Niente slot: i meteoriti stanno sui piedistalli dell'isoletta.
+3. Map/Citadel (opzionale): SOLO decorazioni sopra il terreno (torri dorate, archi, rifiniture del Bifrost,
+   rocce decorative) alle coordinate di Game.World. Le isole e i PIANETI sono Terrain generato dal codice:
+   non modellarli (vedi "Terreno" in docs/ASSET_PIPELINE.md).
 
 Regole: 1 unità Blender = 1 stud, Apply All Transforms prima di esportare, fronte verso -Z di Roblox,
 max 20.000 triangoli per mesh, texture palette unica 1024x1024 stile toon, nomi ESATTI come nel contratto.
