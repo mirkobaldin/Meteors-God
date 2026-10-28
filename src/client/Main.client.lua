@@ -18,6 +18,7 @@ local ORDER = {
 	"Index",
 	"Trade",
 	"Launch",
+	"Hunt",
 }
 
 local controllers = {}

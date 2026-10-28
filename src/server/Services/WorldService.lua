@@ -645,6 +645,49 @@ local function buildFusionReactor()
 	model.Parent = worldFolder
 end
 
+-- Cosmic Hunt portal: a golden ring with a swirling rift inside.
+local function buildHuntPortal()
+	local pos = Game.Hunt.PortalPosition
+	local model = Instance.new("Model")
+	model.Name = "HuntPortal"
+	local face = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
+	disc(pos + Vector3.new(0, 1.5, 0), 34, 3, { Name = "Base", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	local center = face * CFrame.new(0, 34, 0)
+	for i = 1, 28 do
+		local a = i / 28 * math.pi * 2
+		part({
+			Name = "PortalRing",
+			Size = Vector3.new(5, 7.5, 5),
+			CFrame = center * CFrame.Angles(0, 0, a) * CFrame.new(0, 28, 0),
+			Material = Enum.Material.Foil,
+			Color = GOLD,
+			Parent = model,
+		})
+	end
+	local rift = part({
+		Name = "PortalRift",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1, 52, 52),
+		CFrame = center * CFrame.Angles(0, math.rad(90), 0),
+		Material = Enum.Material.ForceField,
+		Color = Color3.fromRGB(120, 80, 255),
+		CanCollide = false,
+		Parent = model,
+	})
+	local _, bb = label(rift, "🌌 COSMIC HUNT\nFly through space · smash planets · earn Stardust",
+		UDim2.new(44, 0, 10, 0), Vector3.new(0, 38, 0), Color3.fromRGB(200, 180, 255))
+	bb.MaxDistance = 900
+	local promptPart = part({ Name = "HuntPrompt", Size = Vector3.new(2, 2, 2), Transparency = 1, CanCollide = false, CFrame = face * CFrame.new(0, 5, -8), Parent = model })
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "OpenHunt"
+	prompt.ActionText = "Enter the Hunt"
+	prompt.ObjectText = "Cosmic Hunt (" .. Game.Hunt.Duration .. "s)"
+	prompt.MaxActivationDistance = 24
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = promptPart
+	model.Parent = worldFolder
+end
+
 -- Bifrost: three separate bridges, each to its own Launch Platform ------------------------------
 
 local function buildLane(lane, padsFolder)
@@ -918,6 +961,7 @@ function WorldService:Init()
 	buildPlots()
 	buildBifrost()
 	buildFusionReactor()
+	buildHuntPortal()
 end
 
 function WorldService:Start()

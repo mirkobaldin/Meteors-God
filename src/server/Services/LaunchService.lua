@@ -89,6 +89,11 @@ local function computeDamage(player, meteor, charge, crit)
 	return math.floor(dmg)
 end
 
+-- Damage of a meteor thrown by this player (used by the Cosmic Hunt too).
+function LaunchService:Damage(player, meteor, charge, crit)
+	return computeDamage(player, meteor, charge, crit)
+end
+
 local function beginLaunch(player, padName)
 	if not RateLimit.Allow(player, "BeginLaunch", 0.3) then
 		return { ok = false }
