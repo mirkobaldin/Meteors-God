@@ -92,7 +92,7 @@ local function grab(player, model)
 	local rarity = Meteors.RarityByID[def.rarity]
 	if rarity.order >= 5 or mutation == "Eclipsed" then
 		local name = (mutation and (mutation .. " ") or "") .. def.id
-		Notify.Announce(player.DisplayName .. " found a " .. name .. " (" .. def.rarity .. ")!", rarity.color)
+		Notify.Chat(player.DisplayName .. " found a " .. name .. " (" .. def.rarity .. ")!", rarity.color)
 	end
 end
 

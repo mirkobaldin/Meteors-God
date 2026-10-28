@@ -277,7 +277,7 @@ function MeteorService:Fuse(player, uid)
 	Notify.Toast(player, "✨ FUSION! 3 " .. m.t .. " became a " .. name .. " (" .. nextRarity .. ")", "good")
 	local rarity = Meteors.RarityByID[nextRarity]
 	if rarity.order >= 5 then
-		Notify.Announce(player.DisplayName .. " fused a " .. name .. " (" .. nextRarity .. ")!", rarity.color)
+		Notify.Chat(player.DisplayName .. " fused a " .. name .. " (" .. nextRarity .. ")!", rarity.color)
 	end
 	return true
 end

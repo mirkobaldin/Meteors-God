@@ -236,9 +236,8 @@ function PlayerService:Evolve(player, force)
 	data.evolution += 1
 	PlayerService:RefreshCharacter(player)
 	PlayerService:Sync(player)
-	Notify.Toast(player, "You evolved into " .. nextEvo.name .. "!", "good")
 	if data.evolution >= 4 then
-		Notify.Announce(player.DisplayName .. " became " .. nextEvo.name .. "!", nextEvo.aura)
+		Notify.Chat(player.DisplayName .. " became " .. nextEvo.name .. "!", nextEvo.aura)
 	end
 	return true
 end
@@ -257,7 +256,7 @@ function PlayerService:Ascend(player)
 	data.ascensions += 1
 	PlayerService:RefreshCharacter(player)
 	PlayerService:Sync(player)
-	Notify.Announce(
+	Notify.Chat(
 		player.DisplayName .. " has ASCENDED! (Ascension " .. data.ascensions .. ")",
 		Color3.fromRGB(255, 120, 220)
 	)

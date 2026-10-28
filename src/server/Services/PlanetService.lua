@@ -31,7 +31,7 @@ local tiers = {} -- [tier] = state (see spawnPlanet)
 local indices = {} -- [tier] = position in the tier sequence
 local legendaryQueued = false
 
-local RIFT_OPEN = 1.4 -- seconds before the planet appears
+local RIFT_OPEN = 2.4 -- seconds before the planet appears (crack, shatter, tear open)
 local RIFT_CLOSE = 2.6 -- seconds the rift stays open after the planet appears
 local PAINT_MAX = 48 -- studs: max radius of crater painting (ReadVoxels cost)
 
@@ -397,7 +397,7 @@ function spawnPlanet(tier, def)
 	if def.legendary then
 		Notify.Announce("⭐ A " .. def.name .. " TORE THROUGH SPACE! x3 rewards!", Color3.fromRGB(255, 210, 60))
 	else
-		Notify.Announce("🌀 " .. tierDef.name .. ": " .. def.name .. " is coming through a rift!", tierDef.color)
+		Notify.Chat("🌀 " .. tierDef.name .. ": " .. def.name .. " is coming through a rift!", tierDef.color)
 	end
 
 	task.wait(RIFT_OPEN)
@@ -602,7 +602,7 @@ function PlanetService:ApplyHit(tier, player, damage, impact, normal, crit, colo
 		s.layer = layer
 		local text = layer == 2 and ("The crust of " .. s.def.name .. " is shattered! The MANTLE is exposed!")
 			or ("The CORE of " .. s.def.name .. " is exposed! Finish it!")
-		Notify.Announce(text, layer == 2 and Color3.fromRGB(255, 130, 40) or s.def.core)
+		Notify.Chat(text, layer == 2 and Color3.fromRGB(255, 130, 40) or s.def.core)
 		fxRemote:FireAllClients({ kind = "layer", tier = tier, center = s.center, radius = s.R, layer = layer, color = s.def.core })
 	end
 	updateAttributes(s)

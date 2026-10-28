@@ -14,8 +14,14 @@ function Notify.Toast(player, text, kind)
 	toastRemote:FireClient(player, text, kind or "info")
 end
 
+-- Big banner for everyone: keep it for the moments that matter (phases, events, planets destroyed).
 function Notify.Announce(text, color)
 	announceRemote:FireAllClients(text, color or Color3.fromRGB(255, 220, 120))
+end
+
+-- Chat line only (no banner): other players' achievements, planet layers...
+function Notify.Chat(text, color)
+	announceRemote:FireAllClients(text, color or Color3.fromRGB(255, 220, 120), true)
 end
 
 return Notify

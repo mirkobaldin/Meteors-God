@@ -214,6 +214,13 @@ end
 
 -- Leaving the launch ------------------------------------------------------------
 
+local function stopStorm()
+	if storm then
+		storm:Destroy()
+		storm = nil
+	end
+end
+
 local function finish()
 	stopStorm()
 	local root = getRoot()
@@ -249,13 +256,6 @@ local function cancel(reason)
 end
 
 -- Throw ------------------------------------------------------------------------
-
-local function stopStorm()
-	if storm then
-		storm:Destroy()
-		storm = nil
-	end
-end
 
 local function release()
 	if state ~= "aiming" then

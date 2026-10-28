@@ -19,11 +19,43 @@ local gui
 local toastList
 local banner
 
+local MAX_TOASTS = 2
+local lastToast = {} -- [text] = os.clock(): the same toast isn't repeated within a few seconds
+
+local function chat(text)
+	pcall(function()
+		local channels = TextChatService:FindFirstChild("TextChannels")
+		local system = channels and channels:FindFirstChild("RBXSystem")
+		if system then
+			system:DisplaySystemMessage(text)
+		end
+	end)
+end
+
 function Notifications.Toast(text, kind)
+	local now = os.clock()
+	if lastToast[text] and now - lastToast[text] < 4 then
+		return
+	end
+	lastToast[text] = now
+	-- Only a couple on screen: the oldest goes away.
+	local items = {}
+	for _, child in ipairs(toastList:GetChildren()) do
+		if child:IsA("GuiObject") then
+			table.insert(items, child)
+		end
+	end
+	table.sort(items, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i = 1, #items - MAX_TOASTS + 1 do
+		items[i]:Destroy()
+	end
 	local color = kind == "good" and UI.Colors.Good or kind == "bad" and UI.Colors.Bad or UI.Colors.Blue
 	local item = UI.Panel({
-		Size = UDim2.new(1, 0, 0, 40),
-		BackgroundTransparency = 0.1,
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundTransparency = 0.25,
+		LayoutOrder = math.floor(now * 1000) % 1e9,
 		Parent = toastList,
 	})
 	UI.Text({
@@ -31,10 +63,13 @@ function Notifications.Toast(text, kind)
 		Position = UDim2.fromOffset(8, 4),
 		Text = text,
 		TextColor3 = color,
-		MaxTextSize = 20,
+		MaxTextSize = 18,
 		Parent = item,
 	})
-	task.delay(3.5, function()
+	task.delay(2.6, function()
+		if not item.Parent then
+			return
+		end
 		local t = TweenService:Create(item, TweenInfo.new(0.4), { BackgroundTransparency = 1 })
 		t:Play()
 		for _, d in ipairs(item:GetDescendants()) do
@@ -49,28 +84,43 @@ function Notifications.Toast(text, kind)
 	end)
 end
 
-local bannerToken = 0
-function Notifications.Announce(text, color)
-	bannerToken += 1
-	local token = bannerToken
-	banner.Text = text
-	banner.TextColor3 = color or UI.Colors.Gold
+-- Banners queue up (never on top of each other); if too many pile up, the old ones go to chat only.
+local bannerQueue = {}
+local bannerBusy = false
+
+local function showNextBanner()
+	local entry = table.remove(bannerQueue, 1)
+	if not entry then
+		bannerBusy = false
+		return
+	end
+	bannerBusy = true
+	banner.Text = entry.text
+	banner.TextColor3 = entry.color or UI.Colors.Gold
 	banner.TextTransparency = 0
 	banner.TextStrokeTransparency = 0.2
 	banner.Position = UDim2.new(0.5, 0, 0.16, -20)
 	TweenService:Create(banner, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Position = UDim2.new(0.5, 0, 0.16, 0) }):Play()
-	task.delay(4, function()
-		if token == bannerToken then
-			TweenService:Create(banner, TweenInfo.new(0.6), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
-		end
+	task.delay(#bannerQueue > 0 and 2.2 or 3.2, function()
+		local t = TweenService:Create(banner, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 })
+		t:Play()
+		t.Completed:Wait()
+		showNextBanner()
 	end)
-	pcall(function()
-		local channels = TextChatService:FindFirstChild("TextChannels")
-		local system = channels and channels:FindFirstChild("RBXSystem")
-		if system then
-			system:DisplaySystemMessage(text)
-		end
-	end)
+end
+
+function Notifications.Announce(text, color, chatOnly)
+	chat(text)
+	if chatOnly then
+		return
+	end
+	table.insert(bannerQueue, { text = text, color = color })
+	while #bannerQueue > 2 do
+		table.remove(bannerQueue, 1)
+	end
+	if not bannerBusy then
+		showNextBanner()
+	end
 end
 
 -- Big centered popup used for discoveries and rewards.
@@ -168,9 +218,10 @@ function Notifications:Start()
 		local subtitle = def.rarity .. (info.upgraded and "  ·  LUCKY! Rarity upgraded!" or "")
 		Anim.Play("Pickup")
 		Sfx.Play((rarity.order >= 3 or info.mutation) and "RarePickup" or "Pickup")
-		if rarity.order >= 3 or info.mutation or info.upgraded then
+		-- Common pickups only make a sound; rare ones get a toast, epic+ a popup.
+		if rarity.order >= 4 or info.mutation or info.upgraded then
 			Notifications.Popup(name .. "!", subtitle, rarity.color)
-		else
+		elseif rarity.order == 3 then
 			Notifications.Toast("You picked up: " .. name, "good")
 		end
 	end)
