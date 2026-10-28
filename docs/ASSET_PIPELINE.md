@@ -59,9 +59,21 @@ o aggiorna quel file. Niente accessori: corna, creste, cristalli e pinne fanno p
 **Stile scelto: due strati.** Dentro un **nucleo luminoso** del colore dell'elemento; sopra un **guscio di roccia a
 placche bombate** con le crepe (stile lava raffreddata) che scendono sotto il nucleo, così la luce esce dalle crepe.
 La **faccia è scavata** nel guscio (occhi arrabbiati e bocca con le zanne, lato −Z) e si vede il nucleo dai buchi.
-L'FBX contiene **solo il guscio** (+ corna/cristalli): il nucleo in Roblox è la sfera Neon `InnerGlow` (0,86 del
-diametro) che il codice mette dentro quando c'è la mesh; in quel caso niente faccia a pezzi. I colori sono cotti in
-una texture 2048 (`<Nome>.png`, inclusa nell'FBX). ~16.000 triangoli per cometa.
+Ogni FBX contiene **due mesh**: `Body` (guscio + corna/cristalli) e `Jaw` (la mascella, che il codice apre e chiude).
+Il nucleo in Roblox è la sfera Neon `InnerGlow` (0,86 del diametro) e le **pupille** sono due sfere create dal codice
+dentro i buchi degli occhi (guardano la telecamera). Le animazioni (mascella che mastica/digrigna/ruggisce/russa
+secondo l'espressione, pupille che si muovono) sono nel controller client `MeteorAnim`. I colori sono cotti in due
+texture (`<Nome>.png` e `<Nome>_Jaw.png`, incluse nell'FBX). ~16.000 triangoli per cometa.
+
+**Import in Studio:** File → Import 3D → scegli `art/export/meteors/<Nome>.fbx` → ottieni un Model con le MeshPart
+`Body` e `Jaw`. Rinomina il Model con l'`id` esatto (es. `Royal Comet`, con lo spazio) e mettilo in
+`ReplicatedStorage/Assets/Meteors/`. Non spostare né ridimensionare i pezzi: il codice li posiziona da solo con
+`Config/MeteorMeshes.lua`.
+
+**Scegliere i materiali:** in `src/shared/Config/Meteors.lua` ogni cometa può avere `rockMaterial` (materiale
+Roblox di guscio e mascella, es. `Enum.Material.Basalt`, `Slate`, `Glacier`, `Marble`, `Foil`...) e `glowColor`
+(colore del nucleo che brilla). I colori della roccia e delle crepe nel modello si cambiano in cima a
+`art/blender/meteors_build.py` (`rock1`, `rock2`, `glow` di ogni cometa) e poi si rilancia lo script.
 
 ## 3. Regole tecniche per i modelli (Blender → Roblox)
 
