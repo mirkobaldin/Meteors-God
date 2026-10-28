@@ -4,6 +4,7 @@
 
 local Shared = script.Parent
 local Meteors = require(Shared.Config.Meteors)
+local AssetLibrary = require(Shared.AssetLibrary)
 
 local MeteorVisual = {}
 
@@ -290,6 +291,29 @@ function MeteorVisual.Build(typeId, opts)
 	weld.Part1 = shell
 	weld.Parent = core
 
+	-- Custom rock mesh from ReplicatedStorage.Assets.Meteors replaces the generated ball.
+	local body = AssetLibrary.MeteorBody(def.id)
+	if body then
+		shell:Destroy()
+		local s = body.Size
+		local maxDim = math.max(s.X, s.Y, s.Z, 0.01)
+		body.Name = "Body"
+		body:SetAttribute("Unit", s / maxDim)
+		body.Size = (s / maxDim) * size * 1.1
+		body.Anchored = false
+		body.Massless = true
+		body.CanCollide = false
+		body.CanQuery = false
+		body.CanTouch = false
+		body.CFrame = core.CFrame
+		body.Parent = model
+		local bodyWeld = Instance.new("WeldConstraint")
+		bodyWeld.Part0 = core
+		bodyWeld.Part1 = body
+		bodyWeld.Parent = core
+		core.Transparency = 1
+	end
+
 	local fire = Instance.new("Fire")
 	fire.Color = def.fire[1]
 	fire.SecondaryColor = def.fire[2]
@@ -346,6 +370,10 @@ function MeteorVisual.SetSize(model, size)
 	local shell = model:FindFirstChild("Shell")
 	if shell then
 		shell.Size = Vector3.new(size * 1.04, size * 1.04, size * 1.04)
+	end
+	local body = model:FindFirstChild("Body")
+	if body and body:GetAttribute("Unit") then
+		body.Size = body:GetAttribute("Unit") * size * 1.1
 	end
 	local fire = core:FindFirstChildOfClass("Fire")
 	if fire then

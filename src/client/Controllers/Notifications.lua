@@ -10,6 +10,8 @@ local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
+local Anim = require(script.Parent.Anim)
+local Sfx = require(script.Parent.Sfx)
 
 local Notifications = {}
 
@@ -117,7 +119,7 @@ function Notifications:Init()
 	toastList = UI.New("Frame", {
 		Name = "Toasts",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -150),
+		Position = UDim2.new(0.5, 0, 1, -200),
 		Size = UDim2.fromOffset(420, 220),
 		BackgroundTransparency = 1,
 		Parent = gui,
@@ -143,6 +145,16 @@ function Notifications:Init()
 end
 
 function Notifications:Start()
+	local Players = game:GetService("Players")
+	local lastEvolution = Players.LocalPlayer:GetAttribute("Evolution")
+	Players.LocalPlayer:GetAttributeChangedSignal("Evolution"):Connect(function()
+		local evo = Players.LocalPlayer:GetAttribute("Evolution")
+		if lastEvolution and evo > lastEvolution then
+			Sfx.Play("Evolve", 0.8)
+			Notifications.Popup("EVOLUZIONE!", "Sei diventato più divino", UI.Colors.Gold)
+		end
+		lastEvolution = evo
+	end)
 	Remotes.Get("Toast").OnClientEvent:Connect(Notifications.Toast)
 	Remotes.Get("Announce").OnClientEvent:Connect(Notifications.Announce)
 
@@ -154,6 +166,8 @@ function Notifications:Start()
 		local rarity = Meteors.RarityByID[def.rarity]
 		local name = (info.mutation and (info.mutation .. " ") or "") .. def.id
 		local subtitle = def.rarity .. (info.upgraded and "  ·  FORTUNA! Rarità superiore!" or "")
+		Anim.Play("Pickup")
+		Sfx.Play((rarity.order >= 3 or info.mutation) and "RarePickup" or "Pickup")
 		if rarity.order >= 3 or info.mutation or info.upgraded then
 			Notifications.Popup(name .. "!", subtitle, rarity.color)
 		else
@@ -162,6 +176,7 @@ function Notifications:Start()
 	end)
 
 	Remotes.Get("PlanetDestroyed").OnClientEvent:Connect(function(info)
+		Sfx.Play("PlanetExplode", 0.9)
 		Notifications.Popup(
 			"PIANETA DISTRUTTO!",
 			"+" .. Format.Number(info.shards) .. " Frammenti  ·  contributo " .. math.floor(info.share * 100) .. "%",

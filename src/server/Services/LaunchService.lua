@@ -151,7 +151,7 @@ local function beginLaunch(player)
 		mutation = meteor.m,
 		size = size,
 		returnCFrame = pad.returnCFrame,
-		planetPosition = Game.World.PlanetPosition,
+		planetPosition = services.WorldService.PlanetPosition,
 	}
 end
 

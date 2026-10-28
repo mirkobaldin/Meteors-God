@@ -7,11 +7,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
+local AssetLibrary = require(Shared.AssetLibrary)
 
 local WorldService = {}
 
 WorldService.Altars = {} -- { {index, model, center: CFrame, owner: Player?, sign: TextLabel} }
 WorldService.LaunchPads = {} -- { {part, returnCFrame} }
+WorldService.PlanetPosition = Game.World.PlanetPosition
 
 local W = Game.World
 local worldFolder
@@ -151,18 +153,27 @@ local function buildCitadel()
 	end
 end
 
-local function buildAltars()
-	local folder = Instance.new("Folder")
-	folder.Name = "Altars"
-	folder.Parent = worldFolder
-
+local function defaultAltarCenters()
+	local centers = {}
 	for i = 1, W.AltarCount do
 		-- Spread altars on the back 3/4 of the ring so they never block the bridges.
 		local a = math.pi * 0.25 + (i - 1) / (W.AltarCount - 1) * math.pi * 1.5
 		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
 		local pos = dir * W.AltarRingRadius + Vector3.new(0, W.CitadelY, 0)
-		local center = CFrame.lookAt(pos, Vector3.new(0, W.CitadelY, 0))
+		centers[i] = CFrame.lookAt(pos, Vector3.new(0, W.CitadelY, 0))
+	end
+	return centers
+end
 
+-- Procedural plinth + name sign for each house spot. A custom house model (Assets/Houses)
+-- is placed on top of it later by UpdateHouse, hiding the plinth.
+local function buildAltars(centers)
+	local folder = Instance.new("Folder")
+	folder.Name = "Altars"
+	folder.Parent = worldFolder
+
+	for i, center in ipairs(centers) do
+		local pos = center.Position
 		local model = Instance.new("Model")
 		model.Name = "Altar" .. i
 
@@ -209,8 +220,40 @@ local function buildAltars()
 			center = center,
 			owner = nil,
 			sign = text,
+			signGui = bb,
+			signPost = signPost,
+			house = nil,
+			houseTier = nil,
+			slots = nil,
 		})
 	end
+end
+
+local function makePad(index, position, returnCFrame, padsFolder)
+	local pad = disc(position, 7, 0.4, {
+		Name = "LaunchPad" .. index,
+		Material = Enum.Material.Neon,
+		Color = Color3.fromRGB(255, 230, 120),
+		CanCollide = false,
+		Parent = padsFolder,
+	})
+	local label = Instance.new("BillboardGui")
+	label.Size = UDim2.new(14, 0, 3, 0)
+	label.StudsOffset = Vector3.new(0, 6, 0)
+	label.LightInfluence = 0
+	label.MaxDistance = 200
+	label.Parent = pad
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.fromScale(1, 1)
+	t.Font = Enum.Font.FredokaOne
+	t.TextScaled = true
+	t.TextColor3 = Color3.fromRGB(255, 240, 180)
+	t.TextStrokeTransparency = 0.3
+	t.Text = "LANCIO"
+	t.Parent = label
+	pad:SetAttribute("ReturnCFrame", returnCFrame)
+	table.insert(WorldService.LaunchPads, { part = pad, returnCFrame = returnCFrame })
 end
 
 local function buildBridges()
@@ -247,35 +290,141 @@ local function buildBridges()
 		end
 
 		local endZ = startZ + W.BridgeLength
-		local pad = disc(Vector3.new(x, W.CitadelY + 0.1, endZ - 6), 7, 0.4, {
-			Name = "LaunchPad" .. b,
-			Material = Enum.Material.Neon,
-			Color = Color3.fromRGB(255, 230, 120),
-			CanCollide = false,
-			Parent = padsFolder,
-		})
-		local label = Instance.new("BillboardGui")
-		label.Size = UDim2.new(14, 0, 3, 0)
-		label.StudsOffset = Vector3.new(0, 6, 0)
-		label.LightInfluence = 0
-		label.MaxDistance = 200
-		label.Parent = pad
-		local t = Instance.new("TextLabel")
-		t.BackgroundTransparency = 1
-		t.Size = UDim2.fromScale(1, 1)
-		t.Font = Enum.Font.FredokaOne
-		t.TextScaled = true
-		t.TextColor3 = Color3.fromRGB(255, 240, 180)
-		t.TextStrokeTransparency = 0.3
-		t.Text = "LANCIO"
-		t.Parent = label
-
 		local returnCFrame = CFrame.lookAt(
 			Vector3.new(x, W.CitadelY + 4, startZ + 4),
 			Vector3.new(x, W.CitadelY + 4, startZ + 40)
 		)
-		pad:SetAttribute("ReturnCFrame", returnCFrame)
-		table.insert(WorldService.LaunchPads, { part = pad, returnCFrame = returnCFrame })
+		makePad(b, Vector3.new(x, W.CitadelY + 0.1, endZ - 6), returnCFrame, padsFolder)
+	end
+end
+
+-- Uses Assets/Map/Citadel and its markers (see docs/ASSET_PIPELINE.md). Returns false if absent.
+local function buildCustomMap()
+	local map = AssetLibrary.Clone("Map", "Citadel")
+	if not map then
+		return false
+	end
+	for _, d in ipairs(map:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+		end
+	end
+	local markers = map:FindFirstChild("Markers")
+	if markers then
+		for _, m in ipairs(markers:GetDescendants()) do
+			if m:IsA("BasePart") then
+				m.Transparency = 1
+				m.CanCollide = false
+				m.CanQuery = false
+				m.CanTouch = false
+			end
+		end
+	end
+	map.Parent = worldFolder
+
+	local spawnCF = AssetLibrary.MarkerCFrame(map, "Markers/Spawn") or CFrame.new(0, W.CitadelY + 1, 0)
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "Spawn"
+	spawn.Anchored = true
+	spawn.Neutral = true
+	spawn.Size = Vector3.new(10, 1, 10)
+	spawn.CFrame = CFrame.new(spawnCF.Position)
+	spawn.Transparency = 1
+	spawn.CanCollide = false
+	spawn.Duration = 0
+	spawn.Parent = worldFolder
+
+	local centers = {}
+	for i = 1, W.AltarCount do
+		local cf = AssetLibrary.MarkerCFrame(map, "Markers/House" .. i)
+		if cf then
+			table.insert(centers, CFrame.new(cf.Position) * cf.Rotation)
+		end
+	end
+	buildAltars(#centers > 0 and centers or defaultAltarCenters())
+
+	local padsFolder = Instance.new("Folder")
+	padsFolder.Name = "LaunchPads"
+	padsFolder.Parent = worldFolder
+	for b = 1, 8 do
+		local padCF = AssetLibrary.MarkerCFrame(map, "Markers/LaunchPad" .. b)
+		if padCF then
+			local returnCF = AssetLibrary.MarkerCFrame(map, "Markers/Return" .. b) or spawnCF
+			makePad(b, padCF.Position, returnCF + Vector3.new(0, 3, 0), padsFolder)
+		end
+	end
+	local planetCF = AssetLibrary.MarkerCFrame(map, "Markers/Planet")
+	if planetCF then
+		WorldService.PlanetPosition = planetCF.Position
+	end
+	return true
+end
+
+-- Places the custom house model for this evolution tier on the player's spot.
+-- Returns true when the house changed. No-op when there are no house assets.
+function WorldService:UpdateHouse(player, tier)
+	local altar = WorldService:GetAltar(player)
+	if not altar or altar.houseTier == tier then
+		return false
+	end
+	local house = AssetLibrary.House(tier)
+	if not house then
+		return false
+	end
+	if altar.house then
+		altar.house:Destroy()
+	end
+	for _, d in ipairs(house:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+		end
+	end
+	house:PivotTo(altar.center)
+	house.Name = "House_" .. player.Name
+	house.Parent = altar.model
+	altar.house = house
+	altar.houseTier = tier
+
+	for _, name in ipairs({ "Base", "Glow" }) do
+		local p = altar.model:FindFirstChild(name)
+		if p then
+			p.Transparency = 1
+			p.CanCollide = false
+		end
+	end
+	altar.slots = {}
+	for k = 1, 4 do
+		local cf = AssetLibrary.MarkerCFrame(house, "Slot" .. k)
+		if cf then
+			altar.slots[k] = cf
+			local slotPart = house:FindFirstChild("Slot" .. k)
+			if slotPart and slotPart:IsA("BasePart") then
+				slotPart.Transparency = 1
+				slotPart.CanCollide = false
+			end
+		end
+	end
+	local sign = house:FindFirstChild("Sign")
+	if sign and sign:IsA("BasePart") then
+		altar.signGui.Parent = sign
+	end
+	return true
+end
+
+local function removeHouse(altar)
+	if altar.house then
+		altar.house:Destroy()
+	end
+	altar.house = nil
+	altar.houseTier = nil
+	altar.slots = nil
+	altar.signGui.Parent = altar.signPost
+	for name, transparency in pairs({ Base = 0, Glow = 0 }) do
+		local p = altar.model:FindFirstChild(name)
+		if p then
+			p.Transparency = transparency
+			p.CanCollide = name == "Base"
+		end
 	end
 end
 
@@ -302,6 +451,7 @@ function WorldService:ReleaseAltar(player)
 			altar.owner = nil
 			altar.sign.Text = "Altare libero"
 			altar.model:SetAttribute("OwnerUserId", 0)
+			removeHouse(altar)
 		end
 	end
 end
@@ -342,9 +492,11 @@ function WorldService:Init()
 	worldFolder.Parent = workspace
 
 	setupLighting()
-	buildCitadel()
-	buildAltars()
-	buildBridges()
+	if not buildCustomMap() then
+		buildCitadel()
+		buildAltars(defaultAltarCenters())
+		buildBridges()
+	end
 end
 
 function WorldService:Start()

@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Planets = require(Shared.Config.Planets)
+local AssetLibrary = require(Shared.AssetLibrary)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 
@@ -106,7 +107,83 @@ local function flingAway(part, distance, duration)
 	end)
 end
 
+local function nameTag(model, def, position)
+	local anchor = basePart({
+		Name = "NameAnchor",
+		Size = Vector3.new(1, 1, 1),
+		Transparency = 1,
+		CFrame = CFrame.new(position),
+	})
+	anchor.Parent = model
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(160, 0, 26, 0)
+	bb.LightInfluence = 0
+	bb.MaxDistance = 2000
+	bb.Parent = anchor
+	local text = Instance.new("TextLabel")
+	text.BackgroundTransparency = 1
+	text.Size = UDim2.fromScale(1, 1)
+	text.Font = Enum.Font.FredokaOne
+	text.TextScaled = true
+	text.TextColor3 = def.legendary and Color3.fromRGB(255, 220, 90) or Color3.fromRGB(255, 255, 255)
+	text.TextStrokeTransparency = 0.2
+	text.Text = def.name
+	text.Parent = bb
+end
+
+-- Planet from Assets/Planets/<name> (pre-fractured Crust folder + Mantle + Core).
+local function buildCustomPlanet(model, def, center)
+	model.Name = "Planet"
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanTouch = false
+		end
+	end
+	model:PivotTo(CFrame.new(center))
+	local core = model:FindFirstChild("Core")
+	if not (core and core:IsA("BasePart")) then
+		core = ball(R * 0.7, { Name = "Core", Material = Enum.Material.Neon, Color = def.core, CFrame = CFrame.new(center) })
+		core.Parent = model
+	end
+	local mantle = model:FindFirstChild("Mantle")
+	if not (mantle and mantle:IsA("BasePart")) then
+		mantle = ball(R * 1.6, { Name = "Mantle", Material = Enum.Material.Neon, Color = def.mantle, CFrame = CFrame.new(center) })
+		mantle.Parent = model
+	end
+	local light = Instance.new("PointLight")
+	light.Color = def.core
+	light.Range = 60
+	light.Brightness = 3
+	light.Parent = core
+
+	-- Crust pieces go to the model root so they fly away individually.
+	local chunks = {}
+	local crust = model:FindFirstChild("Crust")
+	if crust then
+		for _, d in ipairs(crust:GetDescendants()) do
+			if d:IsA("BasePart") then
+				table.insert(chunks, d)
+			end
+		end
+		for _, chunk in ipairs(chunks) do
+			chunk.Name = "Crust"
+			chunk.Parent = model
+		end
+		crust:Destroy()
+	end
+	nameTag(model, def, center + Vector3.new(0, model:GetExtentsSize().Y / 2 + 25, 0))
+	model.PrimaryPart = core
+	return model, core, mantle, chunks
+end
+
 local function buildPlanet(def, center)
+	local custom = AssetLibrary.Clone("Planets", def.legendary and "Legendary" or def.name)
+	if custom then
+		return buildCustomPlanet(custom, def, center)
+	end
+
 	local model = Instance.new("Model")
 	model.Name = "Planet"
 
@@ -289,7 +366,7 @@ function PlanetService:GetImpactPoint()
 	end
 	local spread = Vector3.new(rng:NextNumber(-0.5, 0.5), rng:NextNumber(-0.4, 0.4), rng:NextNumber(-0.5, 0.5))
 	local dir = (toCitadel + spread).Unit
-	local radius = layer == 2 and state.mantle.Size.X / 2 or R * 0.35
+	local radius = layer == 2 and state.mantle.Size.X / 2 or state.core.Size.X / 2
 	return state.center + dir * radius
 end
 
@@ -601,6 +678,7 @@ function PlanetService:Init(s)
 end
 
 function PlanetService:Start()
+	CENTER = services.WorldService.PlanetPosition -- may come from the custom map marker
 	task.delay(2, function()
 		spawnPlanet(Planets.Get(currentIndex))
 	end)

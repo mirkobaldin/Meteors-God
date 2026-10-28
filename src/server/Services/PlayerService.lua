@@ -127,6 +127,10 @@ function PlayerService:RefreshCharacter(player)
 		humanoid.WalkSpeed = 16 + 2 * (data.upgrades.speed or 0)
 	end
 	EvolutionVisuals.Apply(character, data.evolution, PlayerService:HasPass(player, "VIP"))
+	-- The player's house grows with their evolution (only if house models exist).
+	if services.WorldService:UpdateHouse(player, data.evolution) then
+		services.MeteorService:ResetAltarDisplay(player)
+	end
 end
 
 function PlayerService:Evolve(player, force)

@@ -7,7 +7,12 @@ local ORDER = {
 	"Notifications",
 	"HUD",
 	"Inventory",
+	"Evolution",
+	"Upgrades",
 	"Shop",
+	"Daily",
+	"Menu",
+	"Index",
 	"Trade",
 	"Launch",
 }

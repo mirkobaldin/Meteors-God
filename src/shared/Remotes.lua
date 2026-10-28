@@ -27,6 +27,9 @@ local EVENTS = {
 	"TradeSetOffer", -- ({uid})
 	"TradeConfirm", -- ()
 	"TradeCancel", -- ()
+	"ClaimDaily", -- ()
+	"ClaimGift", -- ()
+	"RedeemCode", -- (code)
 }
 
 local FUNCTIONS = {

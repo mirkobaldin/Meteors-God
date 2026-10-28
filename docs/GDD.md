@@ -181,9 +181,35 @@ Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo).
 - Nessun acquisto casuale a pagamento nella v0.1 (niente casse): niente obblighi di probabilità né restrizioni di trading.
 - Prezzi in chiaro, una sola valuta di gioco.
 
-## 10. Roadmap
+## 10. Interfaccia (stile simulator di successo)
+
+- **In alto a sinistra**: contatori 🏆 Pianeti distrutti e 💎 Frammenti.
+- **Sinistra**: griglia di pulsanti grandi: Meteoriti, Evoluzione (badge "!" quando puoi evolverti), Potenzia,
+  Regalo (timer, poi "RISCATTA!"), Indice, Scambi.
+- **In alto al centro**: fase del ciclo con timer + barra vita del pianeta.
+- **In alto a destra**: Negozio (solo Robux, schede Offerte / Game Pass) e Menu a tendina
+  (Giornaliero, Codici, Impostazioni, Nascondi HUD).
+- **Destra**: offerte in evidenza (Pacchetto Iniziale, 2x Potere, Ira Divina) con "SOLO R$ X".
+- **In basso**: Potere totale e Potere/s, barra dell'Evoluzione (MAX all'ultima), 4 acquisti rapidi di Potere/Boost.
+- Pannelli separati: Evoluzione (attuale → prossima, requisiti, Evolvi / Salta Evoluzione R$ / Ascendi),
+  Potenziamenti (Frammenti), Indice collezione, Premi giornalieri, Codici, Impostazioni.
+
+## 11. Ritorno giornaliero
+
+- **Premi giornalieri** (7 giorni, giorno 7 = grande ricompensa: meteorite Epico + 10.000 Frammenti).
+  Saltare un giorno non azzera la serie. Il calendario si apre da solo quando c'è un premio.
+- **Regalo a tempo**: ogni 10 minuti di gioco (45 s in Studio) un regalo di Frammenti.
+- **Codici**: in `src/shared/Config/Rewards.lua` (RELEASE, METEORGODS).
+
+## 12. Case dei giocatori
+
+Ogni giocatore ha un Santuario sul suo spot. Con i modelli in `Assets/Houses/House1..6` il santuario
+**cresce con l'Evoluzione** e i meteoriti fluttuano sugli slot del modello. Vedi `docs/ASSET_PIPELINE.md`.
+
+## 13. Roadmap
 
 - **v0.1 (questa)**: cittadella, ponti, ciclo, pioggia, altari e crescita, lancio, pianeti a strati, Potere +1, evoluzioni, ascensione, upgrade, negozio, trading, salvataggi.
-- **v0.2**: suoni (asset ID in config), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
-- **v0.3**: calendario 7 giorni, codici, forziere gruppo, negozio facce a rotazione, Auto-Lancio, Pioggia di Meteoriti acquistabile.
+- **Prossimo**: suoni e animazioni (ID in `Config/Assets.lua`), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
+- **v0.2 (fatto)**: nuova interfaccia, premi giornalieri, regalo a tempo, codici, indice, hook per modelli/animazioni/suoni.
+- **v0.3**: forziere gruppo, negozio facce a rotazione, Auto-Lancio, Pioggia di Meteoriti acquistabile.
 - **Settimanale**: un pianeta nuovo + 1–2 meteoriti nuovi.

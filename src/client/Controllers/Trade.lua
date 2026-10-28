@@ -4,11 +4,13 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Assets = require(Shared.Config.Assets)
 local Game = require(Shared.Config.Game)
 local Meteors = require(Shared.Config.Meteors)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
+local Panels = require(script.Parent.Panels)
 local State = require(script.Parent.State)
 
 local Trade = {}
@@ -211,7 +213,7 @@ local function renderPlayerList()
 				Parent = rowFrame,
 			}, function()
 				Remotes.Get("TradeRequest"):FireServer(other.UserId)
-				playerListPanel.Visible = false
+				Panels.Close("TradeList")
 			end)
 		end
 	end
@@ -223,13 +225,6 @@ local function renderPlayerList()
 			MaxTextSize = 18,
 			Parent = playerList,
 		})
-	end
-end
-
-function Trade:TogglePlayerList()
-	playerListPanel.Visible = not playerListPanel.Visible
-	if playerListPanel.Visible then
-		renderPlayerList()
 	end
 end
 
@@ -276,34 +271,28 @@ end
 
 function Trade:Init()
 	gui = UI.Screen("Trade", 15)
-	playerListPanel = UI.Panel({
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -150, 0.5, 0),
-		Size = UDim2.fromOffset(300, 320),
-		Visible = false,
-		Parent = gui,
+	local content
+	playerListPanel, content = UI.Window(gui, {
+		Title = "Scambi",
+		Emoji = "🤝",
+		Icon = Assets.Icons.Trade,
+		HeaderColor = Color3.fromRGB(60, 110, 170),
+		Size = UDim2.fromOffset(440, 460),
+		MinSize = Vector2.new(360, 320),
 	})
 	UI.Text({
-		Size = UDim2.new(1, -20, 0, 30),
-		Position = UDim2.fromOffset(10, 8),
-		Text = "🤝 Scegli con chi scambiare",
-		TextColor3 = UI.Colors.Gold,
-		MaxTextSize = 22,
-		Parent = playerListPanel,
-	})
-	UI.Text({
-		Size = UDim2.new(1, -20, 0, 18),
-		Position = UDim2.fromOffset(10, 38),
-		Text = "Serve l'Evoluzione " .. Game.Trade.MinEvolution .. " per scambiare",
+		Size = UDim2.new(1, 0, 0, 22),
+		Text = "Scegli con chi scambiare  ·  serve l'Evoluzione " .. Game.Trade.MinEvolution,
 		TextColor3 = UI.Colors.Muted,
-		MaxTextSize = 14,
-		Parent = playerListPanel,
+		MaxTextSize = 18,
+		Parent = content,
 	})
 	playerList = UI.List({
-		Size = UDim2.new(1, -20, 1, -70),
-		Position = UDim2.fromOffset(10, 62),
-		Parent = playerListPanel,
+		Size = UDim2.new(1, 0, 1, -30),
+		Position = UDim2.fromOffset(0, 30),
+		Parent = content,
 	}, 6)
+	Panels.Register("TradeList", playerListPanel, renderPlayerList)
 	buildWindow()
 end
 

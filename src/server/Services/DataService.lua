@@ -39,6 +39,8 @@ local function defaultData()
 		receipts = {},
 		tradeHistory = {},
 		boosts = { power2xUntil = 0 },
+		daily = { streak = 0, lastDay = -1 },
+		codes = {},
 		firstJoin = os.time(),
 		lastSeen = os.time(),
 	}

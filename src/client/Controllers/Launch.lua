@@ -11,8 +11,12 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
+local MeteorVisual = require(Shared.MeteorVisual)
 
 local UI = require(script.Parent.UI)
+local Anim = require(script.Parent.Anim)
+local Sfx = require(script.Parent.Sfx)
+local Menu = require(script.Parent.Menu)
 
 local Launch = {}
 
@@ -30,6 +34,30 @@ local chargeT = 0
 local charge = 0
 local hoverStart = 0
 local refs = {}
+local BASE_FOV = 70
+
+local function heldMeteor()
+	return workspace:FindFirstChild("Launch_" .. player.Name)
+end
+
+local function tweenFov(fov, time)
+	TweenService:Create(camera, TweenInfo.new(time or 0.3, Enum.EasingStyle.Quad), { FieldOfView = fov }):Play()
+end
+
+local function beginHold()
+	if state ~= "hover" or holding then
+		return
+	end
+	holding = true
+	Anim.Play("Charge", true)
+	Sfx.Play("ChargeLoop", 0.4)
+	tweenFov(BASE_FOV + 12, L.ChargePeriod)
+end
+
+local function flash()
+	refs.flash.BackgroundTransparency = 0.3
+	TweenService:Create(refs.flash, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+end
 
 local function getRoot()
 	local character = player.Character
@@ -75,6 +103,10 @@ end
 local function endLaunch()
 	local root = getRoot()
 	clearConstraints()
+	Anim.Stop("Hover")
+	Anim.Stop("Charge")
+	Sfx.Stop("ChargeLoop")
+	tweenFov(BASE_FOV, 0.4)
 	camera.CameraType = Enum.CameraType.Custom
 	if root and launchData and launchData.returnCFrame then
 		root.AssemblyLinearVelocity = Vector3.zero
@@ -126,6 +158,8 @@ local function startHover(result)
 
 	refs.meteorName.Text = (result.mutation and (result.mutation .. " ") or "") .. result.meteorType
 	showChargeUI(true)
+	Anim.Play("Hover", true)
+	BASE_FOV = camera.FieldOfView
 end
 
 local function requestLaunch()
@@ -156,6 +190,13 @@ local function release()
 		humanoid.CameraOffset = Vector3.zero
 	end
 	Remotes.Get("FireLaunch"):FireServer(charge)
+	Anim.Stop("Charge", 0.05)
+	Anim.Stop("Hover", 0.05)
+	Anim.Play("Throw", false, 0.05)
+	Sfx.Stop("ChargeLoop")
+	Sfx.Play("Throw")
+	flash()
+	tweenFov(BASE_FOV - 6, 0.15)
 	-- Safety net in case the result never arrives.
 	local myData = launchData
 	task.delay(L.FlightTime + 4, function()
@@ -199,6 +240,10 @@ local function followMeteor(result)
 			:Play()
 	end
 	task.delay(result.flightTime, function()
+		Sfx.Play(result.crit and "Crit" or "Impact", 0.8)
+		if result.crit then
+			Anim.Play("Celebrate")
+		end
 		refs.damage.Text = "💥 " .. Format.Number(result.damage)
 		refs.damage.TextTransparency = 0
 		refs.damage.TextStrokeTransparency = 0
@@ -210,8 +255,8 @@ end
 local function buildUI()
 	local gui = UI.Screen("Launch", 8)
 	local root = UI.New("Frame", {
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -110),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.66, 0),
 		Size = UDim2.fromOffset(460, 110),
 		BackgroundTransparency = 1,
 		Visible = false,
@@ -272,9 +317,7 @@ local function buildUI()
 		Parent = gui,
 	})
 	refs.mobileButton.MouseButton1Down:Connect(function()
-		if state == "hover" then
-			holding = true
-		end
+		beginHold()
 	end)
 	refs.mobileButton.MouseButton1Up:Connect(function()
 		if holding then
@@ -282,6 +325,14 @@ local function buildUI()
 		end
 	end)
 
+	refs.flash = UI.New("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(255, 240, 220),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 0,
+		Parent = gui,
+	})
 	refs.critFlash = UI.Text({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.35),
@@ -328,7 +379,7 @@ end
 function Launch:Start()
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if state == "hover" and not processed and isChargeInput(input) then
-			holding = true
+			beginHold()
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
@@ -369,9 +420,14 @@ function Launch:Start()
 				local phase = (chargeT / L.ChargePeriod) % 2
 				charge = phase <= 1 and phase or 2 - phase
 				local _, humanoid = getRoot()
-				if humanoid then
+				if humanoid and Menu.Get("CameraShake") then
 					local s = 0.15 + charge * 0.35
 					humanoid.CameraOffset = Vector3.new(math.random() * s - s / 2, math.random() * s - s / 2, 0)
+				end
+				-- The meteor swells while charging (local visual only).
+				local model = heldMeteor()
+				if model and model.PrimaryPart and launchData then
+					MeteorVisual.SetSize(model, launchData.size * (1 + 0.6 * charge))
 				end
 			end
 			refs.fill.Size = UDim2.fromScale(charge, 1)

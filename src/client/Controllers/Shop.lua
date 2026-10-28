@@ -1,282 +1,231 @@
--- Shop: Shard upgrades, Game Passes and Developer Products, plus the Starter Pack offer.
+-- Robux shop window: tabs for permanent Game Passes and repeatable Offers.
+-- Also shows the Starter Pack offer once per session right after a planet explodes.
 
-local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local Game = require(Shared.Config.Game)
+local Assets = require(Shared.Config.Assets)
 local Monetization = require(Shared.Config.Monetization)
-local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
+local Panels = require(script.Parent.Panels)
+local Prices = require(script.Parent.Prices)
 
 local Shop = {}
 
 local player = Players.LocalPlayer
-local panel
-local list
-local controllers
-local priceCache = {}
+local gui
+local window
+local grid
+local tabButtons = {}
+local currentTab = "Offers"
 local starterOffered = false
 
-local PASS_ORDER = { "VIP", "Power2x", "Shards2x", "ExtraAltar" }
+local PASS_ORDER = {
+	{ key = "VIP", emoji = "👑" },
+	{ key = "Power2x", emoji = "⚡" },
+	{ key = "Shards2x", emoji = "💎" },
+	{ key = "ExtraAltar", emoji = "🏛️" },
+}
 local PRODUCT_ORDER = {
-	"StarterPack",
-	"DivineWrath",
-	"LegendaryPlanet",
-	"Boost2x",
-	"PowerS",
-	"PowerM",
-	"PowerL",
-	"InstantRecharge",
-	"EvolveNow",
+	{ key = "StarterPack", emoji = "🎁" },
+	{ key = "DivineWrath", emoji = "🔥" },
+	{ key = "LegendaryPlanet", emoji = "⭐" },
+	{ key = "Boost2x", emoji = "🧪" },
+	{ key = "PowerS", emoji = "⚡" },
+	{ key = "PowerM", emoji = "⚡" },
+	{ key = "PowerL", emoji = "⚡" },
+	{ key = "InstantRecharge", emoji = "⏱️" },
+	{ key = "EvolveNow", emoji = "🌟" },
 }
 
-local function price(id, infoType)
-	if id == 0 then
-		return nil
-	end
-	if priceCache[id] then
-		return priceCache[id]
-	end
-	local ok, info = pcall(function()
-		return MarketplaceService:GetProductInfo(id, infoType)
-	end)
-	if ok and info and info.PriceInRobux then
-		priceCache[id] = info.PriceInRobux
-		return info.PriceInRobux
-	end
-	return nil
-end
-
-local function section(title, order)
-	UI.Text({
-		Size = UDim2.new(1, -8, 0, 30),
-		Text = title,
-		TextColor3 = UI.Colors.Gold,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		LayoutOrder = order,
-		MaxTextSize = 24,
-		Parent = list,
-	})
-end
-
-local function item(order, title, desc, buttonText, buttonColor, enabled, onClick)
-	local f = UI.New("Frame", {
-		Size = UDim2.new(1, -8, 0, 62),
-		BackgroundColor3 = UI.Colors.PanelLight,
-		BackgroundTransparency = 0.2,
+local function card(order, emoji, title, desc, priceText, enabled, onClick)
+	local c = UI.New("Frame", {
+		BackgroundColor3 = Color3.fromRGB(55, 50, 110),
 		BorderSizePixel = 0,
 		LayoutOrder = order,
-		Parent = list,
+		Parent = grid,
 	})
-	UI.Corner(UDim.new(0, 10)).Parent = f
+	UI.Corner().Parent = c
+	UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = c
+	UI.New("UIGradient", {
+		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 160, 210)),
+		Rotation = 90,
+		Parent = c,
+	})
+	UI.Text({ Size = UDim2.new(1, 0, 0.36, 0), Position = UDim2.fromScale(0, 0.03), Text = emoji, MaxTextSize = 56, Parent = c })
 	UI.Text({
-		Size = UDim2.new(0.7, -16, 0, 26),
-		Position = UDim2.fromOffset(12, 6),
+		Size = UDim2.new(1, -12, 0.16, 0),
+		Position = UDim2.new(0, 6, 0.38, 0),
 		Text = title,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		MaxTextSize = 20,
-		Parent = f,
+		TextStrokeTransparency = 0,
+		MaxTextSize = 24,
+		Parent = c,
 	})
 	UI.Text({
-		Size = UDim2.new(0.7, -16, 0, 20),
-		Position = UDim2.fromOffset(12, 34),
+		Size = UDim2.new(1, -12, 0.2, 0),
+		Position = UDim2.new(0, 6, 0.54, 0),
 		Text = desc,
-		TextColor3 = UI.Colors.Muted,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(230, 225, 255),
+		TextWrapped = true,
 		MaxTextSize = 15,
-		Parent = f,
+		Parent = c,
 	})
-	local b = UI.Button({
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -10, 0.5, 0),
-		Size = UDim2.new(0.28, 0, 0, 42),
-		Text = buttonText,
-		BackgroundColor3 = enabled and buttonColor or Color3.fromRGB(80, 75, 95),
-		MaxTextSize = 18,
-		Parent = f,
+	UI.Button({
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -8),
+		Size = UDim2.new(1, -16, 0.18, 0),
+		Text = priceText,
+		BackgroundColor3 = enabled and UI.Colors.Good or Color3.fromRGB(90, 80, 110),
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		MaxTextSize = 24,
+		Parent = c,
 	}, function()
 		if enabled then
 			onClick()
 		end
 	end)
-	return b
 end
 
 function Shop:Refresh()
-	if not panel.Visible then
+	if not window.Visible then
 		return
 	end
-	local scroll = list.CanvasPosition
-	UI.Clear(list)
-	local order = 0
-	local function nextOrder()
-		order += 1
-		return order
+	UI.Clear(grid)
+	for name, b in pairs(tabButtons) do
+		b.BackgroundColor3 = name == currentTab and UI.Colors.Gold or UI.Colors.PanelLight
+		b.TextColor3 = name == currentTab and Color3.fromRGB(40, 25, 10) or Color3.fromRGB(255, 255, 255)
 	end
-
-	section("⬆️ POTENZIAMENTI (Frammenti)", nextOrder())
-	local shards = player:GetAttribute("Shards") or 0
-	for _, u in ipairs(Game.Upgrades) do
-		local level = player:GetAttribute("Upgrade_" .. u.id) or 0
-		local cost = Game.UpgradeCost(u.id, level)
-		local text = cost and ("💎 " .. Format.Number(cost)) or "MAX"
-		item(
-			nextOrder(),
-			u.name .. "  (Lv " .. level .. "/" .. u.max .. ")",
-			u.desc,
-			text,
-			UI.Colors.Blue,
-			cost ~= nil and shards >= cost,
-			function()
-				Remotes.Get("BuyUpgrade"):FireServer(u.id)
-				task.delay(0.3, function()
-					Shop:Refresh()
-				end)
-			end
-		)
-	end
-
-	section("🎟️ GAME PASS (permanenti)", nextOrder())
-	for _, key in ipairs(PASS_ORDER) do
-		local pass = Monetization.GamePasses[key]
-		local owned = player:GetAttribute("Pass_" .. key) == true
-		local p = price(pass.id, Enum.InfoType.GamePass)
-		local text = owned and "Posseduto" or (pass.id == 0 and "Presto" or ("R$ " .. (p or "?")))
-		item(nextOrder(), pass.name, pass.desc, text, UI.Colors.Good, not owned and pass.id ~= 0, function()
-			MarketplaceService:PromptGamePassPurchase(player, pass.id)
-		end)
-	end
-
-	section("🛍️ OFFERTE", nextOrder())
-	for _, key in ipairs(PRODUCT_ORDER) do
-		local product = Monetization.Products[key]
-		local hidden = key == "StarterPack" and player:GetAttribute("StarterPackBought") == true
-		if not hidden then
-			local p = price(product.id, Enum.InfoType.Product)
-			local text = product.id == 0 and "Presto" or ("R$ " .. (p or "?"))
-			item(nextOrder(), product.name, product.desc, text, UI.Colors.Gold, product.id ~= 0, function()
-				MarketplaceService:PromptProductPurchase(player, product.id)
+	if currentTab == "Passes" then
+		for i, entry in ipairs(PASS_ORDER) do
+			local pass = Monetization.GamePasses[entry.key]
+			local owned = player:GetAttribute("Pass_" .. entry.key) == true
+			card(i, entry.emoji, pass.name, pass.desc, Prices.PassText(entry.key), pass.id ~= 0 and not owned, function()
+				Prices.BuyPass(entry.key)
 			end)
 		end
+	else
+		local order = 0
+		for _, entry in ipairs(PRODUCT_ORDER) do
+			local product = Monetization.Products[entry.key]
+			local hidden = entry.key == "StarterPack" and player:GetAttribute("StarterPackBought") == true
+			if not hidden then
+				order += 1
+				card(order, entry.emoji, product.name, product.desc, Prices.ProductText(entry.key), product.id ~= 0, function()
+					Prices.BuyProduct(entry.key)
+				end)
+			end
+		end
 	end
-	list.CanvasPosition = scroll
 end
 
-function Shop:Toggle()
-	panel.Visible = not panel.Visible
-	if panel.Visible then
-		controllers.Inventory:Close()
-		task.spawn(function()
-			Shop:Refresh()
-		end)
-	end
-end
-
-function Shop:Close()
-	panel.Visible = false
-end
-
--- Shown once per session, at a happy moment (right after a planet explodes).
 local function offerStarterPack()
 	local product = Monetization.Products.StarterPack
 	if starterOffered or product.id == 0 or player:GetAttribute("StarterPackBought") then
 		return
 	end
 	starterOffered = true
-	local gui = panel.Parent
 	local offer = UI.Panel({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(380, 220),
+		Size = UDim2.fromOffset(400, 240),
+		ZIndex = 20,
 		Parent = gui,
 	})
 	UI.Text({
-		Size = UDim2.new(1, -20, 0, 40),
+		Size = UDim2.new(1, -20, 0, 44),
 		Position = UDim2.fromOffset(10, 10),
-		Text = "⭐ STARTER PACK ⭐",
+		Text = "⭐ PACCHETTO INIZIALE ⭐",
 		TextColor3 = UI.Colors.Gold,
+		TextStrokeTransparency = 0,
 		MaxTextSize = 32,
 		Parent = offer,
 	})
 	UI.Text({
-		Size = UDim2.new(1, -30, 0, 70),
-		Position = UDim2.fromOffset(15, 56),
+		Size = UDim2.new(1, -30, 0, 80),
+		Position = UDim2.fromOffset(15, 60),
 		Text = product.desc,
-		MaxTextSize = 20,
+		TextWrapped = true,
+		MaxTextSize = 22,
 		Parent = offer,
 	})
-	local p = price(product.id, Enum.InfoType.Product)
 	UI.Button({
-		Position = UDim2.new(0, 20, 1, -64),
-		Size = UDim2.new(0.5, -30, 0, 48),
-		Text = "R$ " .. (p or "?"),
+		Position = UDim2.new(0, 20, 1, -66),
+		Size = UDim2.new(0.5, -30, 0, 50),
+		Text = Prices.ProductText("StarterPack"),
+		BackgroundColor3 = UI.Colors.Good,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
 		Parent = offer,
 	}, function()
-		MarketplaceService:PromptProductPurchase(player, product.id)
+		Prices.BuyProduct("StarterPack")
 		offer:Destroy()
 	end)
 	UI.Button({
-		Position = UDim2.new(0.5, 10, 1, -64),
-		Size = UDim2.new(0.5, -30, 0, 48),
+		Position = UDim2.new(0.5, 10, 1, -66),
+		Size = UDim2.new(0.5, -30, 0, 50),
 		Text = "Più tardi",
 		BackgroundColor3 = UI.Colors.PanelLight,
-		TextColor3 = UI.Colors.Text,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
 		Parent = offer,
 	}, function()
 		offer:Destroy()
 	end)
 end
 
-function Shop:Init(c)
-	controllers = c
-	local gui = UI.Screen("Shop", 10)
-	panel = UI.Panel({
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.new(0.55, 0, 0.66, 0),
-		Visible = false,
-		Parent = gui,
+function Shop:Init()
+	gui = UI.Screen("Shop", 10)
+	local content
+	window, content = UI.Window(gui, {
+		Title = "Negozio",
+		Emoji = "🛒",
+		Icon = Assets.Icons.Shop,
+		HeaderColor = Color3.fromRGB(60, 140, 80),
 	})
-	UI.New("UISizeConstraint", { MaxSize = Vector2.new(720, 600), MinSize = Vector2.new(400, 320), Parent = panel })
-	UI.Text({
-		Size = UDim2.new(1, -60, 0, 34),
-		Position = UDim2.fromOffset(14, 8),
-		Text = "🛒 NEGOZIO DIVINO",
-		TextColor3 = UI.Colors.Gold,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		MaxTextSize = 30,
-		Parent = panel,
+	local tabs = UI.New("Frame", { Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, Parent = content })
+	UI.New("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = tabs,
 	})
-	UI.Button({
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 8),
-		Size = UDim2.fromOffset(36, 36),
-		Text = "X",
-		BackgroundColor3 = UI.Colors.Bad,
-		Parent = panel,
-	}, function()
-		panel.Visible = false
+	for i, tab in ipairs({ { "Offers", "🛍️ Offerte" }, { "Passes", "🎟️ Game Pass" } }) do
+		tabButtons[tab[1]] = UI.Button({
+			Size = UDim2.fromOffset(180, 40),
+			Text = tab[2],
+			LayoutOrder = i,
+			Parent = tabs,
+		}, function()
+			currentTab = tab[1]
+			Shop:Refresh()
+		end)
+	end
+	local scroll = UI.New("ScrollingFrame", {
+		Position = UDim2.fromOffset(0, 52),
+		Size = UDim2.new(1, 0, 1, -52),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		Parent = content,
+	})
+	grid = scroll
+	UI.New("UIGridLayout", {
+		CellSize = UDim2.new(0.32, -6, 0, 230),
+		CellPadding = UDim2.fromOffset(10, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = scroll,
+	})
+	Panels.Register("Shop", window, function()
+		Shop:Refresh()
 	end)
-	list = UI.List({
-		Size = UDim2.new(1, -20, 1, -56),
-		Position = UDim2.fromOffset(10, 48),
-		Parent = panel,
-	})
 end
 
 function Shop:Start()
 	Remotes.Get("PlanetDestroyed").OnClientEvent:Connect(function()
 		task.delay(3, offerStarterPack)
-	end)
-	player:GetAttributeChangedSignal("Shards"):Connect(function()
-		-- Cheap: only rebuild when open.
-		if panel.Visible then
-			Shop:Refresh()
-		end
 	end)
 end
 

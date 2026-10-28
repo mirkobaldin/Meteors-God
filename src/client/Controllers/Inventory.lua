@@ -3,12 +3,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Assets = require(Shared.Config.Assets)
 local Meteors = require(Shared.Config.Meteors)
 local MeteorMath = require(Shared.Util.MeteorMath)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
+local Panels = require(script.Parent.Panels)
 local State = require(script.Parent.State)
 
 local Inventory = {}
@@ -16,7 +18,6 @@ local Inventory = {}
 local panel
 local header
 local list
-local controllers
 
 local function sortedMeteors(snapshot)
 	local arr = {}
@@ -176,62 +177,31 @@ function Inventory:Refresh()
 	list.CanvasPosition = scroll
 end
 
-function Inventory:Toggle()
-	panel.Visible = not panel.Visible
-	if panel.Visible then
-		controllers.Shop:Close()
-		Inventory:Refresh()
-	end
-end
-
-function Inventory:Close()
-	panel.Visible = false
-end
-
-function Inventory:Init(c)
-	controllers = c
+function Inventory:Init()
 	local gui = UI.Screen("Inventory", 10)
-	panel = UI.Panel({
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.new(0.6, 0, 0.62, 0),
-		Visible = false,
-		Parent = gui,
+	local content
+	panel, content = UI.Window(gui, {
+		Title = "I tuoi Meteoriti",
+		Emoji = "☄️",
+		Icon = Assets.Icons.Meteors,
+		HeaderColor = Color3.fromRGB(150, 80, 50),
 	})
-	UI.New("UISizeConstraint", { MaxSize = Vector2.new(820, 560), MinSize = Vector2.new(420, 300), Parent = panel })
-	UI.Text({
-		Size = UDim2.new(1, -60, 0, 34),
-		Position = UDim2.fromOffset(14, 8),
-		Text = "☄️ I TUOI METEORITI",
-		TextColor3 = UI.Colors.Gold,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		MaxTextSize = 30,
-		Parent = panel,
-	})
-	UI.Button({
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 8),
-		Size = UDim2.fromOffset(36, 36),
-		Text = "X",
-		BackgroundColor3 = UI.Colors.Bad,
-		Parent = panel,
-	}, function()
-		panel.Visible = false
-	end)
 	header = UI.Text({
-		Size = UDim2.new(1, -28, 0, 22),
-		Position = UDim2.fromOffset(14, 44),
+		Size = UDim2.new(1, 0, 0, 24),
 		Text = "",
 		TextColor3 = UI.Colors.Muted,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		MaxTextSize = 18,
-		Parent = panel,
+		MaxTextSize = 20,
+		Parent = content,
 	})
 	list = UI.List({
-		Size = UDim2.new(1, -20, 1, -80),
-		Position = UDim2.fromOffset(10, 72),
-		Parent = panel,
+		Size = UDim2.new(1, 0, 1, -30),
+		Position = UDim2.fromOffset(0, 30),
+		Parent = content,
 	})
+	Panels.Register("Inventory", panel, function()
+		Inventory:Refresh()
+	end)
 end
 
 function Inventory:Start()
@@ -240,7 +210,7 @@ function Inventory:Start()
 	end)
 	task.spawn(function()
 		while true do
-			task.wait(1)
+			task.wait(2)
 			Inventory:Refresh()
 		end
 	end)

@@ -266,6 +266,9 @@ end
 -- Altar display -----------------------------------------------------------
 
 local function slotCFrame(altar, slot, slots)
+	if altar.slots and altar.slots[slot] then
+		return CFrame.new(altar.slots[slot].Position)
+	end
 	local a = (slot - 1) / slots * math.pi * 2
 	local offset = Vector3.new(math.sin(a) * 5.5, 7, math.cos(a) * 5.5)
 	return CFrame.new(altar.center.Position + offset)
@@ -340,6 +343,12 @@ local function clearDisplays(player)
 	displays[player] = nil
 end
 
+-- Rebuilds the floating meteors (e.g. after the house model changed and slots moved).
+function MeteorService:ResetAltarDisplay(player)
+	clearDisplays(player)
+	MeteorService:RefreshAltar(player)
+end
+
 function MeteorService:Init(s)
 	services = s
 	inventoryRemote = Remotes.Get("InventoryUpdate")
@@ -353,6 +362,8 @@ function MeteorService:Start()
 		local altar = services.WorldService:AssignAltar(player)
 		if not altar then
 			Notify.Toast(player, "Nessun altare libero in questo server", "bad")
+		else
+			services.WorldService:UpdateHouse(player, data.evolution)
 		end
 		-- Every new god starts with one meteor so the first launch happens in minute one.
 		if next(data.meteors) == nil then
