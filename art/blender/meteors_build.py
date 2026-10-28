@@ -24,6 +24,9 @@ import bpy  # first: with the bpy module, bmesh/mathutils exist only after it
 import bmesh
 from mathutils import Vector, noise
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import meteor_base  # noqa: E402  (the base mesh, modeled on art/reference/meteor_base.png)
+
 # ------------------------------------------------------------------------------------------------
 # Meteor definitions
 # ------------------------------------------------------------------------------------------------
@@ -52,7 +55,7 @@ METEORS = [
     dict(id="Venom", rarity="Rare", seed=5,
          rock1=rgb(.06, .1, .045), rock2=rgb(.16, .06, .18), glow=rgb(.45, 1, .1), glowStrength=5,
          freq=3.0, plate=.04, groove=.025, gw=.07, lump=.06, det=.012, rough=.55,
-         features=[("horns", 2, rgb(.12, .05, .14)), ("backspikes", 6)]),
+         features=[("backspikes", 6)]),
     dict(id="Crystal", rarity="Rare", seed=6,
          rock1=rgb(.17, .15, .19), rock2=rgb(.28, .25, .3), glow=rgb(1, .3, .8), glowStrength=3,
          freq=2.8, plate=.035, groove=.02, gw=.05, lump=.05, det=.01, rough=.6,
@@ -60,7 +63,7 @@ METEORS = [
     dict(id="Magma", rarity="Epic", seed=7,
          rock1=rgb(.035, .03, .03), rock2=rgb(.08, .06, .05), glow=rgb(1, .22, .02), glowStrength=8,
          freq=2.4, plate=.06, groove=.04, gw=.11, lump=.05, det=.012, rough=.8,
-         features=[("horns", 2, rgb(.05, .04, .04)), ("backspikes", 4)]),
+         features=[("backspikes", 4)]),
     dict(id="Aurora", rarity="Epic", seed=8,
          rock1=rgb(.02, .045, .12), rock2=rgb(.04, .09, .2), glow=rgb(.1, 1, .7), glow2=rgb(.65, .3, 1), glowStrength=4,
          freq=2.2, plate=.035, groove=.02, gw=.06, lump=.03, det=.004, rough=.45,
@@ -77,10 +80,11 @@ METEORS = [
          rock1=rgb(.01, .006, .016), rock2=rgb(.03, .012, .05), glow=rgb(.6, .15, 1), glowStrength=6,
          freq=3.4, plate=.04, groove=.03, gw=.07, lump=.08, det=.012, rough=.7,
          features=[("orbit", 7), ("backspikes", 5)]),
-    dict(id="Supernova", rarity="Mythic", seed=12,
-         rock1=rgb(.55, .06, .04), rock2=rgb(.95, .62, .12), glow=rgb(1, .85, .6), glowStrength=9,
-         freq=2.3, plate=.06, groove=.05, gw=.13, lump=.04, det=.01, rough=.45, metalPlates=True,
-         features=[("crest", 7, rgb(1, .95, .85), 12), ("orbit", 5)]),
+    dict(id="Supernova", rarity="Mythic", seed=12,  # reference: art/reference/meteor_supernova.png
+         rock1=rgb(.07, .045, .08), rock2=rgb(.17, .1, .15), glow=rgb(1, .3, .75), glowStrength=6,
+         galaxy=(rgb(.25, .02, .45), rgb(1, .25, .7), rgb(1, .55, .25), rgb(1, .95, .9)),
+         freq=2.3, plate=.06, groove=.05, gw=.13, lump=.04, det=.01, rough=.6,
+         features=[("orbit", 9)]),
     dict(id="Blue Comet", rarity="Epic", seed=13,
          rock1=rgb(.03, .08, .35), rock2=rgb(.08, .18, .55), glow=rgb(.3, .9, 1), glowStrength=5,
          freq=2.8, plate=.035, groove=.02, gw=.06, lump=.03, det=.008, rough=.4, stretch=1.3,
@@ -459,13 +463,103 @@ def build_core(d):
     bmesh.ops.create_icosphere(bm, subdivisions=4, radius=0.43)
     gc = glow_of(d)
     mat = new_material(d["id"] + "_Core", gc, rough=.4, emit=gc, emit_strength=d.get("coreStrength", 1.6))
+    if d.get("galaxy"):
+        # Swirling galaxy light (renders only; in Roblox the core is a neon ball).
+        nt = mat.node_tree
+        bsdf = nt.nodes["Principled BSDF"]
+        wave = nt.nodes.new("ShaderNodeTexWave")
+        wave.wave_type = "RINGS"
+        wave.inputs["Scale"].default_value = 3.0
+        wave.inputs["Distortion"].default_value = 9.0
+        wave.inputs["Detail"].default_value = 6.0
+        nz = nt.nodes.new("ShaderNodeTexNoise")
+        nz.inputs["Scale"].default_value = 5.0
+        nz.inputs["Detail"].default_value = 8.0
+        mix = nt.nodes.new("ShaderNodeMath")
+        mix.operation = "MULTIPLY"
+        nt.links.new(wave.outputs["Fac"], mix.inputs[0])
+        nt.links.new(nz.outputs["Fac"], mix.inputs[1])
+        ramp = nt.nodes.new("ShaderNodeValToRGB")
+        cr = ramp.color_ramp
+        cols = d["galaxy"]
+        cr.elements[0].position, cr.elements[0].color = 0.0, (*cols[0], 1)
+        cr.elements[1].position, cr.elements[1].color = 1.0, (*cols[3], 1)
+        for pos, c in ((0.3, cols[1]), (0.55, cols[2])):
+            e = cr.elements.new(pos)
+            e.color = (*c, 1)
+        nt.links.new(mix.outputs["Value"], ramp.inputs["Fac"])
+        nt.links.new(ramp.outputs["Color"], bsdf.inputs["Emission Color"])
+        nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+        bsdf.inputs["Emission Strength"].default_value = 5.0
     core = mesh_object(d["id"] + "_Core", bm, mat, smooth=True)
     fill_feature_colors(core, gc, gc)
     return core
 
 
 def build_body(d, subdiv, budget=None):
-    """Outer layer: a rock shell of rounded plates. Along the cracks the shell dips below the
+    """Outer layer: the base mesh (art/blender/meteor_base.py): packed chipped boulders, horn-brows
+    with spirals, eyes and fanged mouth carved through the stones. The faces of the stones turned
+    towards the glowing core catch its light; the core shows between the stones and in the face."""
+    stones, base, brows, cutter = meteor_base.build_base(d["seed"])
+    st = mesh_object(d["id"] + "_Stones", stones, body_material(d), smooth=False)
+    fb = mesh_object(d["id"] + "_FaceBase", base, body_material(d), smooth=True)
+    bpy.ops.object.select_all(action="DESELECT")
+    fb.select_set(True)
+    bpy.context.view_layer.objects.active = fb
+    sol = fb.modifiers.new("Thick", "SOLIDIFY")
+    sol.thickness = 0.05
+    sol.offset = -1
+    bpy.ops.object.modifier_apply(modifier=sol.name)
+    cme = bpy.data.meshes.new("Cutter")
+    cutter.to_mesh(cme)
+    cutter.free()
+    cut = link(bpy.data.objects.new("Cutter", cme))
+    for target in (st, fb):
+        mod = target.modifiers.new("Carve", "BOOLEAN")
+        mod.operation = "DIFFERENCE"
+        mod.object = cut
+        mod.solver = "EXACT"
+        mod.use_self = True
+        mod.use_hole_tolerant = True
+        bpy.ops.object.select_all(action="DESELECT")
+        target.select_set(True)
+        bpy.context.view_layer.objects.active = target
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    bpy.data.objects.remove(cut)
+    br = mesh_object(d["id"] + "_Brows", brows, body_material(d), smooth=True)
+    shell = join([st, fb, br], d["id"] + "_Body")
+    # Colors: rock, darker in the crevices, lit by the core where it faces inwards.
+    off = Vector((d["seed"] * 13.1, d["seed"] * 7.3, d["seed"] * 3.7))
+    gc = glow_of(d)
+    me = shell.data
+    cols, glows = [], []
+    for v in me.vertices:
+        c = v.co
+        n = c.normalized()
+        rr = Vector((c.x / 1.08, c.y, c.z / 0.9)).length  # undo the squash
+        inner = smoothstep(0.5, 0.41, rr)  # deep: between the stones, inside the holes
+        h = noise.noise(c * 5 + off) * 0.5 + 0.5
+        rock = lerp3(d["rock1"], d["rock2"], h)
+        rock = tuple(x * (0.75 + 0.5 * smoothstep(0.44, 0.56, rr)) for x in rock)  # crevices darker
+        cols.append(lerp3(rock, gc, inner * 0.85))
+        glows.append(tuple(x * inner ** 1.5 for x in gc))
+    set_point_color(me, "Col", cols)
+    set_point_color(me, "Glow", glows)
+    set_point_color(me, "Metal", [(0, 0, 0)] * len(cols))
+    if budget:
+        tris = sum(len(p.vertices) - 2 for p in me.polygons)
+        if tris > budget:
+            bpy.ops.object.select_all(action="DESELECT")
+            shell.select_set(True)
+            bpy.context.view_layer.objects.active = shell
+            dec = shell.modifiers.new("Budget", "DECIMATE")
+            dec.ratio = budget / tris
+            bpy.ops.object.modifier_apply(modifier=dec.name)
+    return shell
+
+
+def build_body_plates(d, subdiv, budget=None):
+    """Previous look. Outer layer: a rock shell of rounded plates. Along the cracks the shell dips below the
     glowing core (radius 0.43), so the core shows through as sharp lines of light. The angry
     face is cut through the shell. High detail for renders/baking; `budget` = max triangles."""
     off = Vector((d["seed"] * 13.1, d["seed"] * 7.3, d["seed"] * 3.7))
@@ -741,18 +835,19 @@ def reset():
 
 
 # Rig: the jaw is a separate piece hinged behind the mouth; the pupils are balls in the eye holes.
-HINGE = Vector((0, -0.08, -0.16))  # Blender coords
-JAW_TOP = -0.17  # the jaw is the front of the shell below this height (mid mouth)
+HINGE = Vector((0, -0.12, -0.24))  # Blender coords (behind the middle of the mouth)
+JAW_TOP = -0.265  # the jaw is the front of the shell below this height (mid mouth, after the squash)
 PUPIL_R = 0.06
 PUPIL_SLIT = (0.28, 0.5, 1.0)  # x (width), y (depth), z (height): a vertical snake slit
 PUPIL_DEPTH = 0.445  # distance of the pupils' centers from the middle (just in front of the core)
 
 
 def eye_center(side):
-    xs = [p[0] for p in EYE]
-    zs = [p[1] for p in EYE]
-    x, z = sum(xs) / len(xs) * side, sum(zs) / len(zs)
-    return Vector((x, -math.sqrt(max(0.25 - x * x - z * z, 0)), z)).normalized() * PUPIL_DEPTH
+    eye = meteor_base.EYE
+    x = sum(p[0] for p in eye) / len(eye) * side
+    z = sum(p[1] for p in eye) / len(eye)
+    p = Vector((x, -math.sqrt(max(0.25 - x * x - z * z, 0)), z)).normalized() * PUPIL_DEPTH
+    return Vector((p.x * 1.08, p.y, p.z * 0.9))  # same squash as the base mesh
 
 
 def split_jaw(shell):
@@ -761,7 +856,7 @@ def split_jaw(shell):
     bpy.context.view_layer.objects.active = shell
     for p in shell.data.polygons:
         c = p.center
-        p.select = (JAW_TOP > c.z > -0.47 and abs(c.x) < 0.34 and c.normalized().dot(FRONT) > 0.3)
+        p.select = (JAW_TOP > c.z > -0.47 and abs(c.x) < 0.3 and c.normalized().dot(FRONT) > 0.45)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.separate(type="SELECTED")
     bpy.ops.object.mode_set(mode="OBJECT")
