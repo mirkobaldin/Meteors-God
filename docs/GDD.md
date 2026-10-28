@@ -325,7 +325,8 @@ Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lan
   Cosmic Hunt rifatta (camera, posa da supereroe, cometa in mano, pianetini di terreno con crateri ed esplosioni),
   prompt di Codex rifatti in stile ville moderne di lusso. Le 13 comete modellate in Blender (script
   `art/blender/meteors_build.py`): niente accessori, corna/creste/cristalli/pinne fanno parte della roccia;
-  faccia più cattiva (occhi a fessura luminosi del colore del fuoco, sopracciglia di roccia a V, denti aguzzi).
+  stile low-poly con crateri e **faccia scavata nella roccia** che brilla da dentro (senza mesh, la faccia a pezzi
+  ora ha occhi a fessura luminosi, sopracciglia di roccia a V e denti aguzzi).
 - **v0.8**: 12 giocatori, isolette dei pad, ponti più larghi, pianeti diversi che crescono, meno lag, resti sul pad finché lanci, VFX vento e fulmini, equip/nutrire/abilità, facce cattive, Reattore a Fusione, Cosmic Hunt, Stardust.
 - **v0.7**: mappa ×3, tre ponti separati con piattaforme da 4 pad, pianeti più grandi e vicini, luce diurna e skybox del proprietario, accessori non più al neon, fine del blocco all'esplosione.
 - **v0.6**: mappa dallo schizzo, pianeti di Terrain a 3 tier con crateri e spaccatura, lancio rifatto, VFX per elemento, facce 3D, pet, titoli, fusione, eventi cosmici.

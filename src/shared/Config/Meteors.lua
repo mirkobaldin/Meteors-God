@@ -17,7 +17,7 @@ Meteors.Rarities = {
 -- ability: special power when thrown
 --   damage (+x damage) | burn (+x damage over 3s) | mark (planet takes +x from everyone, 8s)
 --   chain (second strike +x) | critBoost (+x crit multiplier) | shards (+x shards) | recharge (-x recharge)
--- face.eyes: "normal" | "cyclops"
+-- face.eyes: "normal" (every meteor has two eyes)
 -- face.extra: nil | "crest" | "fins" | "horns" (rock features of the body, never accessories)
 Meteors.Types = {
 	{
@@ -157,7 +157,7 @@ Meteors.Types = {
 		rarity = "Mythic",
 		body = Color3.fromRGB(20, 10, 35),
 		fire = { Color3.fromRGB(170, 80, 255), Color3.fromRGB(30, 0, 60) },
-		face = { eyes = "cyclops" },
+		face = { eyes = "normal" },
 		baseDamage = 1000,
 		growTime = 3600,
 		powerBonus = 1.6,

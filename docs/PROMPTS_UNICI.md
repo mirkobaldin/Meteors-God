@@ -48,7 +48,7 @@ The 13 meteors (element / rarity / what makes it unique):
    blinding white-gold eyes.
 10. royal_comet: royal ice / Legendary / pale blue-white comet rock with a natural crown of ice crystals growing
     from its top and veins of gold ore in its cracks, a noble and arrogant king.
-11. void: black hole / Mythic / pitch-black rock with a single huge violet eye in the middle, purple cracks,
+11. void: black hole / Mythic / pitch-black rock with two narrow violet eyes carved into it, purple cracks,
     reality bending around its edges, very creepy.
 12. supernova: exploding star / Mythic / white-hot core breaking through red and gold armor plates, rays of light
     leaking from every crack, about to explode.

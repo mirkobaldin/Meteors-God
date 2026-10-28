@@ -36,11 +36,11 @@ METEORS = [
     dict(id="Pebble", rarity="Common", seed=1,
          rock1=rgb(.16, .15, .14), rock2=rgb(.07, .065, .06), glow=None,
          freq=2.4, plate=.04, groove=.03, gw=.05, lump=.09, det=.014, rough=.9,
-         features=[("chunks", 7), ("backspikes", 3)]),
+         features=[("backspikes", 3)]),
     dict(id="Ember", rarity="Common", seed=2,
          rock1=rgb(.045, .04, .035), rock2=rgb(.11, .07, .05), glow=rgb(1, .32, .04), glowStrength=5,
          freq=3.2, plate=.04, groove=.03, gw=.07, lump=.06, det=.012, rough=.85,
-         features=[("backspikes", 8), ("chunks", 3)]),
+         features=[("backspikes", 8)]),
     dict(id="Frost", rarity="Uncommon", seed=3,
          rock1=rgb(.05, .09, .17), rock2=rgb(.22, .35, .5), glow=rgb(.45, .85, 1), glowStrength=5,
          freq=2.8, plate=.03, groove=.02, gw=.05, lump=.05, det=.01, rough=.35,
@@ -48,7 +48,7 @@ METEORS = [
     dict(id="Spark", rarity="Uncommon", seed=4,
          rock1=rgb(.06, .06, .08), rock2=rgb(.14, .12, .11), glow=rgb(1, .8, .05), glowStrength=5,
          copper=True, freq=3.0, plate=.035, groove=.02, gw=.05, lump=.05, det=.01, rough=.6,
-         features=[("bolts", 2), ("chunks", 2)]),
+         features=[("bolts", 2)]),
     dict(id="Venom", rarity="Rare", seed=5,
          rock1=rgb(.06, .1, .045), rock2=rgb(.16, .06, .18), glow=rgb(.45, 1, .1), glowStrength=5,
          freq=3.0, plate=.04, groove=.025, gw=.07, lump=.06, det=.012, rough=.55,
@@ -63,7 +63,7 @@ METEORS = [
          features=[("horns", 2, rgb(.05, .04, .04)), ("backspikes", 4)]),
     dict(id="Aurora", rarity="Epic", seed=8,
          rock1=rgb(.02, .045, .12), rock2=rgb(.04, .09, .2), glow=rgb(.1, 1, .7), glow2=rgb(.65, .3, 1), glowStrength=4,
-         freq=2.2, plate=.035, groove=.02, gw=.06, lump=.03, det=.004, rough=.18,
+         freq=2.2, plate=.035, groove=.02, gw=.06, lump=.03, det=.004, rough=.45,
          features=[("shards", 8, rgb(.05, .12, .25))]),
     dict(id="Solar", rarity="Legendary", seed=9,
          rock1=rgb(.75, .3, .03), rock2=rgb(.45, .12, .02), glow=rgb(1, .8, .3), glowStrength=5, bodyEmit=.5,
@@ -75,7 +75,7 @@ METEORS = [
          features=[("icecrest", 9)]),
     dict(id="Void", rarity="Mythic", seed=11,
          rock1=rgb(.01, .006, .016), rock2=rgb(.03, .012, .05), glow=rgb(.6, .15, 1), glowStrength=6,
-         freq=3.4, plate=.04, groove=.03, gw=.07, lump=.08, det=.012, rough=.3,
+         freq=3.4, plate=.04, groove=.03, gw=.07, lump=.08, det=.012, rough=.7,
          features=[("orbit", 7), ("backspikes", 5)]),
     dict(id="Supernova", rarity="Mythic", seed=12,
          rock1=rgb(.55, .06, .04), rock2=rgb(.95, .62, .12), glow=rgb(1, .85, .6), glowStrength=9,
@@ -176,10 +176,10 @@ def set_point_color(me, name, values):
 
 def fill_feature_colors(obj, color, glow=(0, 0, 0), metal=0.):
     me = obj.data
-    n = len(me.vertices)
-    set_point_color(me, "Col", [color] * n)
-    set_point_color(me, "Glow", [glow] * n)
-    set_point_color(me, "Metal", [(metal, metal, metal)] * n)
+    n = len(me.polygons)
+    set_face_color(me, "Col", [color] * n)
+    set_face_color(me, "Glow", [glow] * n)
+    set_face_color(me, "Metal", [(metal, metal, metal)] * n)
 
 
 def frame_for(direction):
@@ -256,7 +256,8 @@ def random_dir(rng, avoid_front=0.25, min_z=-1.0, max_z=1.0):
 # Body
 # ------------------------------------------------------------------------------------------------
 
-def build_body(d, subdiv):
+def build_body_cracked(d, subdiv):
+    """Previous look (kept for reference): smooth rock with glowing voronoi cracks."""
     bm = bmesh.new()
     bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=0.5)
     off = Vector((d["seed"] * 13.1, d["seed"] * 7.3, d["seed"] * 3.7))
@@ -306,6 +307,148 @@ def build_body(d, subdiv):
     set_point_color(obj.data, "Glow", glows)
     set_point_color(obj.data, "Metal", metals)
     return obj
+
+
+# ------------------------------------------------------------------------------------------------
+# Carved body (the look the owner chose): faceted low-poly rock covered in octagonal craters,
+# the angry face CUT INTO the rock. The inside of every hole glows with the meteor's element.
+# ------------------------------------------------------------------------------------------------
+
+# Face holes in the front plane (x right, z up as seen from the front), Blender units.
+EYE = [(0.035, 0.0), (0.075, 0.075), (0.31, 0.165), (0.3, 0.04), (0.21, -0.055), (0.085, -0.06)]
+MOUTH = [(-0.26, -0.115), (-0.13, -0.135), (-0.095, -0.205), (-0.06, -0.14), (0.06, -0.14), (0.095, -0.205),
+         (0.13, -0.135), (0.26, -0.115), (0.2, -0.245), (0.07, -0.27), (0.035, -0.215), (-0.035, -0.215),
+         (-0.07, -0.27), (-0.2, -0.245)]
+CYCLOPS = [(-0.2, 0.06), (-0.1, 0.11), (0.0, 0.08), (0.1, 0.11), (0.2, 0.06), (0.15, -0.04), (0.0, -0.07), (-0.15, -0.04)]
+
+
+def prism_bm(bm, outline, y_front, y_back):
+    """Extrudes a 2D outline (x, z) along Y: a cutter for the face holes."""
+    front = [bm.verts.new((x, y_front, z)) for (x, z) in outline]
+    back = [bm.verts.new((x, y_back, z)) for (x, z) in outline]
+    n = len(outline)
+    bm.faces.new(front)
+    bm.faces.new(list(reversed(back)))
+    for i in range(n):
+        j = (i + 1) % n
+        bm.faces.new((front[j], front[i], back[i], back[j]))
+
+
+def frustum_bm(bm, center, normal, r_out, r_in, depth, sides=8):
+    """Octagonal pit cutter: wide at the surface, narrower at the bottom (bevelled crater)."""
+    x, y = frame_for(normal)
+    top_c = center + normal * 0.25
+    bot_c = center - normal * depth
+    angles = [k / sides * math.tau + 0.2 for k in range(sides)]
+    top = [bm.verts.new(top_c + (x * math.cos(a) + y * math.sin(a)) * r_out * 1.25) for a in angles]
+    mid = [bm.verts.new(center + (x * math.cos(a) + y * math.sin(a)) * r_out) for a in angles]
+    bot = [bm.verts.new(bot_c + (x * math.cos(a) + y * math.sin(a)) * r_in) for a in angles]
+    bm.faces.new(top)
+    bm.faces.new(list(reversed(bot)))
+    for ring_a, ring_b in ((top, mid), (mid, bot)):
+        for i in range(sides):
+            j = (i + 1) % sides
+            bm.faces.new((ring_a[j], ring_a[i], ring_b[i], ring_b[j]))
+
+
+def apply_boolean(target, cutter):
+    mod = target.modifiers.new("Carve", "BOOLEAN")
+    mod.operation = "DIFFERENCE"
+    mod.object = cutter
+    mod.solver = "EXACT"
+    mod.use_self = True
+    bpy.ops.object.select_all(action="DESELECT")
+    target.select_set(True)
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    bpy.data.objects.remove(cutter)
+
+
+def build_body(d, subdiv):
+    rng = random.Random(d["seed"] * 101)
+    off = Vector((d["seed"] * 13.1, d["seed"] * 7.3, d["seed"] * 3.7))
+    # 1) Faceted rock: a coarse icosphere pushed around by noise (flat shaded = chiselled stone).
+    # Low-poly rock: a gently deformed sphere collapsed down to a few hundred big irregular facets.
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=5, radius=0.5)
+    for v in bm.verts:
+        n = v.co.normalized()
+        r = 0.5 + noise.fractal(n * 1.3 + off, 1.0, 2.0, 2) * d.get("lump", .05) + noise.noise(n * 4 + off) * 0.025 \
+            + noise.noise(n * 11 + off) * 0.008 + abs(noise.noise(n * 7 + off * 2)) * -0.012
+        if n.dot(FRONT) > 0.55:  # keep the face area round so the carving reads well
+            r = 0.5 + (r - 0.5) * 0.35
+        co = n * r
+        if d.get("stretch") and co.y > 0:
+            co.y *= d["stretch"]
+        v.co = co
+    body = mesh_object(d["id"] + "_Body", bm, body_material(d), smooth=False)
+    mod = body.modifiers.new("Facets", "DECIMATE")
+    mod.ratio = d.get("facets", 1500) / len(body.data.polygons)
+    bpy.ops.object.select_all(action="DESELECT")
+    body.select_set(True)
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+
+    # 2) Cutters: the face and the craters, in one object.
+    cut = bmesh.new()
+    prism_bm(cut, EYE, -1.0, -0.28)  # every meteor has two eyes
+    prism_bm(cut, [(-x, z) for (x, z) in reversed(EYE)], -1.0, -0.28)
+    prism_bm(cut, MOUTH, -1.0, -0.27)
+    placed = []
+    for _ in range(d.get("craters", 55) * 10):
+        if len(placed) >= d.get("craters", 55):
+            break
+        n = Vector((rng.gauss(0, 1), rng.gauss(0, 1), rng.gauss(0, 1))).normalized()
+        if n.z > 0.92:  # no big crater on top
+            continue
+        if n.dot(FRONT) > 0.2 and abs(n.x) < 0.42 and -0.4 < n.z < 0.32:  # not on the face itself
+            continue
+        size = rng.choice((0.03, 0.035, 0.045, 0.06, 0.08, 0.1, 0.13, 0.16))
+        if any(math.acos(max(-1, min(1, n.dot(m)))) < (size + s2) * 1.35 for m, s2 in placed):
+            continue
+        placed.append((n, size))
+        frustum_bm(cut, n * 0.5, n, size, size * 0.55, size * 0.75)
+    bmesh.ops.recalc_face_normals(cut, faces=cut.faces)
+    bmesh.ops.triangulate(cut, faces=cut.faces)
+    cme = bpy.data.meshes.new("Cutter")
+    cut.to_mesh(cme)
+    cut.free()
+    cutter = link(bpy.data.objects.new("Cutter", cme))
+    apply_boolean(body, cutter)
+
+    # 3) Colors per face: rock outside, glowing element color inside the holes.
+    me = body.data
+    glow = d.get("glow")
+    cols, glows = [], []
+    for poly in me.polygons:
+        c = poly.center
+        wall = smoothstep(0.47, 0.42, c.length)  # inside a hole
+        depth = smoothstep(0.41, 0.31, c.length)  # near the bottom: glows
+        h = cell_hash(c * 7 + off)
+        rock = lerp3(d["rock1"], d["rock2"], h)
+        rock = lerp3(rock, lerp3(d["rock1"], (0, 0, 0), 0.55), wall)
+        if glow:
+            gc = glow
+            if d.get("glow2"):
+                gc = lerp3(glow, d["glow2"], noise.noise(c * 3 + off) * 0.5 + 0.5)
+            cols.append(lerp3(rock, gc, depth))
+            glows.append(tuple(x * depth for x in gc))
+        else:
+            cols.append(lerp3(rock, lerp3(d["rock2"], (0, 0, 0), 0.6), depth))
+            glows.append((0, 0, 0))
+    set_face_color(me, "Col", cols)
+    set_face_color(me, "Glow", glows)
+    set_face_color(me, "Metal", [(0, 0, 0)] * len(cols))
+    for poly in me.polygons:
+        poly.use_smooth = False
+    return body
+
+
+def set_face_color(me, name, face_values):
+    attr = me.color_attributes.get(name) or me.color_attributes.new(name, "FLOAT_COLOR", "CORNER")
+    for poly, c in zip(me.polygons, face_values):
+        for li in poly.loop_indices:
+            attr.data[li].color = (*c, 1)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -461,7 +604,7 @@ def face_preview(d):
     def B(x, y, z):
         return Vector((x, z, y))
 
-    cyclops = d["id"] == "Void"
+    cyclops = False  # every meteor has two eyes
     eye_color = d.get("glow") or (1.0, 0.8, 0.3)
     eyes = [(0, 0.08, 0.3)] if cyclops else [(-0.15, 0.07, 0.19), (0.15, 0.07, 0.19)]
     for (x, y, w) in eyes:
@@ -504,7 +647,7 @@ def build(d, subdiv=6, with_face=True):
     parts = [body]
     for f in d["features"]:
         add_feature(d, f, rng, parts)
-    face = face_preview(d) if with_face else []
+    face = []  # the face is carved in the rock (face_preview kept for the old look)
     return parts, face
 
 
@@ -570,7 +713,7 @@ def render_single(d, path):
     reset()
     scene = bpy.context.scene
     parts, face = build(d)
-    group(parts + face, Vector((0, 0, 0)), math.radians(-28))
+    group(parts + face, Vector((0, 0, 0)), math.radians(-16))
     setup_render(scene, (900, 900), 96)
     lights(scene)
     add_camera(scene, (0, -2.6, 0.5), (0, 0, 0.05), lens=55)
@@ -588,7 +731,7 @@ def render_grid(path, subdiv=6):
         x = (c - (n_in_row - 1) / 2) * 1.75
         z = -(r - 1) * 2.15
         parts, face = build(d, subdiv)
-        group(parts + face, Vector((x, 0, z)), math.radians(-25))
+        group(parts + face, Vector((x, 0, z)), math.radians(-14))
         txt = bpy.data.curves.new(d["id"] + "_Label", "FONT")
         txt.body = d["id"] + "\n" + d["rarity"]
         txt.align_x = "CENTER"
@@ -620,7 +763,7 @@ def join(parts, name):
     return obj
 
 
-def export_fbx(d, path, max_tris=2900, tex_size=1024):
+def export_fbx(d, path, max_tris=9000, tex_size=1024):
     """Low-poly mesh with the high-poly colors (cracks included) baked into one texture."""
     global BAKING
     reset()

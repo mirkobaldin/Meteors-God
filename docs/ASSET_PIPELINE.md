@@ -56,7 +56,11 @@ esatto, es. `Royal Comet`), render in `art/renders/meteors/`. Lo script scrive a
 `src/shared/Config/MeteorMeshes.lua` con il riquadro di ogni mesh: serve al codice per far combaciare la sfera della
 roccia con la faccia anche se ci sono corna o creste. Se rifai una cometa a mano, riesegui lo script con `--config`
 o aggiorna quel file. Niente accessori: corna, creste, cristalli e pinne fanno parte della roccia.
-I colori sono nei **vertex color** (crepe luminose comprese): all'import in Studio lascia attivi i vertex color.
+**Stile scelto:** roccia low-poly sfaccettata piena di crateri ottagonali, con la **faccia scavata** (occhi arrabbiati
+e bocca con le zanne sono buchi nella roccia, lato −Z). L'interno dei buchi è colorato col colore dell'elemento e,
+quando c'è la mesh, il codice mette una sfera Neon (`InnerGlow`) dentro la roccia che si vede dai buchi: niente
+faccia a pezzi in quel caso. I colori sono cotti in una texture 1024 (`<Nome>.png`, inclusa nell'FBX).
+Fino a ~6.000 triangoli per cometa.
 
 ## 3. Regole tecniche per i modelli (Blender → Roblox)
 

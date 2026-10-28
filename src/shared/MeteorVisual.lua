@@ -118,12 +118,8 @@ local function faceSpec(def, expression, hasBody)
 	local list = {}
 	local face = def.face or {}
 	local skin = def.body:Lerp(Color3.new(0, 0, 0), 0.35)
-	if face.eyes == "cyclops" then
-		eyeSpec(list, 0, 0.08, 0.3, expression, skin, def.fire[1])
-	else
-		eyeSpec(list, -0.15, 0.07, 0.19, expression, skin, def.fire[1])
-		eyeSpec(list, 0.15, 0.07, 0.19, expression, skin, def.fire[1])
-	end
+	eyeSpec(list, -0.15, 0.07, 0.19, expression, skin, def.fire[1])
+	eyeSpec(list, 0.15, 0.07, 0.19, expression, skin, def.fire[1])
 	mouthSpec(list, expression, def.body)
 	if not hasBody then -- the Blender mesh already has its horns, crests and fins
 		extraSpec(list, face.extra, def.body:Lerp(Color3.new(0, 0, 0), 0.25))
@@ -145,6 +141,10 @@ local function buildFace(model, core, def, expression)
 	end
 	local folder = Instance.new("Folder")
 	folder.Name = "Face"
+	folder.Parent = model
+	if model:FindFirstChild("Body") then
+		return -- the Blender mesh has the face carved in the rock (it glows from the InnerGlow ball)
+	end
 	local size = core.Size.X
 	for _, spec in ipairs(faceSpec(def, expression, model:FindFirstChild("Body") ~= nil)) do
 		local p = Instance.new("Part")
@@ -284,6 +284,24 @@ function MeteorVisual.Build(typeId, opts)
 		bodyWeld.C0 = CFrame.new(body:GetAttribute("UnitOffset") * size)
 		bodyWeld.Parent = core
 		core.Transparency = 1
+		-- Glowing ball inside the rock: it shows through the carved eyes, mouth and craters.
+		local glow = Instance.new("Part")
+		glow.Name = "InnerGlow"
+		glow.Shape = Enum.PartType.Ball
+		glow.Material = Enum.Material.Neon
+		glow.Color = def.fire[1]
+		glow.Size = Vector3.one * size * 0.62
+		glow.Massless = true
+		glow.CanCollide = false
+		glow.CanQuery = false
+		glow.CanTouch = false
+		glow.CastShadow = false
+		glow.CFrame = core.CFrame
+		glow.Parent = model
+		local glowWeld = Instance.new("WeldConstraint")
+		glowWeld.Part0 = core
+		glowWeld.Part1 = glow
+		glowWeld.Parent = core
 	end
 
 	local fire = Instance.new("Fire")
@@ -334,6 +352,10 @@ function MeteorVisual.SetSize(model, size)
 	local body = model:FindFirstChild("Body")
 	if body and body:GetAttribute("Unit") then
 		body.Size = body:GetAttribute("Unit") * size * (body:GetAttribute("UnitScale") or 1.1)
+		local glow = model:FindFirstChild("InnerGlow")
+		if glow then
+			glow.Size = Vector3.one * size * 0.62
+		end
 		local bodyWeld = core:FindFirstChild("BodyWeld")
 		if bodyWeld then
 			bodyWeld.C0 = CFrame.new((body:GetAttribute("UnitOffset") or Vector3.zero) * size)
