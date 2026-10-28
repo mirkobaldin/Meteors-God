@@ -12,7 +12,10 @@ local Planets = {}
 	crust.material   main material
 	crust.patches    { {material, count, size} } bumps of other materials (continents, hills); size = fraction of R
 	crust.poles      material of the polar caps (optional)
-	features         { {kind, count, material?} }  kind = "volcano" | "spikes" | "mountains" | "craters"
+	features         { {kind, count, material?, scale?} }  kind = "volcano" | "spikes" | "mountains" | "craters"
+	bands            materials of stripes around the planet (optional)
+	ring             { color, material, inner, outer (x R), tilt (degrees) } planetary ring (optional)
+	moons            number of small moons (optional)
 	core             core color (neon ball in the cavity)
 	atmosphere       glow around the planet
 ]]
@@ -26,6 +29,8 @@ Planets.Defs = {
 			poles = Enum.Material.Snow,
 		},
 		features = { { kind = "mountains", count = 9, material = Enum.Material.Rock }, { kind = "craters", count = 10 } },
+		ring = { color = Color3.fromRGB(190, 150, 110), material = Enum.Material.Slate, inner = 1.45, outer = 1.9, tilt = 18 },
+		moons = 1,
 		core = Color3.fromRGB(255, 200, 90),
 		atmosphere = Color3.fromRGB(255, 190, 130),
 	},
@@ -37,7 +42,8 @@ Planets.Defs = {
 			patches = { { Enum.Material.Snow, 12, 0.2 } },
 			poles = Enum.Material.Snow,
 		},
-		features = { { kind = "spikes", count = 22, material = Enum.Material.Glacier } },
+		features = { { kind = "spikes", count = 34, material = Enum.Material.Glacier, scale = 1.6 } },
+		moons = 2,
 		core = Color3.fromRGB(160, 240, 255),
 		atmosphere = Color3.fromRGB(150, 220, 255),
 	},
@@ -49,6 +55,8 @@ Planets.Defs = {
 			patches = { { Enum.Material.Limestone, 10, 0.2 }, { Enum.Material.Pavement, 10, 0.16 } },
 		},
 		features = { { kind = "mountains", count = 8, material = Enum.Material.Limestone } },
+		bands = { Enum.Material.Limestone, Enum.Material.Pavement, Enum.Material.Limestone, Enum.Material.Pavement },
+		ring = { color = Color3.fromRGB(255, 150, 210), material = Enum.Material.SmoothPlastic, inner = 1.4, outer = 1.75, tilt = -24 },
 		core = Color3.fromRGB(255, 255, 255),
 		atmosphere = Color3.fromRGB(255, 170, 220),
 	},
@@ -59,7 +67,7 @@ Planets.Defs = {
 			material = Enum.Material.Basalt,
 			patches = { { Enum.Material.CrackedLava, 10, 0.14 } },
 		},
-		features = { { kind = "volcano", count = 7, material = Enum.Material.Basalt } },
+		features = { { kind = "volcano", count = 9, material = Enum.Material.Basalt, scale = 1.4 } },
 		core = Color3.fromRGB(255, 240, 150),
 		atmosphere = Color3.fromRGB(255, 110, 50),
 	},
@@ -70,7 +78,8 @@ Planets.Defs = {
 			material = Enum.Material.Salt,
 			patches = { { Enum.Material.Glacier, 6, 0.12 } },
 		},
-		features = { { kind = "spikes", count = 26, material = Enum.Material.Salt }, { kind = "spikes", count = 8, material = Enum.Material.Glacier } },
+		features = { { kind = "spikes", count = 30, material = Enum.Material.Salt, scale = 2 }, { kind = "spikes", count = 10, material = Enum.Material.Glacier, scale = 1.5 } },
+		ring = { color = Color3.fromRGB(230, 150, 255), material = Enum.Material.Glass, inner = 1.5, outer = 2.1, tilt = 30 },
 		core = Color3.fromRGB(255, 120, 255),
 		atmosphere = Color3.fromRGB(220, 130, 255),
 	},
@@ -81,7 +90,9 @@ Planets.Defs = {
 			material = Enum.Material.Asphalt,
 			patches = { { Enum.Material.Slate, 10, 0.2 } },
 		},
-		features = { { kind = "spikes", count = 24, material = Enum.Material.Slate }, { kind = "craters", count = 14 } },
+		features = { { kind = "spikes", count = 24, material = Enum.Material.Slate, scale = 1.3 }, { kind = "craters", count = 14 } },
+		ring = { color = Color3.fromRGB(90, 40, 140), material = Enum.Material.Slate, inner = 1.35, outer = 1.8, tilt = -12 },
+		moons = 3,
 		core = Color3.fromRGB(190, 70, 255),
 		atmosphere = Color3.fromRGB(140, 60, 220),
 	},
@@ -93,6 +104,7 @@ Planets.Defs = {
 			patches = { { Enum.Material.Pavement, 8, 0.18 } },
 		},
 		features = { { kind = "spikes", count = 18, material = Enum.Material.Glacier } },
+		ring = { color = Color3.fromRGB(255, 210, 80), material = Enum.Material.Foil, inner = 1.4, outer = 2, tilt = 20 },
 		core = Color3.fromRGB(255, 140, 40),
 		atmosphere = Color3.fromRGB(255, 210, 90),
 		legendary = true,
@@ -104,8 +116,8 @@ Planets.Tiers = {
 		name = "Tier I",
 		color = Color3.fromRGB(120, 220, 255),
 		requiredEvolution = 1,
-		laneAngle = -32, -- degrees from +Z of this tier's bridge
-		position = Vector3.new(-1563, 450, 2502),
+		laneAngle = -50, -- degrees from +Z of this tier's bridge
+		position = Vector3.new(-2451, 450, 2057),
 		radius = 520,
 		sequence = { "Rocky Planet", "Ice Planet", "Candy Planet" },
 	},
@@ -114,7 +126,7 @@ Planets.Tiers = {
 		color = Color3.fromRGB(255, 150, 60),
 		requiredEvolution = 3, -- Demigod
 		laneAngle = 0,
-		position = Vector3.new(0, 500, 2950),
+		position = Vector3.new(0, 500, 3200),
 		radius = 600,
 		sequence = { "Lava Planet", "Crystal Planet" },
 	},
@@ -122,8 +134,8 @@ Planets.Tiers = {
 		name = "Tier III",
 		color = Color3.fromRGB(200, 110, 255),
 		requiredEvolution = 5, -- Cosmic God
-		laneAngle = 32,
-		position = Vector3.new(1563, 450, 2502),
+		laneAngle = 50,
+		position = Vector3.new(2451, 450, 2057),
 		radius = 680,
 		sequence = { "Shadow Planet" },
 	},
@@ -149,7 +161,17 @@ Planets.CoreRadius = 0.28 -- neon core floating in the cavity
 -- where share = damage / planet max HP. The sum of the craters roughly empties the planet.
 Planets.CraterScale = 1.3
 Planets.CraterMin = 0.05
-Planets.CraterMax = 0.3
+Planets.CraterMax = 0.16
+
+-- Planets grow with their HP: radius = tier radius * clamp((hp / first planet hp)^GrowthExponent, 1, MaxGrowth).
+Planets.GrowthExponent = 0.12
+Planets.MaxGrowth = 1.45
+
+function Planets.RadiusFor(tierIndex, hp)
+	local tier = Planets.Tiers[tierIndex]
+	local firstHP = Planets.Defs[tier.sequence[1]].hp
+	return tier.radius * math.clamp((hp / firstHP) ^ Planets.GrowthExponent, 1, Planets.MaxGrowth)
+end
 
 function Planets.Get(tierIndex, index)
 	local tier = Planets.Tiers[tierIndex]

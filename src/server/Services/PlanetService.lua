@@ -33,7 +33,7 @@ local legendaryQueued = false
 
 local RIFT_OPEN = 1.4 -- seconds before the planet appears
 local RIFT_CLOSE = 2.6 -- seconds the rift stays open after the planet appears
-local PAINT_MAX = 72 -- studs: max radius of crater painting (ReadVoxels cost)
+local PAINT_MAX = 48 -- studs: max radius of crater painting (ReadVoxels cost)
 
 -- Geometry helpers ------------------------------------------------------------------------
 
@@ -150,7 +150,7 @@ local function addFeatures(s)
 					terrain:FillBall(top - dir * h * 0.1, h * 0.3, Enum.Material.Snow)
 				end
 			elseif feature.kind == "volcano" then
-				local h = R * rng:NextNumber(0.12, 0.2)
+				local h = R * rng:NextNumber(0.12, 0.2) * (feature.scale or 1)
 				local top = cone(s, dir, h, h * 1.3, feature.material)
 				terrain:FillBall(top - dir * h * 0.15, h * 0.32, Enum.Material.CrackedLava)
 				terrain:FillBall(top + dir * h * 0.05, h * 0.22, Enum.Material.Air)
@@ -181,7 +181,7 @@ local function addFeatures(s)
 			elseif feature.kind == "spikes" then
 				for _ = 1, rng:NextInteger(2, 4) do
 					local d = (dir + randomDir() * 0.08).Unit
-					local length = R * rng:NextNumber(0.1, 0.24)
+					local length = R * rng:NextNumber(0.1, 0.24) * (feature.scale or 1)
 					local tilt = (d + randomDir() * 0.25).Unit
 					spike(s.center + d * (R - 10), tilt, length, length * 0.22, feature.material)
 				end
@@ -193,10 +193,80 @@ local function addFeatures(s)
 	end
 end
 
+-- Stripes of other materials around the planet (Candy).
+local function addBands(s)
+	local bands = s.def.bands
+	if not bands then
+		return
+	end
+	for i, material in ipairs(bands) do
+		local y = s.R * (-0.75 + (i - 1) * 1.5 / math.max(1, #bands - 1))
+		local thick = s.R * 0.09
+		local r = math.sqrt(math.max(s.R * s.R - y * y, 0)) + 3
+		terrain:FillCylinder(CFrame.new(s.center + Vector3.new(0, y, 0)), thick, r, material)
+	end
+end
+
+local function decoPart(s, props)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	if props.Shape then
+		p.Shape = props.Shape
+	end
+	for k, v in pairs(props) do
+		if k ~= "Shape" then
+			p[k] = v
+		end
+	end
+	p.Parent = s.folder
+	return p
+end
+
+-- Planetary ring made of flat segments, and small rocky moons around the planet.
+local function addRingAndMoons(s)
+	local ring = s.def.ring
+	if ring then
+		local frame = CFrame.new(s.center) * CFrame.Angles(math.rad(ring.tilt), 0, math.rad(ring.tilt * 0.4))
+		local inner, outer = s.R * ring.inner, s.R * ring.outer
+		local mid, width = (inner + outer) / 2, outer - inner
+		local count = 48
+		local segLen = 2 * math.pi * mid / count + 2
+		for i = 1, count do
+			local a = i / count * math.pi * 2
+			decoPart(s, {
+				Name = "Ring",
+				Size = Vector3.new(math.min(width, 2048), 3, math.min(segLen, 2048)),
+				CFrame = frame * CFrame.Angles(0, a, 0) * CFrame.new(mid, 0, 0),
+				Material = ring.material,
+				Color = ring.color:Lerp(Color3.new(1, 1, 1), (i % 3) * 0.06),
+				Transparency = 0.15,
+			})
+		end
+	end
+	for i = 1, s.def.moons or 0 do
+		local dir = randomDir()
+		local size = s.R * rng:NextNumber(0.1, 0.16) * 2
+		decoPart(s, {
+			Name = "Moon",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * math.min(size, 2048),
+			CFrame = CFrame.new(s.center + dir * s.R * (1.9 + i * 0.25)),
+			Material = Enum.Material.Slate,
+			Color = Color3.fromRGB(150, 140, 160):Lerp(s.def.atmosphere, 0.25),
+		})
+	end
+end
+
 local function buildPlanet(s)
 	local R = s.R
 	sphereSlices(s.center, R, s.def.crust.material)
+	addBands(s)
 	addFeatures(s)
+	addRingAndMoons(s)
 	sphereSlices(s.center, R * Planets.MantleRadius, Enum.Material.CrackedLava)
 	sphereSlices(s.center, R * Planets.CavityRadius, Enum.Material.Air)
 
@@ -232,15 +302,15 @@ local function buildPlanet(s)
 	atmosphere.CastShadow = false
 	atmosphere.Material = Enum.Material.ForceField
 	atmosphere.Color = s.def.atmosphere
-	atmosphere.Transparency = 0.35
-	atmosphere.Size = Vector3.one * R * 2.5
+	atmosphere.Transparency = 0.6
+	atmosphere.Size = Vector3.one * math.min(R * 2.12, 2048)
 	atmosphere.CFrame = CFrame.new(s.center)
 	atmosphere.Parent = s.folder
 end
 
 local function clearPlanet(s)
 	s.folder:ClearAllChildren()
-	sphereSlices(s.center, s.R * 1.25, Enum.Material.Air)
+	sphereSlices(s.center, s.R * 1.55, Enum.Material.Air)
 end
 
 -- State --------------------------------------------------------------------------------------
@@ -306,7 +376,7 @@ function spawnPlanet(tier, def)
 		hp = maxHP,
 		folder = folder,
 		center = tierDef.position,
-		R = tierDef.radius,
+		R = Planets.RadiusFor(tier, def.hp),
 		contributions = {},
 		arriving = true,
 		destroyed = false,

@@ -325,20 +325,17 @@ local function makePad(index, position, lookAt, returnCFrame, tier, padsFolder)
 		Parent = padsFolder,
 	})
 	pad.CFrame = CFrame.lookAt(position, Vector3.new(lookAt.X, position.Y, lookAt.Z)) * CFrame.Angles(0, 0, math.rad(90))
-	part({
-		Name = "PadBeam",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(70, R * 1.6, R * 1.6),
-		CFrame = CFrame.new(position + Vector3.new(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+	-- Low glowing ring around the pad (visible from far, but never in the way of the camera).
+	disc(position + Vector3.new(0, 0.4, 0), R + 1.5, 0.3, {
+		Name = "PadRing",
 		Material = Enum.Material.Neon,
-		Color = tierDef.color,
-		Transparency = 0.82,
+		Color = Color3.new(1, 1, 1),
+		Transparency = 0.3,
 		CanCollide = false,
 		CanQuery = false,
-		CastShadow = false,
 		Parent = padsFolder,
 	})
-	local text, bb = label(pad, "LAUNCH · " .. tierDef.name, UDim2.new(22, 0, 4, 0), Vector3.new(0, 10, 0),
+	local text, bb = label(pad, "LAUNCH · " .. tierDef.name, UDim2.new(22, 0, 4, 0), Vector3.new(0, 14, 0),
 		tierDef.color:Lerp(Color3.new(1, 1, 1), 0.4))
 	bb.MaxDistance = 600
 	text.TextStrokeTransparency = 0
@@ -545,9 +542,10 @@ local function sideIsland(cfg, outward)
 	local c = cfg.center
 	island(c, cfg.radius, cfg.radius * 0.9)
 	-- A real mountain on the outer back corner of the island.
-	mountain(c + Vector3.new(outward * cfg.radius * 0.45, 0, cfg.radius * 0.3), cfg.radius * 0.6, W.MountainHeight)
+	local out = Vector3.new(c.X, 0, c.Z).Unit
+	mountain(c + out * cfg.radius * 0.45 + Vector3.new(outward * cfg.radius * 0.15, 0, 0), cfg.radius * 0.55, W.MountainHeight)
 	local dir = (Vector3.zero - c).Unit
-	bridge(c + dir * (cfg.radius - 12), c + dir * (c.Magnitude - W.CenterRadius + 12), 22)
+	bridge(c + dir * (cfg.radius - 12), c + dir * (c.Magnitude - W.CenterRadius + 12), 30)
 	return CFrame.lookAt(c + dir * cfg.radius * 0.35, c + dir * cfg.radius)
 end
 
@@ -595,7 +593,7 @@ local function buildLane(lane, padsFolder)
 	local right = Vector3.new(dir.Z, 0, -dir.X)
 	local platform = dir * W.PlatformDistance
 	local startDist = W.CenterRadius - 15
-	local endDist = W.PlatformDistance - W.PlatformRadius + 10
+	local endDist = W.PlatformDistance - W.HubRadius + 10
 	local length = endDist - startDist
 	local width = W.LaneWidth
 	local frame = CFrame.lookAt(dir * startDist, dir * endDist)
@@ -653,27 +651,36 @@ local function buildLane(lane, padsFolder)
 		UDim2.new(40, 0, 14, 0), Vector3.new(0, 12, 0), tier.color:Lerp(Color3.new(1, 1, 1), 0.4))
 	gateLabel.MaxDistance = 2000
 
-	-- The lane's own Launch Platform with 4 pads facing its planet.
-	island(platform, W.PlatformRadius - 8, W.PlatformRadius * 0.9, Enum.Material.Basalt)
-	disc(platform + Vector3.new(0, 0.7, 0), W.PlatformRadius, 1.4, {
-		Name = "LaunchPlatform",
+	-- Hub at the end of the bridge, then 4 short bridges to 4 separate pad islets facing the planet.
+	island(platform, W.HubRadius - 6, W.HubRadius * 1.2, Enum.Material.Basalt)
+	disc(platform + Vector3.new(0, 0.7, 0), W.HubRadius, 1.4, {
+		Name = "Bifrost",
 		Material = Enum.Material.Glass,
 		Color = Color3.fromRGB(26, 28, 52),
 		Reflectance = 0.3,
 	})
-	disc(platform + Vector3.new(0, 0.5, 0), W.PlatformRadius + 2, 1, {
-		Name = "LaunchPlatformRim",
+	disc(platform + Vector3.new(0, 0.5, 0), W.HubRadius + 2, 1, {
+		Name = "HubRim",
 		Material = Enum.Material.Neon,
 		Color = tier.color,
 		CanCollide = false,
 	})
 	local toPlanet = Vector3.new(tier.position.X - platform.X, 0, tier.position.Z - platform.Z).Unit
 	local face = CFrame.lookAt(platform, platform + toPlanet)
-	local returnCFrame = face * CFrame.new(0, 4, W.PlatformRadius * 0.35)
+	local returnCFrame = face * CFrame.new(0, 4, W.HubRadius * 0.3)
 	for k = 1, 4 do
-		local a = math.rad(-36 + (k - 1) * 24)
-		local pos = (face * CFrame.new(math.sin(a) * W.PadRingRadius, 1.7, -math.cos(a) * W.PadRingRadius)).Position
-		makePad((lane - 1) * 4 + k, pos, tier.position, returnCFrame, lane, padsFolder)
+		local a = math.rad(-W.PadArc / 2 + (k - 1) * W.PadArc / 3)
+		local isletCF = face * CFrame.new(math.sin(a) * W.PadIsletDistance, 0, -math.cos(a) * W.PadIsletDistance)
+		local isletPos = isletCF.Position
+		island(isletPos, W.PadIsletRadius, W.PadIsletRadius * 1.8)
+		disc(isletPos + Vector3.new(0, 0.6, 0), W.PadIsletRadius - 2, 1.2, {
+			Name = "PadPlatform",
+			Material = Enum.Material.Marble,
+			Color = MARBLE,
+		})
+		local fromHub = (isletPos - platform).Unit
+		bridge(platform + fromHub * (W.HubRadius - 6) + Vector3.new(0, 1.4, 0), isletPos - fromHub * (W.PadIsletRadius - 6) + Vector3.new(0, 1.2, 0), 16)
+		makePad((lane - 1) * 4 + k, isletPos + Vector3.new(0, 1.6, 0), tier.position, returnCFrame, lane, padsFolder)
 	end
 end
 
