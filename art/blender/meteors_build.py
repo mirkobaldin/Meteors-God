@@ -315,10 +315,11 @@ def build_body_cracked(d, subdiv):
 # ------------------------------------------------------------------------------------------------
 
 # Face holes in the front plane (x right, z up as seen from the front), Blender units.
-EYE = [(0.035, 0.0), (0.075, 0.075), (0.31, 0.165), (0.3, 0.04), (0.21, -0.055), (0.085, -0.06)]
-MOUTH = [(-0.26, -0.115), (-0.13, -0.135), (-0.095, -0.205), (-0.06, -0.14), (0.06, -0.14), (0.095, -0.205),
-         (0.13, -0.135), (0.26, -0.115), (0.2, -0.245), (0.07, -0.27), (0.035, -0.215), (-0.035, -0.215),
-         (-0.07, -0.27), (-0.2, -0.245)]
+EYE = [(0.04, 0.0), (0.1, 0.05), (0.31, 0.13), (0.295, 0.045), (0.2, -0.025), (0.085, -0.035)]
+MOUTH = [(-0.29, -0.1), (-0.2, -0.13), (-0.17, -0.19), (-0.14, -0.135), (-0.06, -0.145), (-0.03, -0.215),
+         (0.0, -0.15), (0.03, -0.215), (0.06, -0.145), (0.14, -0.135), (0.17, -0.19), (0.2, -0.13),
+         (0.29, -0.1), (0.23, -0.24), (0.12, -0.28), (0.1, -0.225), (0.06, -0.285), (0.0, -0.29),
+         (-0.06, -0.285), (-0.1, -0.225), (-0.12, -0.28), (-0.23, -0.24)]
 CYCLOPS = [(-0.2, 0.06), (-0.1, 0.11), (0.0, 0.08), (0.1, 0.11), (0.2, 0.06), (0.15, -0.04), (0.0, -0.07), (-0.15, -0.04)]
 
 
@@ -474,30 +475,45 @@ def build_body(d, subdiv, budget=None):
     bm = bmesh.new()
     bmesh.ops.create_icosphere(bm, subdivisions=max(subdiv, 7), radius=0.5)
     cols, glows = [], []
+    off2 = off * 1.7 + Vector((5.0, 9.0, 2.0))
     for v in bm.verts:
         n = v.co.normalized()
         dist, pts = noise.voronoi(n * freq + off, distance_metric="DISTANCE", exponent=2.5)
         e = dist[1] - dist[0]
         h = cell_hash(pts[0])
         crack = (1 - smoothstep(0, gw, e)) ** 1.6
-        # Big cracks everywhere, plus thin secondary cracks inside the plates.
-        dist2, _ = noise.voronoi(n * freq * 2.6 + off * 1.9, distance_metric="DISTANCE", exponent=2.5)
-        thin = 0.0 * dist2[0]  # (secondary cracks made speckles: off)
         mask = smoothstep(0.5, 0.68, n.dot(FRONT))  # the face is one solid plate (no cracks through it)
         crack *= 1 - mask
-        pillow = max(smoothstep(0, gw * 4, e), mask)  # plates bulge in their middle
-        r = 0.47 + pillow * 0.03 + (h - 0.5) * 0.02 \
+        pillow = max(smoothstep(0, gw * 4, e), mask)
+        # Chipped stone: each plate is made of small flat facets tilted a little differently,
+        # with tiny steps between them, plus grain and pits.
+        p2 = n * freq * 3.2 + off2
+        dist2, pts2 = noise.voronoi(p2, distance_metric="DISTANCE", exponent=2.5)
+        h2 = cell_hash(pts2[0])
+        tilt = Vector((cell_hash(pts2[0] * 1.3) - 0.5, cell_hash(pts2[0] * 2.1) - 0.5, cell_hash(pts2[0] * 3.7) - 0.5))
+        facet = (p2 - pts2[0]).dot(tilt) * 0.022 + (h2 - 0.5) * 0.008
+        step = (1 - smoothstep(0, 0.05, dist2[1] - dist2[0])) * 0.006
+        grain = noise.noise(n * 34 + off) * 0.0025 - abs(noise.noise(n * 13 + off2)) * 0.006
+        r = 0.47 + pillow * 0.028 + (h - 0.5) * 0.02 \
             + noise.fractal(n * 1.3 + off, 1.0, 2.0, 2) * d.get("lump", .05) * 0.5 \
-            + noise.noise(n * 16 + off) * 0.004 - crack * 0.1 - thin * 0.05
+            + (facet - step + grain) * (1 - mask * 0.6) - crack * 0.1
+        # Face: round mask, with a heavy brow of rock overhanging each eye.
         if n.dot(FRONT) > 0.6:
             r = max(r, 0.45 + (r - 0.45) * 0.5)
+        fx, fz = abs(n.x) * 0.5 / max(0.2, -n.y), n.z * 0.5 / max(0.2, -n.y)  # face-plane coords
+        if n.dot(FRONT) > 0.55 and fx < 0.36:
+            brow_line = 0.0 + (fx - 0.04) * 0.5
+            above = fz - brow_line
+            if 0 < above < 0.09:
+                r += 0.034 * (1 - above / 0.09) * smoothstep(0.0, 0.05, fx + 0.02)
         co = n * r
         if d.get("stretch") and co.y > 0:
             co.y *= d["stretch"]
         v.co = co
-        rim = max(crack, thin) ** 0.7
-        rock = lerp3(d["rock1"], d["rock2"], h * 0.75 + 0.25 * (noise.noise(n * 9 + off) * 0.5 + 0.5))
-        rock = tuple(c * 0.65 for c in rock)
+        rim = crack ** 0.7
+        rock = lerp3(d["rock1"], d["rock2"], h * 0.5 + h2 * 0.35 + 0.15 * (noise.noise(n * 9 + off) * 0.5 + 0.5))
+        shade = 0.8 + facet * 9 - step * 25 + grain * 30 + noise.noise(n * 60 + off2) * 0.08
+        rock = tuple(max(0.0, c * 0.75 * shade) for c in rock)
         cols.append(lerp3(rock, gc, min(1, rim * 1.2)))
         glows.append(tuple(x * rim for x in gc))
     shell = mesh_object(d["id"] + "_Body", bm, body_material(d), smooth=True)
@@ -727,7 +743,8 @@ def reset():
 # Rig: the jaw is a separate piece hinged behind the mouth; the pupils are balls in the eye holes.
 HINGE = Vector((0, -0.08, -0.16))  # Blender coords
 JAW_TOP = -0.17  # the jaw is the front of the shell below this height (mid mouth)
-PUPIL_R = 0.055
+PUPIL_R = 0.06
+PUPIL_SLIT = (0.28, 0.5, 1.0)  # x (width), y (depth), z (height): a vertical snake slit
 PUPIL_DEPTH = 0.445  # distance of the pupils' centers from the middle (just in front of the core)
 
 
@@ -759,6 +776,8 @@ def build_pupils(d):
     for side in (-1, 1):
         bm = bmesh.new()
         bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=16, radius=PUPIL_R)
+        import mathutils
+        bmesh.ops.scale(bm, vec=PUPIL_SLIT, verts=bm.verts)  # snake slit
         bmesh.ops.translate(bm, vec=eye_center(side), verts=bm.verts)
         o = mesh_object(d["id"] + ("_PupilL" if side < 0 else "_PupilR"), bm, mat, smooth=True)
         fill_feature_colors(o, (0.01, 0.01, 0.012))
@@ -778,7 +797,7 @@ def build(d, subdiv=6, with_face=True, with_core=True, budget=None):
     body = build_body(d, subdiv, budget)
     jaw = split_jaw(body)
     if with_face:  # renders: show the rig (pupils looking at you, jaw a little open)
-        open_jaw(jaw, 9)
+        open_jaw(jaw, 5)
     parts = [body, jaw] + (build_pupils(d) if with_face else [])
     if with_core:
         parts.append(build_core(d))
@@ -834,9 +853,9 @@ def add_camera(scene, loc, target, lens=50, ortho=None):
 
 
 def lights(scene, scale=1.0):
-    add_light(scene, "Key", "AREA", (-2.5 * scale, -3 * scale, 2.5 * scale), 350 * scale * scale, (1, .95, .9), 2 * scale)
+    add_light(scene, "Key", "AREA", (-2.5 * scale, -3 * scale, 2.5 * scale), 210 * scale * scale, (1, .93, .85), 1.5 * scale)
     add_light(scene, "Rim", "AREA", (2.5 * scale, 3 * scale, 1.5 * scale), 500 * scale * scale, (.55, .45, 1), 2 * scale)
-    add_light(scene, "Fill", "AREA", (3 * scale, -2 * scale, -1 * scale), 80 * scale * scale, (.6, .8, 1), 3 * scale)
+    add_light(scene, "Fill", "AREA", (3 * scale, -2 * scale, -1 * scale), 35 * scale * scale, (.6, .8, 1), 3 * scale)
 
 
 def group(parts, offset, yaw):
@@ -879,9 +898,9 @@ def render_grid(path, subdiv=6):
         label.data.materials.append(new_material("Label", (1, 1, 1), emit=(1, 1, 1), emit_strength=2))
         scene.collection.objects.link(label)
     setup_render(scene, (2400, 1900), 64)
-    add_light(scene, "Key", "AREA", (-5, -9, 6), 6000, (1, .95, .9), 8)
+    add_light(scene, "Key", "AREA", (-5, -9, 6), 3800, (1, .93, .85), 6)
     add_light(scene, "Rim", "AREA", (6, 8, 3), 6000, (.55, .45, 1), 8)
-    add_light(scene, "Fill", "AREA", (7, -6, -3), 1500, (.6, .8, 1), 8)
+    add_light(scene, "Fill", "AREA", (7, -6, -3), 700, (.6, .8, 1), 8)
     add_camera(scene, (0, -12, 0.3), (0, 0, 0.1), ortho=10.6)
     scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
@@ -981,7 +1000,8 @@ def export_fbx(d, path, max_tris=16000, tex_size=2048):
     bpy.data.objects.remove(jaw_high)
     tris = sum(len(p.vertices) - 2 for o in (body, jaw) for p in o.data.polygons)
     info = dict(body=roblox_box(body), jaw=roblox_box(jaw), hinge=to_roblox(HINGE),
-                eyes=(to_roblox(eye_center(-1)), to_roblox(eye_center(1))), pupil=PUPIL_R * 2)
+                eyes=(to_roblox(eye_center(-1)), to_roblox(eye_center(1))), pupil=PUPIL_R * 2,
+                slit=(PUPIL_SLIT[0], PUPIL_SLIT[2], PUPIL_SLIT[1]))
     bpy.ops.object.select_all(action="DESELECT")
     body.select_set(True)
     jaw.select_set(True)
@@ -1007,7 +1027,7 @@ def write_config(path, infos):
         lines.append("\t\tjaw = { size = %s, center = %s }," % (v(i["jaw"]["size"]), v(i["jaw"]["center"])))
         lines.append("\t\thinge = %s," % v(i["hinge"]))
         lines.append("\t\teyes = { %s, %s }," % (v(i["eyes"][0]), v(i["eyes"][1])))
-        lines.append("\t\tpupil = %.4f," % i["pupil"])
+        lines.append("\t\tpupil = %.4f, slit = %s," % (i["pupil"], v(i["slit"])))
         lines.append("\t},")
     lines.append("}")
     with open(path, "w") as f:

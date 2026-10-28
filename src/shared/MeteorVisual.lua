@@ -307,10 +307,14 @@ local function buildRig(model, core, def, body, jaw, size)
 	if info and info.eyes then
 		for _, name in ipairs({ "PupilL", "PupilR" }) do
 			local pupil = rigPart(Instance.new("Part"), name)
-			pupil.Shape = Enum.PartType.Ball
 			pupil.Material = Enum.Material.SmoothPlastic
 			pupil.Color = Color3.fromRGB(8, 8, 10)
 			pupil.Reflectance = 0.15
+			-- Snake pupil: a sphere squashed into a vertical slit.
+			local slit = Instance.new("SpecialMesh")
+			slit.MeshType = Enum.MeshType.Sphere
+			slit.Scale = info.slit or Vector3.new(0.28, 1, 0.5)
+			slit.Parent = pupil
 			pupil.CastShadow = false
 			pupil.CFrame = core.CFrame
 			pupil.Parent = model
