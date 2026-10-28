@@ -1,21 +1,29 @@
--- Builds the whole map from code, laid out like Asgard (a keyhole shape along the planet axis):
---   1) back:   the Houses district with golden towers,
---   2) middle: the Meteor Field (raised disc with the Sky Altar) where meteors fall,
---   3) front:  the Bifrost of cosmic glitching glass to the Launch Platform facing the planet.
+-- Builds the whole map from code (see Game.World for the layout, drawn from the owner's sketch):
+--   Central Island with the Meteor Field in the middle (meteors fall here),
+--   behind it one plot per player: a Comet Islet (meteors float on pedestals) and a higher House Island,
+--   at the front sides the Shop island and the Leaderboard island, each with a mountain,
+--   in front the Bifrost: 3 glitching lanes (one per planet tier) joining the Launch Platform.
+-- Islands are Roblox Terrain; bridges, pedestals, houses and pads are Parts, so Blender models can
+-- replace them later (Assets/Map/Citadel, see docs/ASSET_PIPELINE.md).
 
+local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
+local Planets = require(Shared.Config.Planets)
+local Evolutions = require(Shared.Config.Evolutions)
+local TerrainConfig = require(Shared.Config.Terrain)
 local AssetLibrary = require(Shared.AssetLibrary)
 
 local WorldService = {}
 
-WorldService.Altars = {} -- { {index, model, center: CFrame, owner: Player?, sign: TextLabel} }
-WorldService.LaunchPads = {} -- { {part, returnCFrame} }
-WorldService.PlanetPosition = Game.World.PlanetPosition
+-- One per player plot: { index, model, center (house CFrame), display (comet islet CFrame),
+--   pedestals = {CFrame}, owner, sign, signGui, signPost, placeholder, house, houseTier, slots }
+WorldService.Altars = {}
+WorldService.LaunchPads = {} -- { {part, returnCFrame, tier} }
 -- Where meteors fall: a ring (inner/outer radius) around `center`.
 WorldService.Field = {
 	center = Game.World.FieldCenter,
@@ -25,6 +33,21 @@ WorldService.Field = {
 
 local W = Game.World
 local worldFolder
+local terrain = workspace.Terrain
+local trng = Random.new(7)
+
+local MARBLE = Color3.fromRGB(232, 224, 240)
+local GOLD = Color3.fromRGB(205, 145, 70)
+local GOLD_LIGHT = Color3.fromRGB(255, 195, 100)
+local GLITCH_COLORS = {
+	Color3.fromRGB(80, 220, 255),
+	Color3.fromRGB(255, 80, 200),
+	Color3.fromRGB(255, 200, 90),
+	Color3.fromRGB(150, 100, 255),
+	Color3.fromRGB(235, 245, 255),
+}
+
+-- Parts -------------------------------------------------------------------------------
 
 local function part(props)
 	local p = Instance.new("Part")
@@ -52,237 +75,60 @@ local function disc(pos, radius, height, props)
 	return part(props)
 end
 
-local function setupLighting()
-	Lighting.ClockTime = 0
-	Lighting.Brightness = 2.5
-	Lighting.ExposureCompensation = 0.2
-	Lighting.Ambient = Color3.fromRGB(90, 80, 140)
-	Lighting.OutdoorAmbient = Color3.fromRGB(125, 115, 175)
-	Lighting.EnvironmentDiffuseScale = 0.3
-	Lighting.EnvironmentSpecularScale = 0.5
-	Lighting.GlobalShadows = true
-
-	for _, child in ipairs(Lighting:GetChildren()) do
-		if child:IsA("Sky") or child:IsA("Atmosphere") or child:IsA("BloomEffect") or child:IsA("ColorCorrectionEffect") then
-			child:Destroy()
-		end
-	end
-
-	local sky = Instance.new("Sky")
-	sky.StarCount = 5000
-	sky.CelestialBodiesShown = false
-	sky.Parent = Lighting
-
-	local bloom = Instance.new("BloomEffect")
-	bloom.Intensity = 0.8
-	bloom.Size = 30
-	bloom.Threshold = 0.9
-	bloom.Parent = Lighting
-
-	local cc = Instance.new("ColorCorrectionEffect")
-	cc.Saturation = 0.15
-	cc.Contrast = 0.08
-	cc.TintColor = Color3.fromRGB(235, 225, 255)
-	cc.Parent = Lighting
-end
-
--- Procedural plinth + name sign for each house spot. A custom house model (Assets/Houses)
--- is placed on top of it later by UpdateHouse, hiding the plinth.
-local function buildAltars(centers)
-	local folder = Instance.new("Folder")
-	folder.Name = "Altars"
-	folder.Parent = worldFolder
-
-	for i, center in ipairs(centers) do
-		local pos = center.Position
-		local model = Instance.new("Model")
-		model.Name = "Altar" .. i
-
-		disc(pos + Vector3.new(0, 1, 0), 10, 2, {
-			Name = "Base",
-			Material = Enum.Material.Marble,
-			Color = Color3.fromRGB(230, 220, 240),
-			Parent = model,
-		})
-		disc(pos + Vector3.new(0, 2.1, 0), 8, 0.3, {
-			Name = "Glow",
-			Material = Enum.Material.Neon,
-			Color = Color3.fromRGB(120, 90, 200),
-			CanCollide = false,
-			Parent = model,
-		})
-		local signPost = part({
-			Name = "Sign",
-			Size = Vector3.new(1, 1, 1),
-			Transparency = 1,
-			CanCollide = false,
-			CFrame = CFrame.new(pos + Vector3.new(0, 14, 0)),
-			Parent = model,
-		})
-		local bb = Instance.new("BillboardGui")
-		bb.Size = UDim2.new(16, 0, 4, 0)
-		bb.LightInfluence = 0
-		bb.MaxDistance = 250
-		bb.Parent = signPost
-		local text = Instance.new("TextLabel")
-		text.BackgroundTransparency = 1
-		text.Size = UDim2.fromScale(1, 1)
-		text.Font = Enum.Font.FredokaOne
-		text.TextScaled = true
-		text.TextColor3 = Color3.fromRGB(255, 255, 255)
-		text.TextStrokeTransparency = 0.3
-		text.Text = "Free altar"
-		text.Parent = bb
-
-		model.Parent = folder
-		table.insert(WorldService.Altars, {
-			index = i,
-			model = model,
-			center = center,
-			owner = nil,
-			sign = text,
-			signGui = bb,
-			signPost = signPost,
-			house = nil,
-			houseTier = nil,
-			slots = nil,
-		})
-	end
-end
-
-local function makePad(index, position, returnCFrame, padsFolder)
-	local pad = disc(position, 7, 0.4, {
-		Name = "LaunchPad" .. index,
-		Material = Enum.Material.Neon,
-		Color = Color3.fromRGB(255, 230, 120),
-		CanCollide = false,
-		Parent = padsFolder,
-	})
-	local label = Instance.new("BillboardGui")
-	label.Size = UDim2.new(14, 0, 3, 0)
-	label.StudsOffset = Vector3.new(0, 6, 0)
-	label.LightInfluence = 0
-	label.MaxDistance = 200
-	label.Parent = pad
+local function label(parent, text, size, offset, color)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = size
+	bb.StudsOffset = offset or Vector3.zero
+	bb.LightInfluence = 0
+	bb.MaxDistance = 300
+	bb.Parent = parent
 	local t = Instance.new("TextLabel")
 	t.BackgroundTransparency = 1
 	t.Size = UDim2.fromScale(1, 1)
 	t.Font = Enum.Font.FredokaOne
 	t.TextScaled = true
-	t.TextColor3 = Color3.fromRGB(255, 240, 180)
+	t.TextColor3 = color or Color3.new(1, 1, 1)
 	t.TextStrokeTransparency = 0.3
-	t.Text = "LAUNCH"
-	t.Parent = label
-	pad:SetAttribute("ReturnCFrame", returnCFrame)
-	table.insert(WorldService.LaunchPads, { part = pad, returnCFrame = returnCFrame })
+	t.Text = text
+	t.Parent = bb
+	return t, bb
 end
 
--- Ramp between two points (a tilted slab).
-local function ramp(from, to, width, props)
+-- Walkable bridge between two points: marble deck with golden rails.
+local function bridge(from, to, width, props)
+	props = props or {}
+	local flat = Vector3.new(to.X - from.X, 0, to.Z - from.Z)
 	local length = (to - from).Magnitude
-	props.Size = Vector3.new(width, 1.2, length)
-	props.CFrame = CFrame.lookAt((from + to) / 2, to)
-	return part(props)
-end
-
--- Terrain: the islands' rock bodies and the floating islets around the map are Roblox Terrain,
--- so Blender models (houses, towers, altar) can be placed on top later. If the place already
--- has hand-made terrain (Studio Terrain Editor), it is kept and nothing is generated.
-local terrain = workspace.Terrain
-local useTerrain = false
-local terrainRng = Random.new(7)
-
-local function setupTerrain()
-	if not W.GenerateTerrain or terrain:CountCells() > 0 then
-		return
-	end
-	useTerrain = true
-	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(105, 88, 125))
-	terrain:SetMaterialColor(Enum.Material.Basalt, Color3.fromRGB(58, 48, 70))
-	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(70, 150, 120))
-	terrain:SetMaterialColor(Enum.Material.Slate, Color3.fromRGB(80, 70, 105))
-	terrain:SetMaterialColor(Enum.Material.Glacier, Color3.fromRGB(150, 200, 255))
-end
-
--- Organic floating island body: a cone of shrinking cylinders plus random boulders and a
--- hanging tip. `top` is the material of the ring that peeks out around the island's edge.
-local function terrainIsland(pos, radius, depth, top)
-	-- Everything stays below pos.Y so the terrain never covers the walkable floor parts.
-	local steps = 6
-	local h = depth / steps + 4
-	for i = 0, steps - 1 do
-		local t = i / steps
-		local r = radius * (1 - t * 0.82) * terrainRng:NextNumber(0.92, 1.0)
-		terrain:FillCylinder(CFrame.new(pos - Vector3.new(0, depth * t + h / 2, 0)), h, r,
-			t < 0.5 and Enum.Material.Rock or Enum.Material.Slate)
-	end
-	for _ = 1, math.floor(radius / 6) do
-		local a = terrainRng:NextNumber(0, math.pi * 2)
-		local size = radius * terrainRng:NextNumber(0.08, 0.16)
-		local t = math.max(terrainRng:NextNumber(0.2, 0.7), (size + 4) / depth)
-		local r = radius * (1 - t * 0.82) * 0.85
-		terrain:FillBall(pos + Vector3.new(math.cos(a) * r, -depth * t, math.sin(a) * r), size, Enum.Material.Rock)
-	end
-	terrain:FillBall(pos - Vector3.new(0, depth * 1.05, 0), radius * 0.16, Enum.Material.Basalt)
-	if top then
-		terrain:FillCylinder(CFrame.new(pos - Vector3.new(0, 2, 0)), 4, radius + 7, top)
-	end
-end
-
--- Small rocky islets floating around the map (never on the Bifrost line towards the planet).
-local function terrainIslets()
-	local placed = 0
-	while placed < W.IsletCount do
-		local a = terrainRng:NextNumber(0, math.pi * 2)
-		local d = terrainRng:NextNumber(260, 650)
-		local pos = Vector3.new(math.sin(a) * d, terrainRng:NextNumber(-120, 90), -95 + math.cos(a) * d)
-		if math.abs(pos.X) > 70 or pos.Z < 0 then
-			local r = terrainRng:NextNumber(10, 34)
-			terrainIsland(pos, r, r * 1.8, nil)
-			local mat = terrainRng:NextNumber() < 0.25 and Enum.Material.Glacier or Enum.Material.Grass
-			terrain:FillCylinder(CFrame.new(pos + Vector3.new(0, 2, 0)), 4, r, mat)
-			placed += 1
+	local cf = CFrame.lookAt((from + to) / 2, to)
+	part({
+		Name = props.Name or "Bridge",
+		Size = Vector3.new(width, 1.2, length + 2),
+		CFrame = cf * CFrame.new(0, -0.6, 0),
+		Material = props.Material or Enum.Material.Marble,
+		Color = props.Color or MARBLE,
+	})
+	if props.rails ~= false then
+		for _, side in ipairs({ -1, 1 }) do
+			part({
+				Name = "BridgeRail",
+				Size = Vector3.new(0.8, 1.6, length + 2),
+				CFrame = cf * CFrame.new(side * (width / 2 - 0.4), 0.8, 0),
+				Material = Enum.Material.Neon,
+				Color = GOLD_LIGHT,
+				Transparency = 0.15,
+			})
 		end
 	end
+	return flat
 end
-
--- Floating rock underside: stacked shrinking discs give a cone of rock under an island.
-local function underside(pos, radius, depth, color, top)
-	if useTerrain then
-		terrainIsland(pos, radius, depth * 1.4, top)
-		return
-	end
-	local steps = 4
-	for i = 1, steps do
-		local t = i / steps
-		disc(pos - Vector3.new(0, depth * t, 0), radius * (1 - t * 0.75), depth / steps + 1, {
-			Name = "Underside",
-			Material = Enum.Material.Rock,
-			Color = color:Lerp(Color3.fromRGB(20, 15, 30), t * 0.6),
-			CanCollide = false,
-		})
-	end
-end
-
-local CollectionService = game:GetService("CollectionService")
-
-local GOLD = Color3.fromRGB(205, 145, 70)
-local GOLD_LIGHT = Color3.fromRGB(255, 195, 100)
-local GLITCH_COLORS = {
-	Color3.fromRGB(80, 220, 255),
-	Color3.fromRGB(255, 80, 200),
-	Color3.fromRGB(255, 200, 90),
-	Color3.fromRGB(150, 100, 255),
-	Color3.fromRGB(235, 245, 255),
-}
 
 -- Asgard-style golden tower: stacked tapering blocks, glowing trims and a sharp spike.
 local function tower(base, height, width)
-	local steps = 5
+	local steps = 4
 	local y = base.Y
 	for i = 1, steps do
 		local t = (i - 1) / steps
-		local w = width * (1 - t * 0.55)
+		local w = width * (1 - t * 0.5)
 		local h = height / steps
 		part({
 			Name = "Tower",
@@ -304,229 +150,472 @@ local function tower(base, height, width)
 	end
 	part({
 		Name = "TowerSpike",
-		Size = Vector3.new(width * 0.18, height * 0.35, width * 0.18),
-		CFrame = CFrame.new(base.X, y + height * 0.175, base.Z) * CFrame.Angles(0, math.rad(45), 0),
+		Size = Vector3.new(width * 0.2, height * 0.3, width * 0.2),
+		CFrame = CFrame.new(base.X, y + height * 0.15, base.Z) * CFrame.Angles(0, math.rad(45), 0),
 		Material = Enum.Material.Neon,
 		Color = GOLD_LIGHT,
 		CanCollide = false,
 	})
 end
 
--- ZONE 1 (back): the Houses district, a large disc behind the meteor field.
-local function buildHouses()
-	local c = W.HousesCenter
-	disc(c - Vector3.new(0, 2, 0), W.HousesRadius, 4, {
-		Name = "HousesGround",
-		Material = Enum.Material.Marble,
-		Color = Color3.fromRGB(225, 215, 235),
-	})
-	disc(c - Vector3.new(0, 2.3, 0), W.HousesRadius + 1.5, 3.4, {
-		Name = "HousesRim",
-		Material = Enum.Material.Neon,
-		Color = GOLD_LIGHT,
-		CanCollide = false,
-	})
-	underside(c - Vector3.new(0, 4, 0), W.HousesRadius, 90, Color3.fromRGB(110, 90, 130), Enum.Material.Grass)
-	-- Golden towers along the back rim, between the houses.
-	for i = 0, 8 do
-		local a = math.rad(-120 + i * 30)
-		local pos = c + Vector3.new(math.sin(a), 0, -math.cos(a)) * (W.HousesRadius - 10)
-		tower(pos, 40 + (i % 3) * 18, 9)
+-- Terrain -------------------------------------------------------------------------------
+
+-- Floating island: a flat walkable top at `top.Y`, a wavy grass coastline and a cone of rock
+-- below with boulders and a hanging tip.
+local function island(top, radius, depth, topMaterial)
+	if not W.GenerateTerrain then
+		return -- the place has its own hand-made terrain
 	end
+	topMaterial = topMaterial or Enum.Material.Grass
+	terrain:FillCylinder(CFrame.new(top - Vector3.new(0, 4, 0)), 8, radius, topMaterial)
+	-- Wavy coastline: lobes around the edge.
+	local lobes = math.max(6, math.floor(radius / 12))
+	for i = 1, lobes do
+		local a = (i + trng:NextNumber(-0.3, 0.3)) / lobes * math.pi * 2
+		local lr = radius * trng:NextNumber(0.18, 0.3)
+		local pos = top + Vector3.new(math.cos(a), 0, math.sin(a)) * (radius - lr * 0.4)
+		terrain:FillCylinder(CFrame.new(pos - Vector3.new(0, 4, 0)), 8, lr, topMaterial)
+	end
+	local steps = 6
+	local h = depth / steps + 4
+	for i = 0, steps - 1 do
+		local t = i / steps
+		local r = radius * (1 - t * 0.8) * trng:NextNumber(0.94, 1.02)
+		terrain:FillCylinder(CFrame.new(top - Vector3.new(0, 8 + depth * t + h / 2, 0)), h, r,
+			t < 0.5 and Enum.Material.Rock or Enum.Material.Slate)
+	end
+	for _ = 1, math.floor(radius / 5) do
+		local a = trng:NextNumber(0, math.pi * 2)
+		local size = radius * trng:NextNumber(0.08, 0.16)
+		local t = trng:NextNumber(0.15, 0.75)
+		local r = radius * (1 - t * 0.8) * 0.85
+		terrain:FillBall(top + Vector3.new(math.cos(a) * r, -10 - depth * t - size, math.sin(a) * r), size, Enum.Material.Rock)
+	end
+	terrain:FillBall(top - Vector3.new(0, 8 + depth * 1.02, 0), radius * 0.16, Enum.Material.Slate)
+end
+
+-- Rocky mountain with a snowy cap.
+local function mountain(base, radius, height)
+	if not W.GenerateTerrain then
+		return
+	end
+	local steps = 7
+	for i = 0, steps - 1 do
+		local t = i / steps
+		local r = radius * (1 - t * 0.85)
+		local center = base + Vector3.new(trng:NextNumber(-2, 2), height * t + height / steps / 2, trng:NextNumber(-2, 2))
+		terrain:FillCylinder(CFrame.new(center), height / steps + 2, r, Enum.Material.Rock)
+	end
+	terrain:FillBall(base + Vector3.new(0, height * 0.9, 0), radius * 0.28, Enum.Material.Snow)
+	for _ = 1, 4 do
+		local a = trng:NextNumber(0, math.pi * 2)
+		terrain:FillBall(base + Vector3.new(math.cos(a) * radius * 0.7, radius * 0.2, math.sin(a) * radius * 0.7),
+			radius * trng:NextNumber(0.25, 0.4), Enum.Material.Rock)
+	end
+end
+
+local function islets()
+	local placed = 0
+	while placed < W.IsletCount do
+		local a = trng:NextNumber(0, math.pi * 2)
+		local d = trng:NextNumber(480, 900)
+		local pos = Vector3.new(math.sin(a) * d, trng:NextNumber(-160, 60), math.cos(a) * d)
+		-- Keep the sky in front (towards the planets) clear.
+		if pos.Z < 250 then
+			local r = trng:NextNumber(12, 36)
+			island(pos, r, r * 1.6, trng:NextNumber() < 0.25 and Enum.Material.Snow or Enum.Material.Grass)
+			placed += 1
+		end
+	end
+end
+
+-- Lighting --------------------------------------------------------------------------
+
+-- Keeps the Sky placed in Lighting by the owner (e.g. "Purple Nebula"); creates a starfield only
+-- if there is none. Effects created by the game are prefixed with MG_.
+local function setupLighting()
+	Lighting.ClockTime = 0
+	Lighting.Brightness = 2.5
+	Lighting.ExposureCompensation = 0.25
+	Lighting.Ambient = Color3.fromRGB(95, 85, 140)
+	Lighting.OutdoorAmbient = Color3.fromRGB(135, 125, 180)
+	Lighting.EnvironmentDiffuseScale = 0.4
+	Lighting.EnvironmentSpecularScale = 0.5
+	Lighting.GlobalShadows = true
+
+	if not Lighting:FindFirstChildOfClass("Sky") then
+		local sky = Instance.new("Sky")
+		sky.StarCount = 5000
+		sky.CelestialBodiesShown = false
+		sky.Parent = Lighting
+	end
+	for _, child in ipairs(Lighting:GetChildren()) do
+		if string.sub(child.Name, 1, 3) == "MG_" then
+			child:Destroy()
+		end
+	end
+	local bloom = Instance.new("BloomEffect")
+	bloom.Name = "MG_Bloom"
+	bloom.Intensity = 0.7
+	bloom.Size = 28
+	bloom.Threshold = 0.92
+	bloom.Parent = Lighting
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Name = "MG_Color"
+	cc.Saturation = 0.12
+	cc.Contrast = 0.08
+	cc.Parent = Lighting
+end
+
+local function setupTerrainColors()
+	for name, color in pairs(TerrainConfig.Colors) do
+		terrain:SetMaterialColor(Enum.Material[name], color)
+	end
+end
+
+-- Pads -------------------------------------------------------------------------------
+
+local function makePad(index, position, lookAt, returnCFrame, tier, padsFolder)
+	local tierDef = Planets.Tiers[tier]
+	local pad = disc(position, 7, 0.4, {
+		Name = "LaunchPad" .. index,
+		Material = Enum.Material.Neon,
+		Color = tierDef.color,
+		CanCollide = false,
+		Parent = padsFolder,
+	})
+	pad.CFrame = CFrame.lookAt(position, Vector3.new(lookAt.X, position.Y, lookAt.Z)) * CFrame.Angles(0, 0, math.rad(90))
+	disc(position - Vector3.new(0, 0.3, 0), 8.5, 0.3, {
+		Name = "PadRim",
+		Material = Enum.Material.Neon,
+		Color = Color3.new(1, 1, 1),
+		Transparency = 0.4,
+		CanCollide = false,
+		Parent = padsFolder,
+	})
+	label(pad, tierDef.name, UDim2.new(12, 0, 2.6, 0), Vector3.new(0, 6, 0), tierDef.color:Lerp(Color3.new(1, 1, 1), 0.4))
+	pad:SetAttribute("Tier", tier)
+	pad:SetAttribute("RequiredEvolution", tierDef.requiredEvolution)
+	pad:SetAttribute("ReturnCFrame", returnCFrame)
+	table.insert(WorldService.LaunchPads, { part = pad, returnCFrame = returnCFrame, tier = tier })
+end
+
+-- Central island and Meteor Field -------------------------------------------------------
+
+local function buildCenter()
+	island(Vector3.zero, W.CenterRadius, 130)
+	-- Meteor Field: dark scorched rock with small craters, a glowing rim.
+	local f = W.FieldCenter
+	terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 4, 0)), 8, W.FieldRadius, Enum.Material.Basalt)
+	for _ = 1, 16 do
+		local a = trng:NextNumber(0, math.pi * 2)
+		local d = trng:NextNumber(10, W.FieldRadius - 12)
+		local cr = trng:NextNumber(4, 8)
+		terrain:FillBall(f + Vector3.new(math.cos(a) * d, cr * 0.75, math.sin(a) * d), cr, Enum.Material.Air)
+	end
+	disc(f + Vector3.new(0, 0.1, 0), W.FieldRadius + 2, 0.3, {
+		Name = "FieldRim",
+		Material = Enum.Material.Neon,
+		Color = Color3.fromRGB(255, 120, 60),
+		Transparency = 0.35,
+		CanCollide = false,
+		CanQuery = false,
+	})
+	-- The vortex meteors pour out of, high above the field.
+	disc(f + Vector3.new(0, 260, 0), 70, 2, {
+		Name = "SkyVortex",
+		Material = Enum.Material.ForceField,
+		Color = Color3.fromRGB(170, 110, 255),
+		CanCollide = false,
+		CanQuery = false,
+	})
+	-- Golden towers around the island edge, away from bridges and the front.
+	for _, deg in ipairs({ 100, 130, 230, 260 }) do
+		local a = math.rad(deg)
+		tower(Vector3.new(math.sin(a), 0, math.cos(a)) * (W.CenterRadius - 14), 46, 10)
+	end
+
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
 	spawn.Anchored = true
 	spawn.Neutral = true
 	spawn.Size = Vector3.new(12, 1, 12)
-	spawn.CFrame = CFrame.new(c + Vector3.new(0, 0.5, -55))
+	spawn.CFrame = CFrame.lookAt(W.SpawnPosition + Vector3.new(0, 0.5, 0), Vector3.new(0, 0.5, 200))
 	spawn.Material = Enum.Material.Neon
 	spawn.Color = Color3.fromRGB(255, 225, 160)
 	spawn.Transparency = 0.5
+	spawn.CanCollide = false
 	spawn.Duration = 0
 	spawn.Parent = worldFolder
 end
 
--- ZONE 2 (middle): the Meteor Field, a raised disc of dark rock in front of the houses,
--- with the Sky Altar in its center (the vortex meteors pour out of).
-local function buildField()
-	local c = W.FieldCenter
-	local r = W.FieldRadius
-	disc(c - Vector3.new(0, 2, 0), r, 4, {
-		Name = "Field",
-		Material = Enum.Material.Basalt,
-		Color = Color3.fromRGB(62, 52, 68),
-	})
-	disc(c - Vector3.new(0, 2.2, 0), r + 1.2, 3.6, {
-		Name = "FieldRim",
-		Material = Enum.Material.Neon,
-		Color = Color3.fromRGB(255, 120, 60),
-		Transparency = 0.2,
-		CanCollide = false,
-	})
-	underside(c - Vector3.new(0, 4, 0), r, 70, Color3.fromRGB(70, 55, 75))
-	local rng = Random.new(11)
-	for _ = 1, 30 do
-		local a = rng:NextNumber(0, math.pi * 2)
-		local d = rng:NextNumber(W.FieldInner + 8, r - 8)
-		local cr = rng:NextNumber(3, 9)
-		local pos = c + Vector3.new(math.sin(a) * d, 0, math.cos(a) * d)
-		disc(pos + Vector3.new(0, 0.02, 0), cr, 0.1, {
-			Name = "Crater",
-			Material = Enum.Material.Slate,
-			Color = Color3.fromRGB(32, 26, 36),
-			CanCollide = false,
-		})
-		disc(pos + Vector3.new(0, 0.04, 0), cr * 0.45, 0.1, {
-			Name = "CraterGlow",
-			Material = Enum.Material.Neon,
-			Color = Color3.fromRGB(255, 110, 40),
-			Transparency = 0.5,
-			CanCollide = false,
+-- Player plots ----------------------------------------------------------------------------
+
+local function plotDirection(i)
+	local n = W.HouseCount
+	local deg = n > 1 and (-W.PlotArc / 2 + (i - 1) * W.PlotArc / (n - 1)) or 0
+	local a = math.rad(deg)
+	return Vector3.new(math.sin(a), 0, -math.cos(a))
+end
+
+-- Placeholder temple shown until a house model (Assets/Houses) exists.
+local function placeholderHouse(cf, parent)
+	local model = Instance.new("Model")
+	model.Name = "Placeholder"
+	local pos = cf.Position
+	disc(pos + Vector3.new(0, 0.75, 0), 14, 1.5, { Name = "Base", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	for k = 0, 3 do
+		local a = math.rad(45 + k * 90)
+		part({
+			Name = "Column",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(16, 2.6, 2.6),
+			CFrame = CFrame.new(pos + Vector3.new(math.cos(a) * 9, 9.5, math.sin(a) * 9)) * CFrame.Angles(0, 0, math.rad(90)),
+			Material = Enum.Material.Marble,
+			Color = MARBLE,
+			Parent = model,
 		})
 	end
-	-- Sky Altar: a sunken ring with a light beam to the vortex above.
-	disc(c + Vector3.new(0, 0.05, 0), W.FieldInner, 0.2, {
-		Name = "SkyAltarRing",
-		Material = Enum.Material.Neon,
-		Color = Color3.fromRGB(150, 100, 255),
-		Transparency = 0.3,
-		CanCollide = false,
-	})
-	disc(c + Vector3.new(0, 0.1, 0), W.FieldInner - 3, 0.2, {
-		Name = "SkyAltar",
-		Material = Enum.Material.Glass,
-		Color = Color3.fromRGB(20, 18, 40),
-		Reflectance = 0.3,
+	disc(pos + Vector3.new(0, 18.2, 0), 13, 1.4, { Name = "Roof", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	part({
+		Name = "Dome",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(16, 16, 16),
+		CFrame = CFrame.new(pos + Vector3.new(0, 19, 0)),
+		Material = Enum.Material.Foil,
+		Color = GOLD,
+		Reflectance = 0.2,
+		Parent = model,
 	})
 	part({
-		Name = "SkyBeam",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(400, 10, 10),
-		CFrame = CFrame.new(c + Vector3.new(0, 200, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Name = "Spire",
+		Size = Vector3.new(1.4, 10, 1.4),
+		CFrame = CFrame.new(pos + Vector3.new(0, 31, 0)) * CFrame.Angles(0, math.rad(45), 0),
 		Material = Enum.Material.Neon,
-		Color = Color3.fromRGB(170, 120, 255),
-		Transparency = 0.75,
+		Color = GOLD_LIGHT,
 		CanCollide = false,
-		CanQuery = false,
+		Parent = model,
 	})
-	disc(c + Vector3.new(0, 260, 0), 60, 2, {
-		Name = "SkyVortex",
-		Material = Enum.Material.ForceField,
-		Color = Color3.fromRGB(160, 110, 255),
+	model.Parent = parent
+	return model
+end
+
+local function pedestal(cf, index, parent)
+	local base = cf.Position
+	part({
+		Name = "Pedestal" .. index,
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(6, 4.5, 4.5),
+		CFrame = CFrame.new(base + Vector3.new(0, 3, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Material = Enum.Material.Marble,
+		Color = MARBLE,
+		Parent = parent,
+	})
+	part({
+		Name = "PedestalRing",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.6, 6, 6),
+		CFrame = CFrame.new(base + Vector3.new(0, 6.2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Material = Enum.Material.Neon,
+		Color = GOLD_LIGHT,
 		CanCollide = false,
-		CanQuery = false,
+		Parent = parent,
 	})
-	-- Ramps down to the houses district (the field sits higher).
-	for _, deg in ipairs({ 125, 160, 200, 235 }) do
-		local a = math.rad(deg)
-		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
-		ramp(
-			c + dir * (r - 4) - Vector3.new(0, 0.6, 0),
-			c + dir * (r + 16) + Vector3.new(0, W.HousesCenter.Y - c.Y - 0.6, 0),
-			18,
-			{ Name = "Ramp", Material = Enum.Material.Marble, Color = Color3.fromRGB(225, 215, 235) }
+	return CFrame.new(base + Vector3.new(0, 11, 0))
+end
+
+local function buildPlots()
+	local folder = Instance.new("Folder")
+	folder.Name = "Plots"
+	folder.Parent = worldFolder
+	for i = 1, W.HouseCount do
+		local dir = plotDirection(i)
+		local up = Vector3.new(0, 1, 0)
+		local cometPos = dir * W.CometIsletDistance + up * W.CometIsletHeight
+		local housePos = dir * W.HouseIslandDistance + up * W.HouseIslandHeight
+		island(cometPos, W.CometIsletRadius, 60)
+		island(housePos, W.HouseIslandRadius, 80)
+		bridge(dir * (W.CenterRadius - 6), dir * (W.CometIsletDistance - W.CometIsletRadius + 6) + up * W.CometIsletHeight, 12)
+		bridge(
+			dir * (W.CometIsletDistance + W.CometIsletRadius - 6) + up * W.CometIsletHeight,
+			dir * (W.HouseIslandDistance - W.HouseIslandRadius + 6) + up * W.HouseIslandHeight,
+			12
 		)
+
+		local model = Instance.new("Model")
+		model.Name = "Plot" .. i
+		-- Pedestals in an arc on the comet islet, facing the central island.
+		local display = CFrame.lookAt(cometPos, Vector3.new(0, cometPos.Y, 0))
+		local pedestals = {}
+		for k = 1, 4 do
+			local a = math.rad(-54 + (k - 1) * 36)
+			local local_ = Vector3.new(math.sin(a) * 15, 0, -math.cos(a) * 15 + 6)
+			pedestals[k] = pedestal(display * CFrame.new(local_), k, model)
+		end
+		-- House facing the central island.
+		local center = CFrame.lookAt(housePos, Vector3.new(0, housePos.Y, 0))
+		local placeholder = placeholderHouse(center, model)
+		local signPost = part({
+			Name = "Sign",
+			Size = Vector3.new(1, 1, 1),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+			CFrame = CFrame.new(housePos + Vector3.new(0, 40, 0)),
+			Parent = model,
+		})
+		local text, bb = label(signPost, "Free plot", UDim2.new(22, 0, 5, 0))
+		bb.MaxDistance = 500
+		model.Parent = folder
+
+		table.insert(WorldService.Altars, {
+			index = i,
+			model = model,
+			center = center,
+			display = display,
+			pedestals = pedestals,
+			owner = nil,
+			sign = text,
+			signGui = bb,
+			signPost = signPost,
+			placeholder = placeholder,
+			house = nil,
+			houseTier = nil,
+			slots = nil,
+		})
 	end
 end
 
-local function makePadInFolder(padsFolder, index, position, returnCFrame)
-	makePad(index, position, returnCFrame, padsFolder)
+-- Side islands --------------------------------------------------------------------------
+
+local function buildShop()
+	local cfg = W.ShopIsland
+	local c = cfg.center
+	island(c, cfg.radius, 100)
+	mountain(c + Vector3.new(-cfg.radius * 0.45, -2, cfg.radius * 0.35), cfg.radius * 0.45, 95)
+	local dir = (Vector3.zero - c).Unit
+	bridge(c + dir * (cfg.radius - 8), c + dir * ((c.Magnitude) - W.CenterRadius + 8), 16)
+	-- Shop stall: marble counter, golden canopy, a prompt that opens the shop.
+	local front = CFrame.lookAt(c + dir * 12, c + dir * 40)
+	local stall = Instance.new("Model")
+	stall.Name = "ShopStall"
+	part({ Name = "Counter", Size = Vector3.new(22, 4, 5), CFrame = front * CFrame.new(0, 2, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = stall })
+	for _, x in ipairs({ -10, 10 }) do
+		part({ Name = "Post", Size = Vector3.new(1.6, 14, 1.6), CFrame = front * CFrame.new(x, 7, 3), Material = Enum.Material.Foil, Color = GOLD, Parent = stall })
+	end
+	local canopy = part({
+		Name = "Canopy",
+		Size = Vector3.new(26, 1.2, 12),
+		CFrame = front * CFrame.new(0, 14.5, 1) * CFrame.Angles(math.rad(-12), 0, 0),
+		Material = Enum.Material.Neon,
+		Color = Color3.fromRGB(190, 90, 255),
+		Parent = stall,
+	})
+	label(canopy, "🛒 SHOP", UDim2.new(18, 0, 5, 0), Vector3.new(0, 5, 0), GOLD_LIGHT)
+	local promptPart = part({ Name = "ShopPrompt", Size = Vector3.new(2, 2, 2), Transparency = 1, CanCollide = false, CFrame = front * CFrame.new(0, 4, -3), Parent = stall })
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "OpenShop"
+	prompt.ActionText = "Open Shop"
+	prompt.ObjectText = "Celestial Market"
+	prompt.MaxActivationDistance = 14
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = promptPart
+	stall.Parent = worldFolder
 end
 
--- ZONE 3 (front): the Bifrost, a bridge of dark cosmic glass full of glitching light,
--- flanked by golden towers, ending at the observatory-style Launch Platform.
-local function buildBifrost()
-	local y = W.FieldCenter.Y
-	local startZ = W.FieldCenter.Z + W.FieldRadius - 6
-	local length = W.BifrostLength
-	local width = W.BifrostWidth
-	local rng = Random.new(3)
+local function buildLeaderboardIsland()
+	local cfg = W.LeaderboardIsland
+	local c = cfg.center
+	island(c, cfg.radius, 100)
+	mountain(c + Vector3.new(cfg.radius * 0.45, -2, cfg.radius * 0.35), cfg.radius * 0.45, 95)
+	local dir = (Vector3.zero - c).Unit
+	bridge(c + dir * (cfg.radius - 8), c + dir * ((c.Magnitude) - W.CenterRadius + 8), 16)
+end
 
-	local rows, cols = 24, 4
-	local segLen, colW = length / rows, width / cols
-	for r = 1, rows do
-		for col = 1, cols do
+-- Bifrost and Launch Platform -----------------------------------------------------------------
+
+local function buildBifrost()
+	local rng = Random.new(3)
+	local startZ = W.BridgeStartZ
+	local p = W.PlatformCenter
+	local endZ = p.Z - W.PlatformRadius + 6
+	local length = endZ - startZ
+	local width = W.LaneWidth
+
+	for lane = 1, #Planets.Tiers do
+		local tier = Planets.Tiers[lane]
+		local x = (lane - 2) * W.LaneOffset
+		local rows = 16
+		local segLen = length / rows
+		for r = 1, rows do
 			part({
 				Name = "Bifrost",
-				Size = Vector3.new(colW + 0.05, 1, segLen + 0.05),
-				CFrame = CFrame.new(-width / 2 + (col - 0.5) * colW, y - 0.5, startZ + (r - 0.5) * segLen),
+				Size = Vector3.new(width, 1, segLen + 0.05),
+				CFrame = CFrame.new(x, -0.5, startZ + (r - 0.5) * segLen),
 				Material = Enum.Material.Glass,
 				Color = Color3.fromRGB(14, 16, 32):Lerp(Color3.fromRGB(30, 35, 60), rng:NextNumber()),
 				Reflectance = 0.3,
 			})
 		end
-	end
-	-- Glitch pixels: small glowing fragments of every cosmic color (animated on the clients).
-	for _ = 1, 320 do
-		local w = rng:NextNumber(0.4, 1.8)
-		local l = rng:NextNumber(0.4, 4.5)
-		local glitch = part({
-			Name = "BifrostGlitch",
-			Size = Vector3.new(w, 0.12, l),
-			CFrame = CFrame.new(rng:NextNumber(-width / 2 + 1, width / 2 - 1), y + 0.06, startZ + rng:NextNumber(2, length - 2)),
+		-- Glitch pixels (animated on the clients).
+		for _ = 1, 90 do
+			local glitch = part({
+				Name = "BifrostGlitch",
+				Size = Vector3.new(rng:NextNumber(0.4, 1.8), 0.12, rng:NextNumber(0.4, 4.5)),
+				CFrame = CFrame.new(x + rng:NextNumber(-width / 2 + 1, width / 2 - 1), 0.06, startZ + rng:NextNumber(2, length - 2)),
+				Material = Enum.Material.Neon,
+				Color = GLITCH_COLORS[rng:NextInteger(1, #GLITCH_COLORS)],
+				Transparency = rng:NextNumber(0.15, 0.7),
+				CanCollide = false,
+				CanQuery = false,
+			})
+			CollectionService:AddTag(glitch, "BifrostGlitch")
+		end
+		for _, side in ipairs({ -1, 1 }) do
+			part({
+				Name = "BifrostEdge",
+				Size = Vector3.new(0.8, 1.2, length),
+				CFrame = CFrame.new(x + side * (width / 2 + 0.4), 0.3, startZ + length / 2),
+				Material = Enum.Material.Neon,
+				Color = tier.color,
+				Transparency = 0.2,
+			})
+		end
+		-- Gate at the lane entrance with the tier and its requirement.
+		local gateZ = startZ + 10
+		for _, side in ipairs({ -1, 1 }) do
+			part({
+				Name = "GatePillar",
+				Size = Vector3.new(2, 22, 2),
+				CFrame = CFrame.new(x + side * (width / 2 + 1), 11, gateZ),
+				Material = Enum.Material.Foil,
+				Color = GOLD,
+			})
+		end
+		local beam = part({
+			Name = "GateBeam",
+			Size = Vector3.new(width + 4, 2.5, 2.5),
+			CFrame = CFrame.new(x, 23, gateZ),
 			Material = Enum.Material.Neon,
-			Color = GLITCH_COLORS[rng:NextInteger(1, #GLITCH_COLORS)],
-			Transparency = rng:NextNumber(0.15, 0.7),
-			CanCollide = false,
-			CanQuery = false,
+			Color = tier.color,
 		})
-		CollectionService:AddTag(glitch, "BifrostGlitch")
+		local evoName = Evolutions.Get(tier.requiredEvolution).name
+		label(beam, tier.name .. (tier.requiredEvolution > 1 and ("\n" .. evoName .. "+") or ""),
+			UDim2.new(16, 0, 6, 0), Vector3.new(0, 5, 0), tier.color:Lerp(Color3.new(1, 1, 1), 0.5))
 	end
-	-- Long light streaks running along the bridge.
-	for i = 1, 6 do
-		part({
-			Name = "BifrostStreak",
-			Size = Vector3.new(0.25, 0.1, length),
-			CFrame = CFrame.new(-width / 2 + i * width / 7, y + 0.05, startZ + length / 2),
-			Material = Enum.Material.Neon,
-			Color = i % 2 == 0 and Color3.fromRGB(80, 220, 255) or Color3.fromRGB(255, 120, 220),
-			Transparency = 0.6,
-			CanCollide = false,
-			CanQuery = false,
-		})
-	end
-	for _, side in ipairs({ -1, 1 }) do
-		part({
-			Name = "BifrostEdge",
-			Size = Vector3.new(0.8, 1.2, length),
-			CFrame = CFrame.new(side * (width / 2 + 0.4), y + 0.3, startZ + length / 2),
-			Material = Enum.Material.Neon,
-			Color = GOLD_LIGHT,
-			Transparency = 0.2,
-		})
-		-- Golden towers at the entrance of the bridge, like the Bifrost gate.
-		tower(Vector3.new(side * (width / 2 + 9), y, startZ + 6), 70, 12)
-	end
+	tower(Vector3.new(-W.LaneOffset * 1.5 - 14, 0, startZ - 12), 70, 12)
+	tower(Vector3.new(W.LaneOffset * 1.5 + 14, 0, startZ - 12), 70, 12)
 
-	-- Observatory Launch Platform with a golden dome and the pads facing the planet.
-	local platformZ = startZ + length + W.PlatformRadius - 6
-	disc(Vector3.new(0, y - 1, platformZ), W.PlatformRadius, 2, {
+	-- Launch Platform: glass disc with golden rim, a small rock island under it.
+	island(p, W.PlatformRadius - 6, 60, Enum.Material.Basalt)
+	disc(p + Vector3.new(0, 0.6, 0), W.PlatformRadius, 1.2, {
 		Name = "LaunchPlatform",
 		Material = Enum.Material.Glass,
 		Color = Color3.fromRGB(18, 20, 40),
 		Reflectance = 0.3,
 	})
-	disc(Vector3.new(0, y - 1.2, platformZ), W.PlatformRadius + 1.2, 1.6, {
+	disc(p + Vector3.new(0, 0.4, 0), W.PlatformRadius + 1.5, 1, {
 		Name = "LaunchPlatformRim",
-		Material = Enum.Material.Neon,
-		Color = GOLD_LIGHT,
-		CanCollide = false,
-	})
-	underside(Vector3.new(0, y - 2, platformZ), W.PlatformRadius, 40, Color3.fromRGB(110, 90, 130))
-	local domeCenter = Vector3.new(0, y, platformZ - W.PlatformRadius * 0.45)
-	part({
-		Name = "ObservatoryDome",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(22, 22, 22),
-		CFrame = CFrame.new(domeCenter),
-		Material = Enum.Material.Foil,
-		Color = GOLD,
-		Reflectance = 0.2,
-	})
-	part({
-		Name = "ObservatorySpike",
-		Size = Vector3.new(2.5, 26, 2.5),
-		CFrame = CFrame.new(domeCenter + Vector3.new(0, 20, 0)) * CFrame.Angles(0, math.rad(45), 0),
 		Material = Enum.Material.Neon,
 		Color = GOLD_LIGHT,
 		CanCollide = false,
@@ -535,27 +624,20 @@ local function buildBifrost()
 	local padsFolder = Instance.new("Folder")
 	padsFolder.Name = "LaunchPads"
 	padsFolder.Parent = worldFolder
-	local returnCFrame = CFrame.lookAt(Vector3.new(0, y + 4, startZ + 14), Vector3.new(0, y + 4, startZ + 60))
-	local n = W.LaunchPadCount
-	for i = 1, n do
-		local x = (i - (n + 1) / 2) * 15
-		local z = platformZ + W.PlatformRadius * 0.5 - math.abs(x) * 0.3
-		makePadInFolder(padsFolder, i, Vector3.new(x, y + 0.1, z), returnCFrame)
+	local returnCFrame = CFrame.lookAt(p + Vector3.new(0, 4, -20), p + Vector3.new(0, 4, 100))
+	local index = 0
+	for tier = 1, #Planets.Tiers do
+		for k = -1, 1 do
+			index += 1
+			local deg = (tier - 2) * 42 + k * 13
+			local a = math.rad(deg)
+			local pos = p + Vector3.new(math.sin(a), 0, math.cos(a)) * W.PadRingRadius + Vector3.new(0, 1.4, 0)
+			makePad(index, pos, Planets.Tiers[tier].position, returnCFrame, tier, padsFolder)
+		end
 	end
 end
 
--- Houses spread on the visible crescent of the houses district, facing the meteor field.
-local function defaultAltarCenters()
-	local centers = {}
-	local c = W.HousesCenter
-	local n = W.AltarCount
-	for i = 1, n do
-		local a = math.rad(-110 + (i - 1) * (220 / (n - 1)))
-		local pos = c + Vector3.new(math.sin(a), 0, -math.cos(a)) * W.HouseRingRadius
-		centers[i] = CFrame.lookAt(pos, Vector3.new(W.FieldCenter.X, pos.Y, W.FieldCenter.Z))
-	end
-	return centers
-end
+-- Custom map --------------------------------------------------------------------------------
 
 -- Uses Assets/Map/Citadel and its markers (see docs/ASSET_PIPELINE.md). Returns false if absent.
 local function buildCustomMap()
@@ -580,55 +662,12 @@ local function buildCustomMap()
 		end
 	end
 	map.Parent = worldFolder
-
-	local spawnCF = AssetLibrary.MarkerCFrame(map, "Markers/Spawn") or CFrame.new(W.HousesCenter + Vector3.new(0, 1, 0))
-	local spawn = Instance.new("SpawnLocation")
-	spawn.Name = "Spawn"
-	spawn.Anchored = true
-	spawn.Neutral = true
-	spawn.Size = Vector3.new(10, 1, 10)
-	spawn.CFrame = CFrame.new(spawnCF.Position)
-	spawn.Transparency = 1
-	spawn.CanCollide = false
-	spawn.Duration = 0
-	spawn.Parent = worldFolder
-
-	local centers = {}
-	for i = 1, W.AltarCount do
-		local cf = AssetLibrary.MarkerCFrame(map, "Markers/House" .. i)
-		if cf then
-			table.insert(centers, CFrame.new(cf.Position) * cf.Rotation)
-		end
-	end
-	buildAltars(#centers > 0 and centers or defaultAltarCenters())
-
-	local padsFolder = Instance.new("Folder")
-	padsFolder.Name = "LaunchPads"
-	padsFolder.Parent = worldFolder
-	for b = 1, 8 do
-		local padCF = AssetLibrary.MarkerCFrame(map, "Markers/LaunchPad" .. b)
-		if padCF then
-			local returnCF = AssetLibrary.MarkerCFrame(map, "Markers/Return" .. b) or spawnCF
-			makePad(b, padCF.Position, returnCF + Vector3.new(0, 3, 0), padsFolder)
-		end
-	end
-	local markers2 = map:FindFirstChild("Markers")
-	local fieldMarker = markers2 and markers2:FindFirstChild("Field")
-	if fieldMarker and fieldMarker:IsA("BasePart") then
-		WorldService.Field = {
-			center = fieldMarker.Position,
-			inner = fieldMarker:GetAttribute("InnerRadius") or 0,
-			outer = fieldMarker:GetAttribute("OuterRadius") or W.FieldRadius,
-		}
-	end
-	local planetCF = AssetLibrary.MarkerCFrame(map, "Markers/Planet")
-	if planetCF then
-		WorldService.PlanetPosition = planetCF.Position
-	end
 	return true
 end
 
--- Places the custom house model for this evolution tier on the player's spot.
+-- Houses ------------------------------------------------------------------------------------
+
+-- Places the custom house model for this evolution tier on the player's house island.
 -- Returns true when the house changed. No-op when there are no house assets.
 function WorldService:UpdateHouse(player, tier)
 	local altar = WorldService:GetAltar(player)
@@ -652,26 +691,7 @@ function WorldService:UpdateHouse(player, tier)
 	house.Parent = altar.model
 	altar.house = house
 	altar.houseTier = tier
-
-	for _, name in ipairs({ "Base", "Glow" }) do
-		local p = altar.model:FindFirstChild(name)
-		if p then
-			p.Transparency = 1
-			p.CanCollide = false
-		end
-	end
-	altar.slots = {}
-	for k = 1, 4 do
-		local cf = AssetLibrary.MarkerCFrame(house, "Slot" .. k)
-		if cf then
-			altar.slots[k] = cf
-			local slotPart = house:FindFirstChild("Slot" .. k)
-			if slotPart and slotPart:IsA("BasePart") then
-				slotPart.Transparency = 1
-				slotPart.CanCollide = false
-			end
-		end
-	end
+	altar.placeholder.Parent = nil
 	local sign = house:FindFirstChild("Sign")
 	if sign and sign:IsA("BasePart") then
 		altar.signGui.Parent = sign
@@ -685,15 +705,8 @@ local function removeHouse(altar)
 	end
 	altar.house = nil
 	altar.houseTier = nil
-	altar.slots = nil
 	altar.signGui.Parent = altar.signPost
-	for name, transparency in pairs({ Base = 0, Glow = 0 }) do
-		local p = altar.model:FindFirstChild(name)
-		if p then
-			p.Transparency = transparency
-			p.CanCollide = name == "Base"
-		end
-	end
+	altar.placeholder.Parent = altar.model
 end
 
 function WorldService:AssignAltar(player)
@@ -717,7 +730,7 @@ function WorldService:ReleaseAltar(player)
 	for _, altar in ipairs(WorldService.Altars) do
 		if altar.owner == player then
 			altar.owner = nil
-			altar.sign.Text = "Free altar"
+			altar.sign.Text = "Free plot"
 			altar.model:SetAttribute("OwnerUserId", 0)
 			removeHouse(altar)
 		end
@@ -760,16 +773,18 @@ function WorldService:Init()
 	worldFolder.Parent = workspace
 
 	setupLighting()
-	setupTerrain()
-	if not buildCustomMap() then
-		buildHouses()
-		buildAltars(defaultAltarCenters())
-		buildField()
-		buildBifrost()
+	setupTerrainColors()
+	-- A custom Citadel model only adds its parts on top: the terrain layout and the gameplay
+	-- objects (plots, pads) are always generated from Game.World.
+	buildCustomMap()
+	buildCenter()
+	buildShop()
+	buildLeaderboardIsland()
+	if W.GenerateTerrain then
+		islets()
 	end
-	if useTerrain then
-		terrainIslets()
-	end
+	buildPlots()
+	buildBifrost()
 end
 
 function WorldService:Start()

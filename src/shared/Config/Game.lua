@@ -7,7 +7,7 @@ local IS_STUDIO = RunService:IsStudio()
 local Game = {}
 
 -- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
-Game.Version = "0.5.0"
+Game.Version = "0.6.0"
 
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
@@ -21,27 +21,45 @@ Game.Cycle = {
 	NextPlanetDelay = 8,
 }
 
+-- Map layout (top view, the planets are towards +Z), following the owner's sketch:
+--   center: the big Central Island, meteors fall on the Meteor Field in its middle;
+--   behind: one plot per player = a Comet Islet (meteors on pedestals) + a higher House Island,
+--           linked by bridges and fanned out in an arc;
+--   front sides: Shop island and Leaderboard island, each with a mountain;
+--   front: the Bifrost with 3 lanes (one per planet tier) joining the Launch Platform.
+-- Heights: houses 32 > comet islets 16 > everything else 0 (multiples of 4 = terrain voxels).
 Game.World = {
-	-- Zone 1 (back): Houses district
-	HousesCenter = Vector3.new(0, 0, -95),
-	HousesRadius = 170,
-	HouseRingRadius = 140,
-	AltarCount = 8,
+	CenterRadius = 170,
+	FieldCenter = Vector3.new(0, 0, 0),
+	FieldRadius = 85,
+	FieldInner = 0,
+	SpawnPosition = Vector3.new(0, 0, -125),
+
+	HouseCount = 6, -- set the server's Max Players to the same number
+	PlotArc = 150, -- degrees covered by the plots behind the central island
+	CometIsletDistance = 255,
+	CometIsletRadius = 30,
+	CometIsletHeight = 16,
+	HouseIslandDistance = 390,
+	HouseIslandRadius = 46,
+	HouseIslandHeight = 32,
 	AltarSlotsBase = 3,
-	-- Zone 2 (middle): Meteor Field, meteors fall between FieldInner and FieldRadius
-	FieldCenter = Vector3.new(0, 6, 0),
-	FieldRadius = 115,
-	FieldInner = 26,
-	-- Zone 3 (front): Bifrost + Launch Platform
-	BifrostLength = 300,
-	BifrostWidth = 26,
-	PlatformRadius = 38,
-	LaunchPadCount = 4,
+
+	ShopIsland = { center = Vector3.new(-240, 0, 140), radius = 80 },
+	LeaderboardIsland = { center = Vector3.new(240, 0, 140), radius = 80 },
+
+	BridgeStartZ = 160,
+	LaneOffset = 26, -- x distance between the 3 lanes
+	LaneWidth = 17,
+	PlatformCenter = Vector3.new(0, 0, 470),
+	PlatformRadius = 80,
+	PadRingRadius = 60,
 	LaunchPadRadius = 8,
-	PlanetPosition = Vector3.new(0, 380, 2750),
-	PlanetRadius = 420,
-	-- Island rock bodies and floating islets made of Terrain (skipped if the place has its own terrain).
+
+	-- false = the place has its own hand-made terrain (Studio Terrain Editor): no islands are
+	-- generated, only the parts (bridges, pedestals, houses, pads). Planets are always terrain.
 	GenerateTerrain = true,
+	-- Floating islets of terrain around the map (decoration).
 	IsletCount = 22,
 }
 
@@ -150,20 +168,13 @@ function Game.InventoryCap(data)
 	return Game.Economy.InventoryCap + Game.UpgradeEffect(data, "storage")
 end
 
--- Space backdrop (client): distances from the map center, in studs. The target planet is ~2750 away.
-Game.Sky = {
-	PlanetDistance = 4200,
-	NebulaDistance = 6000,
-	GalaxyDistance = 6500,
-}
-
 Game.Leaderboard = {
 	StoreName = "MeteorGods_Planets_v1",
 	Size = 10,
 	RefreshInterval = 120, -- seconds (OrderedDataStore limits)
 	-- Beside the spawn in the Houses district, facing the players.
-	Position = Vector3.new(-30, 17, -165),
-	LookAt = Vector3.new(0, 0, -120),
+	Position = Vector3.new(225, 17, 115), -- on the Leaderboard island
+	LookAt = Vector3.new(0, 0, 0),
 }
 
 Game.Trade = {

@@ -62,17 +62,6 @@ Assets.Particles = {
 	Trail = 0,
 }
 
--- Optional skybox: 6 uploaded images (e.g. a free space skybox from the Creator Store).
--- All 0 = default starfield; the generated planets, nebulae and galaxy are drawn either way.
-Assets.Sky = {
-	Front = 0,
-	Back = 0,
-	Left = 0,
-	Right = 0,
-	Up = 0,
-	Down = 0,
-}
-
 -- Equirectangular planet textures (future use on mantle/core spheres), keyed by planet name.
 Assets.PlanetTextures = {}
 

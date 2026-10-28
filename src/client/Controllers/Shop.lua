@@ -227,6 +227,12 @@ function Shop:Start()
 	Remotes.Get("PlanetDestroyed").OnClientEvent:Connect(function()
 		task.delay(3, offerStarterPack)
 	end)
+	-- The stall on the Shop island.
+	game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
+		if prompt.Name == "OpenShop" then
+			Panels.Open("Shop")
+		end
+	end)
 end
 
 return Shop

@@ -266,6 +266,9 @@ end
 -- Altar display -----------------------------------------------------------
 
 local function slotCFrame(altar, slot, slots)
+	if altar.pedestals and altar.pedestals[slot] then
+		return altar.pedestals[slot]
+	end
 	if altar.slots and altar.slots[slot] then
 		return CFrame.new(altar.slots[slot].Position)
 	end
@@ -361,7 +364,7 @@ function MeteorService:Start()
 	services.DataService.PlayerLoaded:Connect(function(player, data)
 		local altar = services.WorldService:AssignAltar(player)
 		if not altar then
-			Notify.Toast(player, "No free altar on this server", "bad")
+			Notify.Toast(player, "No free plot on this server", "bad")
 		else
 			services.WorldService:UpdateHouse(player, data.evolution)
 		end
