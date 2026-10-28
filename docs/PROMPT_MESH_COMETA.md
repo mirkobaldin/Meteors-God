@@ -2,6 +2,19 @@
 
 Da incollare nel Claude Code sul PC, con Blender aperto e il Blender MCP collegato.
 
+## Setup (porta 9555, separata da DeadPlanet)
+
+1. Blender: Edit → Preferences → Add-ons → (se non c'è già) Install from disk `addon.py` di blender-mcp
+   (github.com/ahujasid/blender-mcp) e attivalo ("Interface: Blender MCP").
+2. Nella vista 3D premi **N** → tab **BlenderMCP**: Port = **9555**, spunta **Use Hyper3D Rodin**
+   (e "Use Hunyuan3D" se c'è), premi **Connect to MCP server** / Start.
+3. Nel terminale, nella cartella Meteors-God:
+   `claude mcp add blender-meteors -e BLENDER_PORT=9555 -- uvx blender-mcp`
+   (su Windows, se non parte: `claude mcp add blender-meteors -e BLENDER_PORT=9555 -- cmd /c uvx blender-mcp`;
+   serve `uv` installato: `pip install uv`).
+4. Avvia `claude` in Meteors-God, scrivi `/mcp` e controlla che **blender-meteors** sia connesso.
+5. `git pull`, poi incolla il prompt qui sotto.
+
 ```
 Progetto Meteor Gods: C:\Users\mirko\Desktop\Meteors-God (fai git pull prima). Lavora SOLO in art/.
 Obiettivo: la MESH BASE delle comete IDENTICA alla reference art/reference/meteor_base.png
