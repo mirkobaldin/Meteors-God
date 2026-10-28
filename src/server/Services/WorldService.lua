@@ -584,6 +584,67 @@ local function buildLeaderboardIsland()
 	sideIsland(W.LeaderboardIsland, 1)
 end
 
+-- Fusion Reactor: a big machine on the central island where 3 meteors become 1 rarer one.
+local function buildFusionReactor()
+	local pos = Game.Fusion.Position
+	local model = Instance.new("Model")
+	model.Name = "FusionReactor"
+	local front = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
+	disc(pos + Vector3.new(0, 1.5, 0), 42, 3, { Name = "Base", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	disc(pos + Vector3.new(0, 3.2, 0), 34, 0.6, { Name = "BaseTrim", Material = Enum.Material.Foil, Color = GOLD, Parent = model })
+	-- Four heavy pylons with glass tubes.
+	for k = 0, 3 do
+		local a = math.rad(45 + k * 90)
+		local p = pos + Vector3.new(math.cos(a) * 28, 0, math.sin(a) * 28)
+		part({ Name = "Pylon", Size = Vector3.new(8, 46, 8), CFrame = CFrame.new(p + Vector3.new(0, 26, 0)) * CFrame.Angles(0, -a, 0), Material = Enum.Material.DiamondPlate, Color = Color3.fromRGB(70, 70, 90), Parent = model })
+		part({ Name = "PylonCap", Size = Vector3.new(10, 4, 10), CFrame = CFrame.new(p + Vector3.new(0, 50, 0)) * CFrame.Angles(0, -a, 0), Material = Enum.Material.Foil, Color = GOLD, Parent = model })
+		part({
+			Name = "Tube",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(30, 3, 3),
+			CFrame = CFrame.lookAt((p + pos) / 2 + Vector3.new(0, 34, 0), pos + Vector3.new(0, 30, 0)) * CFrame.Angles(0, math.rad(90), 0),
+			Material = Enum.Material.Glass,
+			Color = Color3.fromRGB(150, 200, 255),
+			Transparency = 0.4,
+			Parent = model,
+		})
+	end
+	-- Containment sphere with the glowing fusion core and two tilted rings.
+	part({ Name = "Containment", Shape = Enum.PartType.Ball, Size = Vector3.one * 30, CFrame = CFrame.new(pos + Vector3.new(0, 30, 0)), Material = Enum.Material.Glass, Color = Color3.fromRGB(120, 170, 255), Transparency = 0.55, CanCollide = false, Parent = model })
+	local core = part({ Name = "FusionCore", Shape = Enum.PartType.Ball, Size = Vector3.one * 11, CFrame = CFrame.new(pos + Vector3.new(0, 30, 0)), Material = Enum.Material.Neon, Color = Color3.fromRGB(190, 120, 255), CanCollide = false, Parent = model })
+	local light = Instance.new("PointLight")
+	light.Color = core.Color
+	light.Range = 40
+	light.Brightness = 2
+	light.Parent = core
+	for r, tilt in ipairs({ 25, -35 }) do
+		for i = 1, 20 do
+			local a = i / 20 * math.pi * 2
+			part({
+				Name = "ReactorRing" .. r,
+				Size = Vector3.new(2.5, 2.5, 6.4),
+				CFrame = CFrame.new(pos + Vector3.new(0, 30, 0)) * CFrame.Angles(math.rad(tilt), 0, 0) * CFrame.Angles(0, a, 0) * CFrame.new(21, 0, 0),
+				Material = Enum.Material.Foil,
+				Color = GOLD,
+				CanCollide = false,
+				Parent = model,
+			})
+		end
+	end
+	local _, bb = label(core, "⚛ FUSION REACTOR\n3 meteors → 1 rarer · unlocks at " .. Game.Fusion.RequiredPlanets .. " planets",
+		UDim2.new(44, 0, 10, 0), Vector3.new(0, 34, 0), Color3.fromRGB(220, 190, 255))
+	bb.MaxDistance = 900
+	local promptPart = part({ Name = "FusionPrompt", Size = Vector3.new(2, 2, 2), Transparency = 1, CanCollide = false, CFrame = front * CFrame.new(0, 5, -44), Parent = model })
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "OpenFusion"
+	prompt.ActionText = "Use Reactor"
+	prompt.ObjectText = "Fusion Reactor"
+	prompt.MaxActivationDistance = 24
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = promptPart
+	model.Parent = worldFolder
+end
+
 -- Bifrost: three separate bridges, each to its own Launch Platform ------------------------------
 
 local function buildLane(lane, padsFolder)
@@ -856,6 +917,7 @@ function WorldService:Init()
 	end
 	buildPlots()
 	buildBifrost()
+	buildFusionReactor()
 end
 
 function WorldService:Start()
