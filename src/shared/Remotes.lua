@@ -13,6 +13,8 @@ local EVENTS = {
 	"PlanetDestroyed", -- ({name, shards, share})
 	"TradeIncoming", -- (fromUserId, fromName)
 	"TradeState", -- (state | nil)
+	"PlanetFX", -- (payload) impacts, mantle shatter, supernova, arrival
+	"LaunchFX", -- (payload) another player's meteor flight
 	-- client -> server
 	"FireLaunch", -- (charge)
 	"CancelLaunch", -- ()

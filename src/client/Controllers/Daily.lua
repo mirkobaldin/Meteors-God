@@ -1,7 +1,8 @@
--- Daily rewards calendar (7 days, big reward on day 7).
+-- Daily rewards as a "constellation path": 7 stars joined by a line, day 7 is the big one.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Assets = require(Shared.Config.Assets)
@@ -15,97 +16,50 @@ local Daily = {}
 
 local player = Players.LocalPlayer
 local window
-local cells = {}
+local nodes = {}
+local claimButton
+local detail
 
-local function buildCell(parent, day, reward, big)
-	local c = UI.New("Frame", {
-		BackgroundColor3 = day % 2 == 0 and Color3.fromRGB(110, 70, 170) or Color3.fromRGB(70, 140, 190),
-		BorderSizePixel = 0,
-		LayoutOrder = day,
-		Parent = parent,
-	})
-	UI.Corner().Parent = c
-	UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = c
-	UI.New("UIGradient", {
-		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(180, 170, 220)),
-		Rotation = 90,
-		Parent = c,
-	})
-	UI.Text({
-		Size = UDim2.new(1, -10, big and 0.1 or 0.2, 0),
-		Position = UDim2.new(0, 5, 0.02, 0),
-		Text = "Giorno " .. day,
-		TextStrokeTransparency = 0,
-		MaxTextSize = 30,
-		Parent = c,
-	})
-	UI.Text({
-		Size = UDim2.new(1, 0, big and 0.42 or 0.34, 0),
-		Position = UDim2.new(0, 0, big and 0.16 or 0.2, 0),
-		Text = reward.emoji or "🎁",
-		MaxTextSize = big and 120 or 56,
-		Parent = c,
-	})
-	UI.Text({
-		Size = UDim2.new(1, -10, big and 0.12 or 0.14, 0),
-		Position = UDim2.new(0, 5, big and 0.6 or 0.54, 0),
-		Text = reward.label,
-		TextStrokeTransparency = 0,
-		MaxTextSize = big and 34 or 22,
-		Parent = c,
-	})
-	UI.Text({
-		Size = UDim2.new(1, -10, 0.1, 0),
-		Position = UDim2.new(0, 5, big and 0.72 or 0.67, 0),
-		Text = reward.sub or "",
-		TextColor3 = Color3.fromRGB(255, 240, 180),
-		TextStrokeTransparency = 0,
-		TextWrapped = true,
-		MaxTextSize = 16,
-		Parent = c,
-	})
-	local button = UI.Button({
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -6),
-		Size = UDim2.new(1, -12, big and 0.1 or 0.17, 0),
-		Text = "Non pronto",
-		BackgroundColor3 = Color3.fromRGB(35, 35, 55),
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		MaxTextSize = 22,
-		Parent = c,
-	}, function()
-		Remotes.Get("ClaimDaily"):FireServer()
-	end)
-	cells[day] = { frame = c, button = button }
-	return c
+local function state()
+	local streak = player:GetAttribute("DailyStreak") or 0
+	local available = player:GetAttribute("DailyAvailable") == true
+	local n = #Rewards.Daily
+	local pos = streak % n
+	if pos == 0 and streak > 0 and not available then
+		pos = n
+	end
+	return pos, available
 end
 
 function Daily:Refresh()
 	if not window.Visible then
 		return
 	end
-	local streak = player:GetAttribute("DailyStreak") or 0
-	local available = player:GetAttribute("DailyAvailable") == true
-	local n = #Rewards.Daily
-	local pos = streak % n -- rewards already claimed in this cycle
-	if pos == 0 and streak > 0 and not available then
-		pos = n -- cycle just completed today
-	end
-	for day, cell in pairs(cells) do
-		local b = cell.button
-		if day <= pos then
-			b.Text = "Riscattato ✓"
-			b.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-		elseif day == pos + 1 and available then
-			b.Text = "Riscatta!"
-			b.BackgroundColor3 = UI.Colors.Good
-		elseif day == pos + 1 then
-			b.Text = "Domani"
-			b.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
-		else
-			b.Text = "Non pronto"
-			b.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+	local pos, available = state()
+	for day, node in ipairs(nodes) do
+		local claimed = day <= pos
+		local current = day == pos + 1
+		node.star.BackgroundColor3 = claimed and UI.Colors.Gold
+			or current and (available and UI.Colors.Cyan or UI.Colors.PanelLight)
+			or Color3.fromRGB(25, 28, 55)
+		node.stroke.Color = current and available and UI.Colors.Cyan or UI.Colors.Gold
+		node.stroke.Transparency = (claimed or current) and 0 or 0.6
+		node.check.Visible = claimed
+		node.emoji.TextTransparency = claimed and 0.5 or 0
+		if node.line then
+			node.line.BackgroundColor3 = day <= pos + 1 and UI.Colors.Gold or Color3.fromRGB(60, 60, 90)
 		end
+	end
+	local nextDay = math.min(pos + 1, #Rewards.Daily)
+	local reward = Rewards.Daily[nextDay]
+	if available then
+		detail.Text = "Oggi: Giorno " .. nextDay .. "  ·  " .. reward.label .. " " .. (reward.sub or "")
+		claimButton.Text = "RISCATTA"
+		claimButton.BackgroundColor3 = UI.Colors.Gold
+	else
+		detail.Text = "Torna domani per il Giorno " .. (pos % #Rewards.Daily + 1)
+		claimButton.Text = "GIÀ RISCATTATO"
+		claimButton.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
 	end
 end
 
@@ -116,34 +70,120 @@ function Daily:Init()
 		Title = "Premi giornalieri",
 		Emoji = "📅",
 		Icon = Assets.Icons.Daily,
-		Size = UDim2.new(0.72, 0, 0.74, 0),
-		MaxSize = Vector2.new(1000, 640),
-	})
-	local left = UI.New("Frame", { Size = UDim2.new(0.74, 0, 1, 0), BackgroundTransparency = 1, Parent = content })
-	UI.New("UIGridLayout", {
-		CellSize = UDim2.new(0.333, -8, 0.5, -8),
-		CellPadding = UDim2.fromOffset(8, 8),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = left,
+		HeaderColor = Color3.fromRGB(60, 120, 200),
+		Size = UDim2.new(0.7, 0, 0.56, 0),
+		MaxSize = Vector2.new(980, 460),
+		MinSize = Vector2.new(560, 340),
 	})
 	local n = #Rewards.Daily
-	for day = 1, n - 1 do
-		buildCell(left, day, Rewards.Daily[day], false)
+	local path = UI.New("Frame", { Size = UDim2.new(1, 0, 0.62, 0), BackgroundTransparency = 1, Parent = content })
+	for day = 1, n do
+		local reward = Rewards.Daily[day]
+		local big = day == n
+		local x = (day - 0.5) / n
+		local y = (day % 2 == 0) and 0.36 or 0.5
+		if big then
+			y = 0.42
+		end
+		local size = big and 104 or 74
+		if day > 1 then
+			local prev = nodes[day - 1]
+			local p1 = Vector2.new(prev.x, prev.y)
+			local p2 = Vector2.new(x, y)
+			local line = UI.New("Frame", {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2),
+				Size = UDim2.new((p2 - p1).Magnitude * 1.02, 0, 0, 3),
+				Rotation = math.deg(math.atan2((p2.Y - p1.Y) * 0.35, p2.X - p1.X)),
+				BorderSizePixel = 0,
+				ZIndex = 1,
+				Parent = path,
+			})
+			prev.line = line
+		end
+		local star = UI.New("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(x, y),
+			Size = UDim2.fromOffset(size, size),
+			BorderSizePixel = 0,
+			ZIndex = 2,
+			Parent = path,
+		})
+		UI.Corner(UDim.new(1, 0)).Parent = star
+		local stroke = UI.Stroke(UI.Colors.Gold, big and 3 or 2, 0.3)
+		stroke.Parent = star
+		local emoji = UI.Text({
+			Size = UDim2.fromScale(0.7, 0.7),
+			Position = UDim2.fromScale(0.15, 0.15),
+			Text = reward.emoji or "⭐",
+			ZIndex = 3,
+			MaxTextSize = big and 56 or 36,
+			Parent = star,
+		})
+		local check = UI.Text({
+			AnchorPoint = Vector2.new(1, 1),
+			Position = UDim2.fromScale(1.05, 1.05),
+			Size = UDim2.fromOffset(26, 26),
+			Text = "✓",
+			Font = UI.TitleFont,
+			TextColor3 = UI.Colors.Good,
+			TextStrokeTransparency = 0,
+			ZIndex = 4,
+			Visible = false,
+			MaxTextSize = 24,
+			Parent = star,
+		})
+		UI.Text({
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(x, 0, y, size / 2 + 6),
+			Size = UDim2.fromOffset(120, 16),
+			Text = "GIORNO " .. day,
+			Font = UI.TitleFont,
+			TextColor3 = big and UI.Colors.Gold or UI.Colors.Muted,
+			MaxTextSize = 13,
+			Parent = path,
+		})
+		UI.Text({
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(x, 0, y, size / 2 + 22),
+			Size = UDim2.fromOffset(130, 16),
+			Text = reward.label,
+			MaxTextSize = 13,
+			Parent = path,
+		})
+		nodes[day] = { star = star, stroke = stroke, emoji = emoji, check = check, x = x, y = y }
 	end
-	local big = buildCell(content, n, Rewards.Daily[n], true)
-	big.Position = UDim2.new(0.76, 0, 0, 0)
-	big.Size = UDim2.new(0.24, 0, 1, -4)
-	UI.Text({
+	detail = UI.Text({
+		Position = UDim2.new(0, 0, 0.7, 0),
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "",
+		MaxTextSize = 20,
+		Parent = content,
+	})
+	claimButton = UI.Button({
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 1, 4),
-		Size = UDim2.new(1, 0, 0, 22),
-		Text = "Se salti un giorno non perdi i progressi: riprendi da dove eri.",
+		Position = UDim2.new(0.5, 0, 0.8, 0),
+		Size = UDim2.fromOffset(260, 46),
+		Text = "RISCATTA",
+		MaxTextSize = 22,
+		Parent = content,
+	}, function()
+		Remotes.Get("ClaimDaily"):FireServer()
+	end)
+	UI.Text({
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, 0),
+		Size = UDim2.new(1, 0, 0, 16),
+		Text = "Saltare un giorno non azzera la costellazione: riprendi da dove eri.",
 		TextColor3 = UI.Colors.Muted,
-		MaxTextSize = 16,
-		Parent = window,
+		MaxTextSize = 14,
+		Parent = content,
 	})
 	Panels.Register("Daily", window, function()
 		Daily:Refresh()
+		local scale = window:FindFirstChildOfClass("UIScale") or UI.New("UIScale", { Parent = window })
+		scale.Scale = 0.9
+		TweenService:Create(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = 1 }):Play()
 	end)
 end
 
@@ -154,7 +194,6 @@ function Daily:Start()
 	player:GetAttributeChangedSignal("DailyAvailable"):Connect(function()
 		Daily:Refresh()
 	end)
-	-- Open the calendar automatically when a reward is waiting.
 	task.spawn(function()
 		local start = os.clock()
 		while player:GetAttribute("DailyAvailable") == nil and os.clock() - start < 30 do

@@ -1,26 +1,29 @@
--- Server side of the launch: validates the pad, picks the meteor, spawns it above the
--- player's head, computes damage on release and flies it into the planet.
+-- Server side of the launch: validates the pad, picks the meteor, holds it above the player's
+-- head (visible to everyone), then on release resolves where the aimed throw lands, tells the
+-- other clients to animate the flight and applies the hit when the meteor arrives.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Meteors = require(Shared.Config.Meteors)
 local Evolutions = require(Shared.Config.Evolutions)
 local MeteorMath = require(Shared.Util.MeteorMath)
+local PlanetMath = require(Shared.Util.PlanetMath)
 local MeteorVisual = require(Shared.MeteorVisual)
 local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent.Parent
 local RateLimit = require(Server.RateLimit)
+local Poses = require(Server.Poses)
 
 local LaunchService = {}
 
 local services
 local active = {} -- [player] = {uid, startedAt, model, fired}
 local resultRemote
+local launchFxRemote
 
 local L = Game.Launch
 
@@ -32,8 +35,8 @@ local function setAuraBoost(player, boosted)
 	if aura then
 		if boosted then
 			aura:SetAttribute("BaseRate", aura:GetAttribute("BaseRate") or aura.Rate)
-			aura.Rate = (aura:GetAttribute("BaseRate") or 10) * 5
-			aura.Speed = NumberRange.new(4, 8)
+			aura.Rate = (aura:GetAttribute("BaseRate") or 10) * 6
+			aura.Speed = NumberRange.new(4, 9)
 		else
 			aura.Rate = aura:GetAttribute("BaseRate") or aura.Rate
 			aura.Speed = NumberRange.new(1, 3)
@@ -51,6 +54,7 @@ local function cleanup(player, cooldownSeconds)
 		a.model:Destroy()
 	end
 	setAuraBoost(player, false)
+	Poses.Reset(player.Character)
 	if cooldownSeconds then
 		services.MeteorService:SetCooldown(player, a.uid, cooldownSeconds)
 	end
@@ -82,7 +86,7 @@ local function computeDamage(player, meteor, charge, crit)
 end
 
 local function beginLaunch(player)
-	if not RateLimit.Allow(player, "BeginLaunch", 0.4) then
+	if not RateLimit.Allow(player, "BeginLaunch", 0.3) then
 		return { ok = false }
 	end
 	if active[player] then
@@ -96,7 +100,7 @@ local function beginLaunch(player)
 		return { ok = false, reason = "Aspetta il Bombardamento per lanciare!" }
 	end
 	if not services.PlanetService:IsTargetable() then
-		return { ok = false, reason = "Il pianeta sta arrivando..." }
+		return { ok = false, reason = "Il pianeta si sta formando..." }
 	end
 	if services.TradeService:IsTrading(player) then
 		return { ok = false, reason = "Chiudi lo scambio prima di lanciare" }
@@ -112,7 +116,7 @@ local function beginLaunch(player)
 	end
 	local uid = services.MeteorService:BestReady(player)
 	if not uid then
-		return { ok = false, reason = "Nessun meteorite pronto! Aspetta la ricarica o raccoglierne altri." }
+		return { ok = false, reason = "Nessun meteorite pronto! Aspetta la ricarica o raccogline altri." }
 	end
 	local meteor = data.meteors[uid]
 	local size = MeteorMath.LaunchSize(meteor, os.time())
@@ -125,7 +129,7 @@ local function beginLaunch(player)
 	})
 	local core = model.PrimaryPart
 	core.Massless = true
-	core.CFrame = root.CFrame * CFrame.new(0, 5 + size / 2, 0)
+	core.CFrame = root.CFrame * CFrame.new(0, 4 + size / 2, 0)
 	local weld = Instance.new("WeldConstraint")
 	weld.Name = "HoldWeld"
 	weld.Part0 = root
@@ -134,9 +138,10 @@ local function beginLaunch(player)
 	model.Name = "Launch_" .. player.Name
 	model.Parent = workspace
 
-	active[player] = { uid = uid, startedAt = os.clock(), model = model, fired = false }
-	services.MeteorService:SetCooldown(player, uid, L.MaxHoldTime + L.FlightTime + 5)
+	active[player] = { uid = uid, startedAt = os.clock(), model = model, fired = false, size = size }
+	services.MeteorService:SetCooldown(player, uid, L.MaxHoldTime + L.FlightMax + 5)
 	setAuraBoost(player, true)
+	Poses.Set(character, "charge", 0.25)
 
 	local myLaunch = active[player]
 	task.delay(L.MaxHoldTime + 1, function()
@@ -151,11 +156,14 @@ local function beginLaunch(player)
 		mutation = meteor.m,
 		size = size,
 		returnCFrame = pad.returnCFrame,
-		planetPosition = services.WorldService.PlanetPosition,
 	}
 end
 
-local function fireLaunch(player, charge)
+local function isFiniteVector(v)
+	return typeof(v) == "Vector3" and v.X == v.X and v.Y == v.Y and v.Z == v.Z and v.Magnitude < 1e6
+end
+
+local function fireLaunch(player, charge, aim)
 	local a = active[player]
 	if not a or a.fired then
 		return
@@ -167,66 +175,59 @@ local function fireLaunch(player, charge)
 	if os.clock() - a.startedAt < L.MinChargeTime then
 		charge = math.min(charge, 0.3)
 	end
-	a.fired = true
-
 	local data = services.DataService:Get(player)
 	local meteor = data and data.meteors[a.uid]
-	if not meteor then
+	local core = a.model and a.model.PrimaryPart
+	if not meteor or not core then
 		cleanup(player, nil)
 		return
 	end
+	a.fired = true
 
+	local origin = core.Position
+	if not isFiniteVector(aim) then
+		aim = workspace:GetAttribute("PlanetCenter") or Game.World.PlanetPosition
+	end
 	local crit = charge >= L.CritThreshold
 	local damage = computeDamage(player, meteor, charge, crit)
 	local def = Meteors.ByID[meteor.t]
 	local color = def and def.fire[1] or Color3.new(1, 1, 1)
-	local impact = services.PlanetService:GetImpactPoint()
+	local impact, normal = services.PlanetService:ResolveImpact(origin, aim)
+	local flightTime = PlanetMath.FlightTime((impact - origin).Magnitude)
 
-	-- Release the meteor and send it flying.
-	local model = a.model
-	local core = model.PrimaryPart
-	local weld = core:FindFirstChild("HoldWeld")
-	if weld then
-		weld:Destroy()
-	end
-	core.Anchored = true
-	local a0 = Instance.new("Attachment")
-	a0.Position = Vector3.new(0, core.Size.X * 0.4, 0)
-	a0.Parent = core
-	local a1 = Instance.new("Attachment")
-	a1.Position = Vector3.new(0, -core.Size.X * 0.4, 0)
-	a1.Parent = core
-	local trail = Instance.new("Trail")
-	trail.Attachment0 = a0
-	trail.Attachment1 = a1
-	trail.Color = ColorSequence.new(def.fire[1], def.fire[2])
-	trail.LightEmission = 1
-	trail.Lifetime = 0.6
-	trail.WidthScale = NumberSequence.new(1, 0)
-	trail.Transparency = NumberSequence.new(0, 1)
-	trail.FaceCamera = true
-	trail.Parent = core
-
-	local flight = TweenService:Create(core, TweenInfo.new(L.FlightTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		CFrame = CFrame.lookAt(impact, impact + (impact - core.Position).Unit),
-	})
-	flight:Play()
+	-- The flight itself is animated by each client; the server only keeps time.
+	a.model:Destroy()
+	setAuraBoost(player, false)
+	Poses.Set(player.Character, "throw", 0.08)
+	task.delay(0.35, function()
+		Poses.Reset(player.Character, 0.3)
+	end)
 
 	resultRemote:FireClient(player, {
-		model = model,
-		flightTime = L.FlightTime,
+		impact = impact,
+		normal = normal,
+		flightTime = flightTime,
 		damage = damage,
 		crit = crit,
-		impact = impact,
 	})
-	setAuraBoost(player, false)
-	services.MeteorService:SetCooldown(player, a.uid, L.FlightTime + MeteorMath.Cooldown(data.upgrades.recharge))
-
-	task.delay(L.FlightTime, function()
-		local dealt = services.PlanetService:ApplyHit(player, damage, impact, crit, color)
-		if model.Parent then
-			model:Destroy()
+	local fx = {
+		thrower = player.UserId,
+		from = origin,
+		to = impact,
+		flightTime = flightTime,
+		meteorType = meteor.t,
+		mutation = meteor.m,
+		size = a.size,
+	}
+	for _, other in ipairs(Players:GetPlayers()) do
+		if other ~= player then
+			launchFxRemote:FireClient(other, fx)
 		end
+	end
+	services.MeteorService:SetCooldown(player, a.uid, flightTime + MeteorMath.Cooldown(data.upgrades.recharge))
+
+	task.delay(flightTime, function()
+		local dealt = services.PlanetService:ApplyHit(player, damage, impact, normal, crit, color)
 		if active[player] == a then
 			active[player] = nil
 		end
@@ -241,6 +242,7 @@ end
 function LaunchService:Init(s)
 	services = s
 	resultRemote = Remotes.Get("LaunchResult")
+	launchFxRemote = Remotes.Get("LaunchFX")
 end
 
 function LaunchService:Start()
@@ -253,7 +255,7 @@ function LaunchService:Start()
 		end
 	end)
 
-	local function onCharacter(player)
+	local function watch(player)
 		player.CharacterRemoving:Connect(function()
 			local a = active[player]
 			if a and not a.fired then
@@ -261,9 +263,9 @@ function LaunchService:Start()
 			end
 		end)
 	end
-	Players.PlayerAdded:Connect(onCharacter)
+	Players.PlayerAdded:Connect(watch)
 	for _, p in ipairs(Players:GetPlayers()) do
-		onCharacter(p)
+		watch(p)
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		local a = active[player]

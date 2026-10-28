@@ -34,12 +34,17 @@
 
 ## 4. Il lancio
 
-1. Il giocatore arriva sul Pad di Lancio in fondo a un Ponte Stellare durante il Bombardamento.
-2. Il server sceglie il miglior meteorite **pronto** del suo altare e lo fa apparire sopra la sua testa.
-3. Il giocatore si solleva in aria sopra il vuoto, l'aura si accende (colore = Evoluzione).
-4. **Carica**: tenendo premuto, una barra oscilla 0 → 1 → 0. Rilasciare nella zona dorata (≥ 88%) = **CRITICO** (x2).
-5. Il meteorite parte (volo ~1,2 s), la telecamera lo segue, impatto, numero di danno, cratere col nome.
-6. Il giocatore torna all'inizio del ponte. Il meteorite torna all'altare **stordito** (ricarica).
+1. Il giocatore entra sul Pad di Lancio in fondo a un Ponte Stellare durante il Bombardamento.
+2. **Decollo istantaneo** (0,3 s): si solleva sopra il vuoto, la camera inquadra il pianeta da sopra la spalla,
+   il personaggio alza le braccia (posa procedurale visibile a tutti) e il meteorite appare sopra la testa.
+3. **Mira**: un mirino segue il mouse (o il dito); una scia di puntini mostra la traiettoria. Il meteorite va
+   esattamente dove miri; se manchi il pianeta finisce sul bordo più vicino.
+4. **Carica**: tenendo premuto, l'anello attorno al mirino si riempie avanti e indietro. Rilasciare nei segmenti
+   dorati (≥ 88%) = **CRITICO** (x2). Il meteorite si gonfia, la camera trema e stringe lo zoom.
+5. **Volo**: camera che insegue il meteorite, poi inquadratura laterale cinematografica dell'impatto (click per saltarla).
+6. **Impatto**: lampo, doppia onda d'urto sulla superficie, fuoco, fumo, scintille, rocce e le **placche della crosta
+   che volano nello spazio** scoprendo il mantello incandescente. Numero di danno gigante.
+7. Il giocatore torna all'inizio del ponte; il meteorite torna all'altare stordito (ricarica). `Q` annulla il lancio.
 
 ### Formula del danno
 
@@ -137,16 +142,16 @@ danno = DannoBase(tipo)
 
 ## 7. Pianeti
 
-Sequenza (v0.1): Pianeta Roccioso → Pianeta di Ghiaccio → Pianeta di Lava → Pianeta Caramella → Pianeta Cristallo → Pianeta Ombra; poi si ricomincia con vita ×2,5 per giro.
+Pianeti grandi (raggio 420 stud) e lontani (~2.300 stud dai ponti), generati da codice:
+- **Crosta**: icosfera di 320 placche tettoniche colorate per bioma (rumore + calotte polari + venature/lava al neon).
+  Ogni impatto rimuove le placche più vicine (cratere vero) e scopre il mantello. Placche rimosse proporzionali alla vita persa.
+- **Mantello**: sfera incandescente che si rimpicciolisce e si scurisce, poi esplode in schegge.
+- **Nucleo**: pulsa; a zero → supernova con lampo accecante, onde d'urto e frammenti per tutto il server.
+- **Atmosfera**: alone luminoso (materiale ForceField). Il Pianeta Leggendario ha un anello.
 
-Ogni pianeta ha **3 strati**:
-- **Crosta** (55% della vita): 42 blocchi che si staccano vicino agli impatti.
-- **Mantello** (35%): si rimpicciolisce e si scurisce, poi esplode in frammenti.
-- **Nucleo** (10%): pulsa; a zero → supernova.
-
-Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo).
-
-**Pianeta Leggendario**: evocabile con Developer Product, vita alta, ricompense ×3.
+Sequenza: Roccioso → Ghiaccio → Lava → Caramella → Cristallo → Ombra; poi si ricomincia con vita ×2,5.
+Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Quota vita: crosta 55%, mantello 35%, nucleo 10%.
+Il server decide le placche rimosse; tutti gli effetti (detriti, esplosioni, voli) sono calcolati sui client.
 
 ## 8. Trading
 

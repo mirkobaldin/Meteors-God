@@ -32,14 +32,6 @@ local function randomGroundPoint()
 end
 
 local function impactFlash(position, color)
-	local e = Instance.new("Explosion")
-	e.Position = position
-	e.BlastRadius = 6
-	e.BlastPressure = 0
-	e.DestroyJointRadiusPercent = 0
-	e.ExplosionType = Enum.ExplosionType.NoCraters
-	e.Parent = workspace
-
 	local ring = Instance.new("Part")
 	ring.Anchored = true
 	ring.CanCollide = false

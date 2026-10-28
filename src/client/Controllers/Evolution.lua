@@ -1,4 +1,5 @@
--- Evolution window: current form -> next form, requirements, Evolve / Skip (Robux) / Ascend.
+-- "Ladder of Divinity": every evolution as a step. Past steps are lit, the current one glows,
+-- the next one shows its requirements with Evolve / Skip (Robux), future ones are locked.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +18,7 @@ local Evolution = {}
 
 local player = Players.LocalPlayer
 local window
+local rows = {}
 local refs = {}
 
 local VISUAL_NAMES = {
@@ -27,101 +29,68 @@ local VISUAL_NAMES = {
 	galaxy = "Aura galattica",
 }
 
-local function card(parent, x, title)
-	local c = UI.New("Frame", {
-		Position = UDim2.new(x, 0, 0, 0),
-		Size = UDim2.new(0.42, 0, 0.62, 0),
-		BackgroundColor3 = Color3.fromRGB(60, 70, 130),
-		BorderSizePixel = 0,
-		Parent = parent,
-	})
-	UI.Corner().Parent = c
-	UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = c
-	local header = UI.Text({
-		Size = UDim2.new(1, -16, 0.14, 0),
-		Position = UDim2.new(0, 8, 0.02, 0),
-		Text = title,
-		TextColor3 = UI.Colors.Muted,
-		TextStrokeTransparency = 0,
-		MaxTextSize = 24,
-		Parent = c,
-	})
-	local orb = UI.New("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0.18, 0),
-		Size = UDim2.fromScale(0.36, 0.36),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		BorderSizePixel = 0,
-		Parent = c,
-	})
-	UI.New("UIAspectRatioConstraint", { Parent = orb })
-	UI.Corner(UDim.new(1, 0)).Parent = orb
-	UI.Stroke(Color3.fromRGB(255, 255, 255), 4, 0.2).Parent = orb
-	UI.Icon(orb, Assets.Icons.Evolution, "🌟", { MaxTextSize = 50 })
-	local name = UI.Text({
-		Size = UDim2.new(1, -16, 0.14, 0),
-		Position = UDim2.new(0, 8, 0.56, 0),
-		Text = "",
-		TextStrokeTransparency = 0,
-		MaxTextSize = 34,
-		Parent = c,
-	})
-	local mult = UI.Text({
-		Size = UDim2.new(1, -16, 0.11, 0),
-		Position = UDim2.new(0, 8, 0.71, 0),
-		Text = "",
-		TextColor3 = UI.Colors.Good,
-		TextStrokeTransparency = 0,
-		MaxTextSize = 26,
-		Parent = c,
-	})
-	local looks = UI.Text({
-		Size = UDim2.new(1, -16, 0.14, 0),
-		Position = UDim2.new(0, 8, 0.83, 0),
-		Text = "",
-		TextColor3 = Color3.fromRGB(255, 170, 90),
-		TextStrokeTransparency = 0,
-		MaxTextSize = 18,
-		Parent = c,
-	})
-	return { frame = c, header = header, orb = orb, name = name, mult = mult, looks = looks }
-end
-
-local function fillCard(c, evo, index)
-	c.orb.BackgroundColor3 = evo.aura
-	c.name.Text = evo.name
-	c.mult.Text = "x" .. evo.mult .. " Potere  ·  x" .. evo.mult .. " Danno"
-	local looks = {}
+local function looks(evo)
+	local list = {}
 	for _, v in ipairs(evo.visuals) do
-		table.insert(looks, VISUAL_NAMES[v] or v)
+		table.insert(list, VISUAL_NAMES[v] or v)
 	end
 	if evo.scale and evo.scale > 1 then
-		table.insert(looks, "Taglia x" .. evo.scale)
+		table.insert(list, "Taglia x" .. evo.scale)
 	end
-	c.looks.Text = #looks > 0 and table.concat(looks, " · ") or "Aura stellare"
-	c.header.Text = c.header.Text:gsub("%d+$", tostring(index))
+	return #list > 0 and table.concat(list, " · ") or "Aura stellare"
 end
 
-local function chip(parent, x, emoji)
-	local f = UI.New("Frame", {
-		Position = UDim2.new(x, 0, 0.66, 0),
-		Size = UDim2.new(0.44, 0, 0.13, 0),
-		BackgroundColor3 = Color3.fromRGB(30, 30, 60),
+local function buildRow(parent, index, evo)
+	local row = UI.New("Frame", {
+		Size = UDim2.new(1, -10, 0, 64),
+		BackgroundColor3 = UI.Colors.PanelLight,
+		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
+		LayoutOrder = -index, -- highest form on top
 		Parent = parent,
 	})
-	UI.Corner(UDim.new(0, 10)).Parent = f
-	UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = f
-	UI.Text({ Size = UDim2.fromScale(0.18, 1), Text = emoji, MaxTextSize = 32, Parent = f })
-	local t = UI.Text({
-		Size = UDim2.new(0.8, 0, 1, -6),
-		Position = UDim2.new(0.18, 0, 0, 3),
-		Text = "",
-		TextStrokeTransparency = 0,
-		MaxTextSize = 28,
-		Parent = f,
+	UI.Corner(UDim.new(0, 14)).Parent = row
+	local stroke = UI.Stroke(evo.aura, 1.5, 0.6)
+	stroke.Parent = row
+	local orb = UI.New("Frame", {
+		Position = UDim2.fromOffset(10, 8),
+		Size = UDim2.fromOffset(48, 48),
+		BackgroundColor3 = evo.aura,
+		BorderSizePixel = 0,
+		Parent = row,
 	})
-	return t
+	UI.Corner(UDim.new(1, 0)).Parent = orb
+	UI.Stroke(Color3.new(1, 1, 1), 2, 0.4).Parent = orb
+	UI.Text({ Size = UDim2.fromScale(1, 1), Text = tostring(index), Font = UI.TitleFont, TextColor3 = Color3.fromRGB(20, 20, 40), MaxTextSize = 24, Parent = orb })
+	UI.Text({
+		Position = UDim2.fromOffset(70, 8),
+		Size = UDim2.new(0.45, -70, 0, 26),
+		Text = string.upper(evo.name),
+		Font = UI.TitleFont,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		MaxTextSize = 20,
+		Parent = row,
+	})
+	UI.Text({
+		Position = UDim2.fromOffset(70, 36),
+		Size = UDim2.new(0.45, -70, 0, 18),
+		Text = "x" .. evo.mult .. " Potere e Danno  ·  " .. looks(evo),
+		TextColor3 = UI.Colors.Muted,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		MaxTextSize = 14,
+		Parent = row,
+	})
+	local status = UI.Text({
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -14, 0.5, 0),
+		Size = UDim2.new(0.5, -20, 0, 26),
+		Text = "",
+		Font = UI.TitleFont,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		MaxTextSize = 16,
+		Parent = row,
+	})
+	rows[index] = { row = row, stroke = stroke, status = status }
 end
 
 function Evolution:Refresh()
@@ -131,89 +100,89 @@ function Evolution:Refresh()
 	local index = player:GetAttribute("Evolution") or 1
 	local power = player:GetAttribute("Power") or 0
 	local planets = player:GetAttribute("Planets") or 0
-	local current = Evolutions.Get(index)
-	fillCard(refs.current, current, index)
-	refs.ascend.Visible = index >= Evolutions.AscensionMinEvolution
+	for i, r in ipairs(rows) do
+		local evo = Evolutions.Get(i)
+		if i < index then
+			r.status.Text = "✓ RAGGIUNTA"
+			r.status.TextColor3 = UI.Colors.Good
+			r.row.BackgroundTransparency = 0.5
+			r.stroke.Transparency = 0.7
+		elseif i == index then
+			r.status.Text = "★ FORMA ATTUALE"
+			r.status.TextColor3 = UI.Colors.Gold
+			r.row.BackgroundTransparency = 0.05
+			r.stroke.Transparency = 0
+		elseif i == index + 1 then
+			r.status.Text = "Potere " .. Format.Number(power) .. "/" .. Format.Number(evo.power) .. "  ·  Pianeti " .. planets .. "/" .. evo.planets
+			r.status.TextColor3 = Color3.new(1, 1, 1)
+			r.row.BackgroundTransparency = 0.2
+			r.stroke.Transparency = 0.2
+		else
+			r.status.Text = "🔒"
+			r.status.TextColor3 = UI.Colors.Muted
+			r.row.BackgroundTransparency = 0.6
+			r.stroke.Transparency = 0.8
+		end
+	end
 
+	refs.ascend.Visible = index >= Evolutions.AscensionMinEvolution
 	if index >= Evolutions.Max() then
-		refs.next.frame.Visible = false
-		refs.arrow.Text = "MAX"
-		refs.powerChip.Text = "Forma suprema raggiunta"
-		refs.planetChip.Text = "Ascendi per crescere ancora"
-		refs.skip.Visible = false
 		refs.evolve.Visible = false
+		refs.skip.Visible = false
+		refs.info.Text = "Hai raggiunto la forma suprema. Ascendi per crescere ancora!"
 		return
 	end
-	refs.next.frame.Visible = true
-	refs.arrow.Text = "➜"
 	local nextEvo = Evolutions.Get(index + 1)
-	fillCard(refs.next, nextEvo, index + 1)
-
-	local powerOk = power >= nextEvo.power
-	local planetsOk = planets >= nextEvo.planets
-	refs.powerChip.Text = "Potere " .. Format.Number(power) .. " / " .. Format.Number(nextEvo.power)
-	refs.powerChip.TextColor3 = powerOk and UI.Colors.Good or Color3.fromRGB(255, 255, 255)
-	refs.planetChip.Text = "Pianeti " .. planets .. " / " .. nextEvo.planets
-	refs.planetChip.TextColor3 = planetsOk and UI.Colors.Good or Color3.fromRGB(255, 255, 255)
-
-	refs.skip.Visible = true
-	refs.skip.Text = "Salta Evoluzione  " .. Prices.ProductText("EvolveNow")
+	local ready = power >= nextEvo.power and planets >= nextEvo.planets
 	refs.evolve.Visible = true
-	if powerOk and planetsOk then
-		refs.evolve.Text = "EVOLVI!"
-		refs.evolve.BackgroundColor3 = UI.Colors.Good
-	elseif not planetsOk then
-		refs.evolve.Text = "Servono altri " .. (nextEvo.planets - planets) .. " pianeti"
-		refs.evolve.BackgroundColor3 = Color3.fromRGB(60, 120, 50)
+	refs.skip.Visible = true
+	refs.skip.Text = "SALTA  " .. Prices.ProductText("EvolveNow")
+	if ready then
+		refs.evolve.Text = "EVOLVI IN " .. string.upper(nextEvo.name)
+		refs.evolve.BackgroundColor3 = UI.Colors.Gold
+		refs.info.Text = "Sei pronto!"
 	else
-		refs.evolve.Text = "Serve più Potere"
-		refs.evolve.BackgroundColor3 = Color3.fromRGB(60, 120, 50)
+		refs.evolve.Text = "NON ANCORA PRONTO"
+		refs.evolve.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+		local missing = {}
+		if power < nextEvo.power then
+			table.insert(missing, Format.Number(nextEvo.power - power) .. " Potere")
+		end
+		if planets < nextEvo.planets then
+			table.insert(missing, (nextEvo.planets - planets) .. " pianeti distrutti")
+		end
+		refs.info.Text = "Ti mancano: " .. table.concat(missing, " e ")
 	end
 end
 
 function Evolution:Init()
 	local gui = UI.Screen("Evolution", 10)
 	local content
-	window, content = UI.Window(gui, { Title = "Evoluzione", Emoji = "🌟", Icon = Assets.Icons.Evolution })
-	refs.current = card(content, 0.03, "Attuale · Evoluzione 1")
-	refs.next = card(content, 0.55, "Prossima · Evoluzione 2")
-	refs.next.frame.BackgroundColor3 = Color3.fromRGB(90, 60, 140)
-	refs.arrow = UI.Text({
-		Position = UDim2.new(0.45, 0, 0.22, 0),
-		Size = UDim2.new(0.1, 0, 0.16, 0),
-		Text = "➜",
-		TextStrokeTransparency = 0,
-		MaxTextSize = 60,
-		Parent = content,
+	window, content = UI.Window(gui, {
+		Title = "Scala della Divinità",
+		Emoji = "🌟",
+		Icon = Assets.Icons.Evolution,
+		HeaderColor = Color3.fromRGB(150, 90, 220),
+		Size = UDim2.new(0.56, 0, 0.74, 0),
+		MaxSize = Vector2.new(780, 640),
 	})
-	refs.powerChip = chip(content, 0.04, "⚡")
-	refs.planetChip = chip(content, 0.52, "🏆")
-	refs.skip = UI.Button({
-		Position = UDim2.new(0.04, 0, 0.83, 0),
-		Size = UDim2.new(0.44, 0, 0.15, 0),
-		Text = "Salta Evoluzione",
-		BackgroundColor3 = Color3.fromRGB(255, 110, 200),
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		MaxTextSize = 28,
+	local list = UI.List({ Size = UDim2.new(1, 0, 1, -110), Parent = content }, 6)
+	for i = 1, Evolutions.Max() do
+		buildRow(list, i, Evolutions.Get(i))
+	end
+	refs.info = UI.Text({
+		Position = UDim2.new(0, 0, 1, -104),
+		Size = UDim2.new(1, 0, 0, 22),
+		Text = "",
+		TextColor3 = UI.Colors.Muted,
+		MaxTextSize = 17,
 		Parent = content,
-	}, function()
-		Prices.BuyProduct("EvolveNow")
-	end)
-	UI.New("UIGradient", {
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 120)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 230, 120)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 120, 255)),
-		}),
-		Parent = refs.skip,
 	})
 	refs.evolve = UI.Button({
-		Position = UDim2.new(0.52, 0, 0.83, 0),
-		Size = UDim2.new(0.44, 0, 0.15, 0),
-		Text = "EVOLVI!",
-		BackgroundColor3 = UI.Colors.Good,
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		MaxTextSize = 28,
+		Position = UDim2.new(0, 0, 1, -74),
+		Size = UDim2.new(0.62, -6, 0, 48),
+		Text = "",
+		MaxTextSize = 20,
 		Parent = content,
 	}, function()
 		Remotes.Get("Evolve"):FireServer()
@@ -221,16 +190,24 @@ function Evolution:Init()
 			Evolution:Refresh()
 		end)
 	end)
+	refs.skip = UI.Button({
+		Position = UDim2.new(0.62, 6, 1, -74),
+		Size = UDim2.new(0.38, -6, 0, 48),
+		Text = "SALTA",
+		BackgroundColor3 = UI.Colors.Cyan,
+		MaxTextSize = 18,
+		Parent = content,
+	}, function()
+		Prices.BuyProduct("EvolveNow")
+	end)
 	refs.ascend = UI.Button({
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, -50),
-		Size = UDim2.fromOffset(360, 40),
-		Text = "✨ ASCENDI: +50% Potere permanente (azzera Potere ed Evoluzione)",
-		BackgroundColor3 = Color3.fromRGB(255, 120, 220),
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		MaxTextSize = 16,
+		Position = UDim2.new(0, 0, 1, -20),
+		Size = UDim2.new(1, 0, 0, 20),
+		Text = "✨ ASCENDI: +50% Potere per sempre (azzera Potere ed Evoluzione)",
+		BackgroundColor3 = Color3.fromRGB(255, 130, 220),
+		MaxTextSize = 13,
 		Visible = false,
-		Parent = window,
+		Parent = content,
 	}, function()
 		Remotes.Get("Ascend"):FireServer()
 	end)

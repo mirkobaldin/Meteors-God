@@ -176,7 +176,6 @@ function Notifications:Start()
 	end)
 
 	Remotes.Get("PlanetDestroyed").OnClientEvent:Connect(function(info)
-		Sfx.Play("PlanetExplode", 0.9)
 		Notifications.Popup(
 			"PIANETA DISTRUTTO!",
 			"+" .. Format.Number(info.shards) .. " Frammenti  ·  contributo " .. math.floor(info.share * 100) .. "%",

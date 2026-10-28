@@ -5,6 +5,7 @@ local Controllers = script.Parent:WaitForChild("Controllers")
 local ORDER = {
 	"State",
 	"Notifications",
+	"FX",
 	"HUD",
 	"Inventory",
 	"Evolution",

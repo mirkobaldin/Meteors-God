@@ -1,5 +1,7 @@
--- The target planet: built from code in 3 layers (crust chunks, mantle, core), damaged by
--- launched meteors, destroyed in a supernova that rains loot on the whole server.
+-- The target planet. Built from code as a big icosphere of tectonic plates (crust) over a glowing
+-- mantle and core, with an atmosphere glow. Meteors carve craters: the plates nearest to the
+-- impact are removed and every client animates them flying into space (see client FX).
+-- Optionally uses a hand-made model from Assets/Planets/<name> (see docs/ASSET_PIPELINE.md).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,7 +11,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Planets = require(Shared.Config.Planets)
 local AssetLibrary = require(Shared.AssetLibrary)
-local Format = require(Shared.Util.Format)
+local PlanetMath = require(Shared.Util.PlanetMath)
 local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent.Parent
@@ -19,26 +21,68 @@ local PlanetService = {}
 
 local services
 local rng = Random.new()
-local fxFolder
 local destroyedRemote
+local fxRemote
 
 local currentIndex = 1
 local legendaryQueued = false
-local state -- current planet state (see spawnPlanet)
+local state -- current planet (see spawnPlanet)
 
 local CENTER = Game.World.PlanetPosition
 local R = Game.World.PlanetRadius
-local CRATER_LIMIT = 14
+local MAX_FX_TILES = 70
 
-local function basePart(props)
-	local p = Instance.new("Part")
+-- Geometry -----------------------------------------------------------------
+
+local function icosphere(subdivisions)
+	local t = (1 + math.sqrt(5)) / 2
+	local verts = {
+		Vector3.new(-1, t, 0), Vector3.new(1, t, 0), Vector3.new(-1, -t, 0), Vector3.new(1, -t, 0),
+		Vector3.new(0, -1, t), Vector3.new(0, 1, t), Vector3.new(0, -1, -t), Vector3.new(0, 1, -t),
+		Vector3.new(t, 0, -1), Vector3.new(t, 0, 1), Vector3.new(-t, 0, -1), Vector3.new(-t, 0, 1),
+	}
+	for i, v in ipairs(verts) do
+		verts[i] = v.Unit
+	end
+	local faces = {
+		{ 1, 12, 6 }, { 1, 6, 2 }, { 1, 2, 8 }, { 1, 8, 11 }, { 1, 11, 12 },
+		{ 2, 6, 10 }, { 6, 12, 5 }, { 12, 11, 3 }, { 11, 8, 7 }, { 8, 2, 9 },
+		{ 4, 10, 5 }, { 4, 5, 3 }, { 4, 3, 7 }, { 4, 7, 9 }, { 4, 9, 10 },
+		{ 5, 10, 6 }, { 3, 5, 12 }, { 7, 3, 11 }, { 9, 7, 8 }, { 10, 9, 2 },
+	}
+	for _ = 1, subdivisions do
+		local cache = {}
+		local function midpoint(a, b)
+			local key = a < b and (a .. "_" .. b) or (b .. "_" .. a)
+			if cache[key] then
+				return cache[key]
+			end
+			table.insert(verts, ((verts[a] + verts[b]) / 2).Unit)
+			cache[key] = #verts
+			return #verts
+		end
+		local nextFaces = {}
+		for _, f in ipairs(faces) do
+			local a, b, c = f[1], f[2], f[3]
+			local ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+			table.insert(nextFaces, { a, ab, ca })
+			table.insert(nextFaces, { b, bc, ab })
+			table.insert(nextFaces, { c, ca, bc })
+			table.insert(nextFaces, { ab, bc, ca })
+		end
+		faces = nextFaces
+	end
+	return verts, faces
+end
+
+local function newPart(className, props)
+	local p = Instance.new(className)
 	p.Anchored = true
 	p.CanCollide = false
 	p.CanTouch = false
 	p.CastShadow = false
 	p.TopSurface = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
-	-- Shape first: changing Shape after Size can resize the part.
 	if props.Shape then
 		p.Shape = props.Shape
 	end
@@ -53,13 +97,176 @@ end
 local function ball(diameter, props)
 	props.Shape = Enum.PartType.Ball
 	props.Size = Vector3.new(diameter, diameter, diameter)
-	return basePart(props)
+	return newPart("Part", props)
 end
 
+-- Draws a thick triangle (slab) with two WedgeParts. The outer face lies on the triangle,
+-- the thickness goes towards `inward`.
+local function triangle(a, b, c, thickness, inward, props, parent)
+	local ab, ac, bc = b - a, c - a, c - b
+	local abd, acd, bcd = ab:Dot(ab), ac:Dot(ac), bc:Dot(bc)
+	if abd > acd and abd > bcd then
+		c, a = a, c
+	elseif acd > bcd and acd > abd then
+		a, b = b, a
+	end
+	ab, ac, bc = b - a, c - a, c - b
+	local right = ac:Cross(ab).Unit
+	local up = bc:Cross(right).Unit
+	local back = bc.Unit
+	local height = math.abs(ab:Dot(up))
+	local offset = inward * (thickness / 2)
+
+	local w1 = newPart("WedgePart", props)
+	w1.Size = Vector3.new(thickness, height, math.abs(ab:Dot(back)))
+	w1.CFrame = CFrame.fromMatrix((a + b) / 2 + offset, right, up, back)
+	w1.Parent = parent
+
+	local w2 = newPart("WedgePart", props)
+	w2.Size = Vector3.new(thickness, height, math.abs(ac:Dot(back)))
+	w2.CFrame = CFrame.fromMatrix((a + c) / 2 + offset, -right, up, -back)
+	w2.Parent = parent
+	return { w1, w2 }
+end
+
+local function plateLook(def, dir, seed)
+	local crust = def.crust
+	local n = math.noise(dir.X * 2.2 + seed, dir.Y * 2.2, dir.Z * 2.2 - seed)
+	n += 0.5 * math.noise(dir.X * 5 - seed, dir.Y * 5 + seed, dir.Z * 5)
+	local v = math.clamp((n + 0.9) / 1.8, 0, 1)
+	if crust.accent and v >= crust.accent.threshold then
+		return crust.accent.color, crust.accent.material
+	end
+	if crust.poles and math.abs(dir.Y) > 0.82 then
+		return crust.poles, crust.material
+	end
+	local colors = crust.colors
+	local idx = math.clamp(math.floor(v * #colors) + 1, 1, #colors)
+	local color = colors[idx]
+	local h, s, val = color:ToHSV()
+	return Color3.fromHSV(h, s, math.clamp(val + rng:NextNumber(-0.04, 0.04), 0, 1)), crust.material
+end
+
+-- Builds the procedural planet. Plates are created a few at a time (the planet "forms" in the sky).
+local function buildPlanet(def, center, model)
+	local core = ball(R * Planets.CoreRadius * 2, {
+		Name = "Core",
+		Material = Enum.Material.Neon,
+		Color = def.core,
+		CFrame = CFrame.new(center),
+	})
+	core.Parent = model
+	local light = Instance.new("PointLight")
+	light.Color = def.core
+	light.Range = 60
+	light.Brightness = 4
+	light.Parent = core
+
+	local mantle = ball(R * Planets.MantleRadius * 2, {
+		Name = "Mantle",
+		Material = Enum.Material.Neon,
+		Color = def.mantle,
+		CFrame = CFrame.new(center),
+	})
+	mantle.Parent = model
+
+	local atmosphere = ball(R * 2.16, {
+		Name = "Atmosphere",
+		Material = Enum.Material.ForceField,
+		Color = def.atmosphere or def.mantle,
+		CFrame = CFrame.new(center),
+		CanQuery = false,
+	})
+	atmosphere.Parent = model
+
+	if def.ring then
+		local ring = newPart("Part", {
+			Name = "Ring",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(4, R * 3.4, R * 3.4),
+			Material = Enum.Material.Neon,
+			Color = def.ring,
+			Transparency = 0.5,
+			CanQuery = false,
+			CFrame = CFrame.new(center) * CFrame.Angles(math.rad(18), 0, math.rad(90)),
+		})
+		ring.Parent = model
+	end
+
+	local tiles = {}
+	local verts, faces = icosphere(Planets.CrustSubdivisions)
+	local thickness = R * Planets.CrustThickness
+	local seed = rng:NextNumber(0, 100)
+	-- Build from the top down so the planet visibly assembles.
+	table.sort(faces, function(f1, f2)
+		return (verts[f1[1]] + verts[f1[2]] + verts[f1[3]]).Y > (verts[f2[1]] + verts[f2[2]] + verts[f2[3]]).Y
+	end)
+	for i, f in ipairs(faces) do
+		local dir = ((verts[f[1]] + verts[f[2]] + verts[f[3]]) / 3).Unit
+		local color, material = plateLook(def, dir, seed)
+		local parts = triangle(
+			center + verts[f[1]] * R,
+			center + verts[f[2]] * R,
+			center + verts[f[3]] * R,
+			thickness,
+			-dir,
+			{ Name = "Crust", Color = color, Material = material },
+			model
+		)
+		table.insert(tiles, { parts = parts, center = center + dir * R, normal = dir })
+		if i % 40 == 0 then
+			task.wait()
+		end
+	end
+	return core, mantle, tiles
+end
+
+-- Hand-made planet from Assets/Planets/<name>: Crust folder pieces become plates.
+local function buildCustomPlanet(custom, def, center, model)
+	for _, d in ipairs(custom:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanTouch = false
+		end
+	end
+	custom:PivotTo(CFrame.new(center))
+	local tiles = {}
+	local crust = custom:FindFirstChild("Crust")
+	if crust then
+		for _, d in ipairs(crust:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.Name = "Crust"
+				d.Parent = model
+				local dir = (d.Position - center)
+				dir = dir.Magnitude > 0 and dir.Unit or Vector3.new(0, 1, 0)
+				table.insert(tiles, { parts = { d }, center = d.Position, normal = dir })
+			end
+		end
+	end
+	for _, child in ipairs(custom:GetChildren()) do
+		if child ~= crust then
+			child.Parent = model
+		end
+	end
+	custom:Destroy()
+	local core = model:FindFirstChild("Core")
+	if not (core and core:IsA("BasePart")) then
+		core = ball(R * Planets.CoreRadius * 2, { Name = "Core", Material = Enum.Material.Neon, Color = def.core, CFrame = CFrame.new(center) })
+		core.Parent = model
+	end
+	local mantle = model:FindFirstChild("Mantle")
+	if not (mantle and mantle:IsA("BasePart")) then
+		mantle = ball(R * Planets.MantleRadius * 2, { Name = "Mantle", Material = Enum.Material.Neon, Color = def.mantle, CFrame = CFrame.new(center) })
+		mantle.Parent = model
+	end
+	return core, mantle, tiles
+end
+
+-- State helpers ----------------------------------------------------------------
+
 local function layerShares()
-	local crust = Planets.Layers[1].share
-	local mantle = Planets.Layers[2].share
-	return crust, mantle
+	return Planets.Layers[1].share, Planets.Layers[2].share
 end
 
 local function currentLayer()
@@ -76,6 +283,19 @@ local function currentLayer()
 	return 3
 end
 
+function PlanetService:TargetRadius()
+	if not state then
+		return R
+	end
+	local layer = currentLayer()
+	if layer == 1 then
+		return R
+	elseif layer == 2 and state.mantle and state.mantle.Parent then
+		return state.mantle.Size.X / 2
+	end
+	return state.core.Size.X / 2
+end
+
 local function updateAttributes()
 	if state then
 		workspace:SetAttribute("PlanetName", state.def.name)
@@ -83,205 +303,89 @@ local function updateAttributes()
 		workspace:SetAttribute("PlanetMaxHP", state.maxHP)
 		workspace:SetAttribute("PlanetLayer", Planets.Layers[math.max(1, currentLayer())].id)
 		workspace:SetAttribute("PlanetLegendary", state.def.legendary == true)
+		workspace:SetAttribute("PlanetCenter", state.center)
+		workspace:SetAttribute("PlanetTargetRadius", PlanetService:TargetRadius())
+		workspace:SetAttribute("PlanetReady", not state.arriving and not state.destroyed)
 	else
 		workspace:SetAttribute("PlanetHP", 0)
-		workspace:SetAttribute("PlanetLayer", "")
+		workspace:SetAttribute("PlanetReady", false)
 	end
 end
 
--- Pieces that fly away from the planet and fade out.
-local function flingAway(part, distance, duration)
-	part.Anchored = true
-	local dir = (part.Position - state.center)
-	dir = dir.Magnitude > 0.1 and dir.Unit or Vector3.new(0, 1, 0)
-	local spin = CFrame.Angles(rng:NextNumber(-3, 3), rng:NextNumber(-3, 3), rng:NextNumber(-3, 3))
-	local goal = CFrame.new(part.Position + dir * distance + Vector3.new(0, rng:NextNumber(-40, 80), 0)) * spin
-	local t = TweenService:Create(
-		part,
-		TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{ CFrame = goal, Transparency = 1 }
-	)
-	t:Play()
-	t.Completed:Connect(function()
-		part:Destroy()
-	end)
-end
-
-local function nameTag(model, def, position)
-	local anchor = basePart({
-		Name = "NameAnchor",
-		Size = Vector3.new(1, 1, 1),
-		Transparency = 1,
-		CFrame = CFrame.new(position),
-	})
-	anchor.Parent = model
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(160, 0, 26, 0)
-	bb.LightInfluence = 0
-	bb.MaxDistance = 2000
-	bb.Parent = anchor
-	local text = Instance.new("TextLabel")
-	text.BackgroundTransparency = 1
-	text.Size = UDim2.fromScale(1, 1)
-	text.Font = Enum.Font.FredokaOne
-	text.TextScaled = true
-	text.TextColor3 = def.legendary and Color3.fromRGB(255, 220, 90) or Color3.fromRGB(255, 255, 255)
-	text.TextStrokeTransparency = 0.2
-	text.Text = def.name
-	text.Parent = bb
-end
-
--- Planet from Assets/Planets/<name> (pre-fractured Crust folder + Mantle + Core).
-local function buildCustomPlanet(model, def, center)
-	model.Name = "Planet"
-	for _, d in ipairs(model:GetDescendants()) do
-		if d:IsA("BasePart") then
-			d.Anchored = true
-			d.CanCollide = false
-			d.CanTouch = false
+local function tileData(tile)
+	local out = {}
+	for _, p in ipairs(tile.parts) do
+		if p.Parent then
+			table.insert(out, { cf = p.CFrame, size = p.Size, color = p.Color, mat = p.Material, wedge = p:IsA("WedgePart") })
 		end
 	end
-	model:PivotTo(CFrame.new(center))
-	local core = model:FindFirstChild("Core")
-	if not (core and core:IsA("BasePart")) then
-		core = ball(R * 0.7, { Name = "Core", Material = Enum.Material.Neon, Color = def.core, CFrame = CFrame.new(center) })
-		core.Parent = model
-	end
-	local mantle = model:FindFirstChild("Mantle")
-	if not (mantle and mantle:IsA("BasePart")) then
-		mantle = ball(R * 1.6, { Name = "Mantle", Material = Enum.Material.Neon, Color = def.mantle, CFrame = CFrame.new(center) })
-		mantle.Parent = model
-	end
-	local light = Instance.new("PointLight")
-	light.Color = def.core
-	light.Range = 60
-	light.Brightness = 3
-	light.Parent = core
+	return out
+end
 
-	-- Crust pieces go to the model root so they fly away individually.
-	local chunks = {}
-	local crust = model:FindFirstChild("Crust")
-	if crust then
-		for _, d in ipairs(crust:GetDescendants()) do
-			if d:IsA("BasePart") then
-				table.insert(chunks, d)
+-- Removes the `count` plates closest to `point`. Returns their data for the client FX.
+local function removePlates(point, count)
+	local removed = {}
+	for _ = 1, count do
+		local bestIndex, bestDist
+		for i, tile in ipairs(state.tiles) do
+			if not tile.gone then
+				local d = (tile.center - point).Magnitude
+				if not bestDist or d < bestDist then
+					bestIndex, bestDist = i, d
+				end
 			end
 		end
-		for _, chunk in ipairs(chunks) do
-			chunk.Name = "Crust"
-			chunk.Parent = model
+		if not bestIndex then
+			break
 		end
-		crust:Destroy()
+		local tile = state.tiles[bestIndex]
+		tile.gone = true
+		state.platesRemoved += 1
+		if #removed < MAX_FX_TILES then
+			for _, data in ipairs(tileData(tile)) do
+				table.insert(removed, data)
+			end
+		end
+		for _, p in ipairs(tile.parts) do
+			p:Destroy()
+		end
 	end
-	nameTag(model, def, center + Vector3.new(0, model:GetExtentsSize().Y / 2 + 25, 0))
-	model.PrimaryPart = core
-	return model, core, mantle, chunks
+	return removed
 end
 
-local function buildPlanet(def, center)
-	local custom = AssetLibrary.Clone("Planets", def.legendary and "Legendary" or def.name)
-	if custom then
-		return buildCustomPlanet(custom, def, center)
+local function nearestPlateDistance(point)
+	local best = math.huge
+	for _, tile in ipairs(state.tiles) do
+		if not tile.gone then
+			best = math.min(best, (tile.center - point).Magnitude)
+		end
 	end
-
-	local model = Instance.new("Model")
-	model.Name = "Planet"
-
-	local core = ball(R * 0.7, {
-		Name = "Core",
-		Material = Enum.Material.Neon,
-		Color = def.core,
-		CFrame = CFrame.new(center),
-	})
-	core.Parent = model
-	local light = Instance.new("PointLight")
-	light.Color = def.core
-	light.Range = 60
-	light.Brightness = 3
-	light.Parent = core
-
-	local mantle = ball(R * 1.6, {
-		Name = "Mantle",
-		Material = Enum.Material.Neon,
-		Color = def.mantle,
-		CFrame = CFrame.new(center),
-	})
-	mantle.Parent = model
-
-	-- Lumpy crust: overlapping balls distributed on a Fibonacci sphere.
-	local chunks = {}
-	local n = Planets.CrustChunks
-	local golden = math.pi * (3 - math.sqrt(5))
-	for i = 0, n - 1 do
-		local y = 1 - (i / (n - 1)) * 2
-		local radius = math.sqrt(1 - y * y)
-		local theta = golden * i
-		local dir = Vector3.new(math.cos(theta) * radius, y, math.sin(theta) * radius)
-		local shade = rng:NextNumber(-0.08, 0.08)
-		local h, s, v = def.crust.color:ToHSV()
-		local chunk = ball(R * 0.78, {
-			Name = "Crust",
-			Material = def.crust.material,
-			Color = Color3.fromHSV(h, s, math.clamp(v + shade, 0, 1)),
-			CFrame = CFrame.new(center + dir * R * 0.76),
-		})
-		chunk.Parent = model
-		table.insert(chunks, chunk)
-	end
-
-	if def.legendary then
-		local ring = basePart({
-			Name = "LegendaryRing",
-			Shape = Enum.PartType.Cylinder,
-			Size = Vector3.new(2, R * 3.2, R * 3.2),
-			Material = Enum.Material.Neon,
-			Color = Color3.fromRGB(255, 220, 90),
-			Transparency = 0.45,
-			CFrame = CFrame.new(center) * CFrame.Angles(math.rad(15), 0, math.rad(90)),
-		})
-		ring.Parent = model
-	end
-
-	local anchor = basePart({
-		Name = "NameAnchor",
-		Size = Vector3.new(1, 1, 1),
-		Transparency = 1,
-		CFrame = CFrame.new(center + Vector3.new(0, R * 1.35, 0)),
-	})
-	anchor.Parent = model
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(160, 0, 26, 0)
-	bb.LightInfluence = 0
-	bb.MaxDistance = 2000
-	bb.Parent = anchor
-	local text = Instance.new("TextLabel")
-	text.BackgroundTransparency = 1
-	text.Size = UDim2.fromScale(1, 1)
-	text.Font = Enum.Font.FredokaOne
-	text.TextScaled = true
-	text.TextColor3 = def.legendary and Color3.fromRGB(255, 220, 90) or Color3.fromRGB(255, 255, 255)
-	text.TextStrokeTransparency = 0.2
-	text.Text = def.name
-	text.Parent = bb
-
-	model.PrimaryPart = core
-	return model, core, mantle, chunks
+	return best
 end
 
-local function pulseCore(core)
-	local base = core.Size
-	TweenService:Create(
-		core,
-		TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-		{ Size = base * 1.12 }
-	):Play()
+-- Impact point for a throw from `origin` aimed at `aim`. Holes in the crust let meteors reach the mantle.
+function PlanetService:ResolveImpact(origin, aim)
+	if not state then
+		return aim, Vector3.new(0, 1, 0)
+	end
+	local radius = PlanetService:TargetRadius()
+	local point, normal = PlanetMath.ImpactFromAim(origin, aim, state.center, radius)
+	if currentLayer() == 1 and state.mantle and state.mantle.Parent then
+		local plateSize = R * 0.28
+		if nearestPlateDistance(point) > plateSize then
+			point, normal = PlanetMath.ImpactFromAim(origin, aim, state.center, state.mantle.Size.X / 2)
+		end
+	end
+	return point, normal
 end
+
+-- Spawning ------------------------------------------------------------------------
 
 local function spawnPlanet(def)
 	local playerCount = math.max(1, #Players:GetPlayers())
 	local maxHP = math.floor(def.hp * (0.6 + 0.4 * playerCount))
-	local startCenter = CENTER + Vector3.new(0, 300, 2500)
-	local model, core, mantle, chunks = buildPlanet(def, startCenter)
+	local model = Instance.new("Model")
+	model.Name = "Planet"
 	model.Parent = workspace
 
 	state = {
@@ -289,245 +393,73 @@ local function spawnPlanet(def)
 		maxHP = maxHP,
 		hp = maxHP,
 		model = model,
-		core = core,
-		mantle = mantle,
-		mantleBaseSize = mantle.Size,
-		chunks = chunks,
-		chunksRemoved = 0,
+		tiles = {},
+		platesRemoved = 0,
 		contributions = {},
-		craters = {},
-		center = startCenter,
+		center = CENTER,
 		arriving = true,
 		destroyed = false,
 	}
 	local myState = state
 	updateAttributes()
-
-	-- Fly in from deep space.
-	local value = Instance.new("CFrameValue")
-	value.Value = CFrame.new(startCenter)
-	value.Changed:Connect(function(cf)
-		if model.Parent then
-			model:PivotTo(cf)
-		end
-	end)
-	local tween = TweenService:Create(
-		value,
-		TweenInfo.new(4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-		{ Value = CFrame.new(CENTER) }
-	)
-	tween:Play()
-	tween.Completed:Connect(function()
-		value:Destroy()
-		if state == myState then
-			state.center = CENTER
-			state.arriving = false
-			pulseCore(core)
-		end
-	end)
+	fxRemote:FireAllClients({ kind = "arrival", center = CENTER, radius = R, color = def.atmosphere or def.mantle })
 
 	if def.legendary then
 		Notify.Announce("⭐ È ARRIVATO IL " .. def.name .. "! Ricompense x3!", Color3.fromRGB(255, 210, 60))
 	else
 		Notify.Announce("Sta arrivando il " .. def.name .. "!", Color3.fromRGB(200, 220, 255))
 	end
+
+	local custom = AssetLibrary.Clone("Planets", def.legendary and "Legendary" or def.name)
+	local core, mantle, tiles
+	if custom then
+		core, mantle, tiles = buildCustomPlanet(custom, def, CENTER, model)
+	else
+		core, mantle, tiles = buildPlanet(def, CENTER, model)
+	end
+	if state ~= myState then
+		model:Destroy()
+		return
+	end
+	state.core = core
+	state.mantle = mantle
+	state.mantleBaseSize = mantle.Size
+	state.tiles = tiles
+	model.PrimaryPart = core
+	TweenService:Create(
+		core,
+		TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Size = core.Size * 1.08 }
+	):Play()
+	state.arriving = false
+	updateAttributes()
 end
 
 function PlanetService:IsTargetable()
 	return state ~= nil and not state.destroyed and not state.arriving
 end
 
--- Picks where the next meteor will hit, facing the Citadel.
-function PlanetService:GetImpactPoint()
-	if not state then
-		return CENTER
-	end
-	local toCitadel = (Vector3.new(0, Game.World.CitadelY, 0) - state.center).Unit
-	local layer = currentLayer()
-	if layer == 1 then
-		local candidates = {}
-		for _, chunk in ipairs(state.chunks) do
-			if chunk.Name == "Crust" and (chunk.Position - state.center).Unit:Dot(toCitadel) > 0.2 then
-				table.insert(candidates, chunk)
-			end
-		end
-		if #candidates == 0 then
-			for _, chunk in ipairs(state.chunks) do
-				if chunk.Name == "Crust" then
-					table.insert(candidates, chunk)
-				end
-			end
-		end
-		if #candidates > 0 then
-			local chunk = candidates[rng:NextInteger(1, #candidates)]
-			local dir = (chunk.Position - state.center).Unit
-			return chunk.Position + dir * chunk.Size.X * 0.4
-		end
-	end
-	local spread = Vector3.new(rng:NextNumber(-0.5, 0.5), rng:NextNumber(-0.4, 0.4), rng:NextNumber(-0.5, 0.5))
-	local dir = (toCitadel + spread).Unit
-	local radius = layer == 2 and state.mantle.Size.X / 2 or state.core.Size.X / 2
-	return state.center + dir * radius
-end
-
-local function damageNumber(position, damage, crit, color)
-	local anchor = basePart({
-		Name = "DamageNumber",
-		Size = Vector3.new(1, 1, 1),
-		Transparency = 1,
-		CFrame = CFrame.new(position),
-	})
-	anchor.Parent = fxFolder
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(crit and 70 or 50, 0, crit and 22 or 15, 0)
-	bb.LightInfluence = 0
-	bb.AlwaysOnTop = true
-	bb.MaxDistance = 2000
-	bb.Parent = anchor
-	local t = Instance.new("TextLabel")
-	t.BackgroundTransparency = 1
-	t.Size = UDim2.fromScale(1, 1)
-	t.Font = Enum.Font.FredokaOne
-	t.TextScaled = true
-	t.TextStrokeTransparency = 0
-	t.TextColor3 = crit and Color3.fromRGB(255, 220, 60) or color
-	t.Text = (crit and "CRITICO! " or "") .. Format.Number(damage)
-	t.Parent = bb
-	local tween = TweenService:Create(anchor, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		CFrame = anchor.CFrame + Vector3.new(0, 40, 0),
-	})
-	tween:Play()
-	TweenService:Create(t, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		TextTransparency = 1,
-		TextStrokeTransparency = 1,
-	}):Play()
-	tween.Completed:Connect(function()
-		anchor:Destroy()
-	end)
-end
-
-local function impactFX(position, damage, color, ownerName)
-	local scale = math.clamp(math.log10(math.max(damage, 10)) * 8, 10, 60)
-
-	local e = Instance.new("Explosion")
-	e.Position = position
-	e.BlastRadius = scale
-	e.BlastPressure = 0
-	e.DestroyJointRadiusPercent = 0
-	e.ExplosionType = Enum.ExplosionType.NoCraters
-	e.Parent = workspace
-
-	local shock = ball(4, {
-		Name = "Shockwave",
-		Material = Enum.Material.Neon,
-		Color = color,
-		Transparency = 0.2,
-		CFrame = CFrame.new(position),
-		CanQuery = false,
-	})
-	shock.Parent = fxFolder
-	local t = TweenService:Create(shock, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Size = Vector3.new(scale * 2.2, scale * 2.2, scale * 2.2),
-		Transparency = 1,
-	})
-	t:Play()
-	t.Completed:Connect(function()
-		shock:Destroy()
-	end)
-
-	-- Crater with the thrower's name; stays until the planet dies.
-	if state and state.model.Parent then
-		local crater = ball(scale * 0.8, {
-			Name = "Crater",
-			Material = Enum.Material.Basalt,
-			Color = Color3.fromRGB(25, 20, 25),
-			CFrame = CFrame.new(position),
-		})
-		crater.Parent = state.model
-		local glow = Instance.new("PointLight")
-		glow.Color = color
-		glow.Range = scale
-		glow.Parent = crater
-		local bb = Instance.new("BillboardGui")
-		bb.Size = UDim2.new(40, 0, 8, 0)
-		bb.StudsOffset = Vector3.new(0, scale * 0.6, 0)
-		bb.LightInfluence = 0
-		bb.MaxDistance = 1500
-		bb.Parent = crater
-		local name = Instance.new("TextLabel")
-		name.BackgroundTransparency = 1
-		name.Size = UDim2.fromScale(1, 1)
-		name.Font = Enum.Font.FredokaOne
-		name.TextScaled = true
-		name.TextColor3 = color
-		name.TextStrokeTransparency = 0.3
-		name.Text = ownerName
-		name.Parent = bb
-		table.insert(state.craters, crater)
-		if #state.craters > CRATER_LIMIT then
-			local oldest = table.remove(state.craters, 1)
-			if oldest.Parent then
-				oldest:Destroy()
-			end
-		end
-	end
-end
-
-local function updateCrust(impactPoint)
-	local crustHP = state.maxHP * Planets.Layers[1].share
-	local lost = math.min(state.maxHP - state.hp, crustHP)
-	local target = math.floor(lost / crustHP * #state.chunks + 1e-6)
-	while state.chunksRemoved < target do
-		local best, bestDist
-		for _, chunk in ipairs(state.chunks) do
-			if chunk.Parent and chunk.Name == "Crust" then
-				local d = (chunk.Position - impactPoint).Magnitude
-				if not bestDist or d < bestDist then
-					best, bestDist = chunk, d
-				end
-			end
-		end
-		if not best then
-			break
-		end
-		best.Name = "CrustFalling"
-		best.Parent = fxFolder
-		flingAway(best, 350, 3)
-		state.chunksRemoved += 1
-	end
-end
-
-local function shatter(part, pieces, color)
-	local center = part.Position
-	local size = part.Size.X
-	for _ = 1, pieces do
-		local dir = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1)).Unit
-		local frag = basePart({
-			Name = "Fragment",
-			Size = Vector3.new(size * 0.3, size * 0.22, size * 0.26),
-			Material = part.Material,
-			Color = color or part.Color,
-			CFrame = CFrame.new(center + dir * size * 0.3),
-		})
-		frag.Parent = fxFolder
-		flingAway(frag, 500, 3.5)
-	end
-	part:Destroy()
-end
-
-local function updateMantle()
+local function updateMantle(impact)
 	local crust, mantleShare = layerShares()
 	local lost = state.maxHP - state.hp
 	local f = math.clamp((lost - state.maxHP * crust) / (state.maxHP * mantleShare), 0, 1)
-	if state.mantle and state.mantle.Parent then
-		if f >= 1 then
-			shatter(state.mantle, 16)
-			Notify.Announce("Il mantello del " .. state.def.name .. " è esploso! Colpite il nucleo!", state.def.core)
-		elseif f > 0 then
-			local size = state.mantleBaseSize * (1 - 0.3 * f)
-			state.mantle.Size = size
-			state.mantle.Color = state.def.mantle:Lerp(Color3.fromRGB(30, 20, 20), 0.5 * f)
-		end
+	local mantle = state.mantle
+	if not (mantle and mantle.Parent) then
+		return
+	end
+	if f >= 1 then
+		fxRemote:FireAllClients({
+			kind = "mantle",
+			center = state.center,
+			radius = mantle.Size.X / 2,
+			color = state.def.mantle,
+			point = impact,
+		})
+		mantle:Destroy()
+		Notify.Announce("Il mantello del " .. state.def.name .. " è esploso! Colpite il NUCLEO!", state.def.core)
+	elseif f > 0 then
+		mantle.Size = state.mantleBaseSize * (1 - 0.25 * f)
+		mantle.Color = state.def.mantle:Lerp(Color3.fromRGB(40, 15, 10), 0.55 * f)
 	end
 end
 
@@ -536,46 +468,22 @@ local function supernova()
 	s.destroyed = true
 	updateAttributes()
 
-	local center = s.center
-	local nova = ball(R * 0.7, {
-		Name = "Supernova",
-		Material = Enum.Material.Neon,
-		Color = s.def.core,
-		CFrame = CFrame.new(center),
-	})
-	nova.Parent = fxFolder
-	local t = TweenService:Create(nova, TweenInfo.new(2.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Size = Vector3.new(R * 6, R * 6, R * 6),
-		Transparency = 1,
-	})
-	t:Play()
-	t.Completed:Connect(function()
-		nova:Destroy()
-	end)
-	for i = 1, 5 do
-		task.delay(i * 0.15, function()
-			local e = Instance.new("Explosion")
-			e.Position = center + Vector3.new(rng:NextNumber(-60, 60), rng:NextNumber(-60, 60), rng:NextNumber(-60, 60))
-			e.BlastRadius = 80
-			e.BlastPressure = 0
-			e.DestroyJointRadiusPercent = 0
-			e.ExplosionType = Enum.ExplosionType.NoCraters
-			e.Parent = workspace
-		end)
-	end
-
-	for _, child in ipairs(s.model:GetChildren()) do
-		if child:IsA("BasePart") then
-			if child.Name == "Core" then
-				child:Destroy()
-			elseif child.Name == "NameAnchor" then
-				child:Destroy()
-			else
-				child.Parent = fxFolder
-				flingAway(child, 700, 4)
+	local leftovers = {}
+	for _, tile in ipairs(s.tiles) do
+		if not tile.gone and #leftovers < MAX_FX_TILES * 2 then
+			for _, data in ipairs(tileData(tile)) do
+				table.insert(leftovers, data)
 			end
 		end
 	end
+	fxRemote:FireAllClients({
+		kind = "supernova",
+		center = s.center,
+		radius = R,
+		color = s.def.core,
+		mantleColor = s.def.mantle,
+		tiles = leftovers,
+	})
 	s.model:Destroy()
 
 	-- Rewards by contribution.
@@ -606,7 +514,6 @@ local function supernova()
 		Color3.fromRGB(255, 140, 60)
 	)
 
-	-- Loot rain on the Citadel.
 	services.ShowerService:SpawnBurst(Game.Cycle.PlanetDestroyedBonusMeteors, Game.Cycle.PlanetDestroyedBonusLuck)
 
 	local wasLegendary = s.def.legendary
@@ -627,19 +534,35 @@ local function supernova()
 end
 
 -- Applies damage from a meteor impact. Returns the damage actually dealt.
-function PlanetService:ApplyHit(player, damage, impactPoint, crit, color)
-	if not state or state.destroyed then
+function PlanetService:ApplyHit(player, damage, impact, normal, crit, color)
+	if not state or state.destroyed or state.arriving then
 		return 0
 	end
 	local dealt = math.min(damage, state.hp)
 	state.hp -= dealt
 	state.contributions[player.UserId] = (state.contributions[player.UserId] or 0) + dealt
 
-	impactFX(impactPoint, damage, color, player.DisplayName)
-	damageNumber(impactPoint, damage, crit, color)
+	-- Crust: keep the number of removed plates proportional to the crust HP lost.
+	local crustHP = state.maxHP * Planets.Layers[1].share
+	local lostCrust = math.min(state.maxHP - state.hp, crustHP)
+	local target = math.floor(lostCrust / crustHP * #state.tiles + 1e-6)
+	local removed = {}
+	if target > state.platesRemoved then
+		removed = removePlates(impact, target - state.platesRemoved)
+	end
 
-	updateCrust(impactPoint)
-	updateMantle()
+	fxRemote:FireAllClients({
+		kind = "impact",
+		point = impact,
+		normal = normal,
+		damage = damage,
+		crit = crit,
+		color = color,
+		thrower = player.UserId,
+		tiles = removed,
+	})
+
+	updateMantle(impact)
 	updateAttributes()
 
 	if state.hp <= 0 then
@@ -656,25 +579,16 @@ function PlanetService:SummonLegendary()
 		return
 	end
 	if state and not state.destroyed then
-		local old = state
-		old.destroyed = true
-		for _, child in ipairs(old.model:GetChildren()) do
-			if child:IsA("BasePart") then
-				child.Parent = fxFolder
-				flingAway(child, 900, 3)
-			end
-		end
-		old.model:Destroy()
+		state.destroyed = true
+		state.model:Destroy()
 	end
 	spawnPlanet(Planets.Legendary)
 end
 
 function PlanetService:Init(s)
 	services = s
-	fxFolder = Instance.new("Folder")
-	fxFolder.Name = "PlanetFX"
-	fxFolder.Parent = workspace
 	destroyedRemote = Remotes.Get("PlanetDestroyed")
+	fxRemote = Remotes.Get("PlanetFX")
 end
 
 function PlanetService:Start()

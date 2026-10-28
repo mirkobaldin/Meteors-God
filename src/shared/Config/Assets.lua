@@ -48,6 +48,23 @@ Assets.Sounds = {
 	Music = 0,
 }
 
+-- Particle textures (white on transparent PNG). 0 = Roblox built-in fallbacks.
+Assets.Particles = {
+	Glow = 0,
+	Fire = 0,
+	Smoke = 0,
+	Spark = 0,
+	Ring = 0,
+	Debris = 0,
+	Swirl = 0,
+	Lightning = 0,
+	Burst = 0,
+	Trail = 0,
+}
+
+-- Equirectangular planet textures (future use on mantle/core spheres), keyed by planet name.
+Assets.PlanetTextures = {}
+
 function Assets.Image(id)
 	return (id and id ~= 0) and ("rbxassetid://" .. id) or nil
 end

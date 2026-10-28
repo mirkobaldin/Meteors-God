@@ -46,9 +46,10 @@ end
 
 local function setupLighting()
 	Lighting.ClockTime = 0
-	Lighting.Brightness = 1.5
-	Lighting.Ambient = Color3.fromRGB(70, 50, 110)
-	Lighting.OutdoorAmbient = Color3.fromRGB(90, 70, 140)
+	Lighting.Brightness = 2.5
+	Lighting.ExposureCompensation = 0.2
+	Lighting.Ambient = Color3.fromRGB(90, 80, 140)
+	Lighting.OutdoorAmbient = Color3.fromRGB(125, 115, 175)
 	Lighting.EnvironmentDiffuseScale = 0.3
 	Lighting.EnvironmentSpecularScale = 0.5
 	Lighting.GlobalShadows = true
@@ -470,7 +471,7 @@ function WorldService:PadAt(position)
 	for _, pad in ipairs(WorldService.LaunchPads) do
 		local p = pad.part.Position
 		local flat = Vector3.new(position.X - p.X, 0, position.Z - p.Z)
-		if flat.Magnitude <= W.LaunchPadRadius and math.abs(position.Y - p.Y) < 12 then
+		if flat.Magnitude <= W.LaunchPadRadius + 4 and position.Y - p.Y > -6 and position.Y - p.Y < 40 then
 			return pad
 		end
 	end

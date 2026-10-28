@@ -28,19 +28,23 @@ Game.World = {
 	BridgeSpacing = 32,
 	BridgeLength = 220,
 	BridgeWidth = 12,
-	PlanetPosition = Vector3.new(0, 170, 760),
-	PlanetRadius = 140,
+	PlanetPosition = Vector3.new(0, 380, 2600),
+	PlanetRadius = 420,
 	LaunchPadRadius = 14,
 }
 
 Game.Launch = {
-	HoverHeight = 28,
-	MinChargeTime = 0.25,
-	MaxHoldTime = 8,
-	ChargePeriod = 1.1, -- seconds for the bar to go 0 -> 1
+	HoverHeight = 18,
+	RiseTime = 0.3, -- seconds to lift off the pad (instant feel)
+	MinChargeTime = 0.2,
+	MaxHoldTime = 10,
+	ChargePeriod = 1.0, -- seconds for the ring to go 0 -> 1
 	CritThreshold = 0.88,
 	CritMultiplier = 2,
-	FlightTime = 1.2,
+	MeteorSpeed = 1500, -- studs per second
+	FlightMin = 0.9,
+	FlightMax = 1.8,
+	ArcHeight = 0.08, -- arc apex as a fraction of the distance
 	BaseCooldown = 10,
 	WrathMultiplier = 3,
 }

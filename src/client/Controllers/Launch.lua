@@ -1,5 +1,7 @@
--- The launch: step on a LAUNCH pad -> rise above the void -> hold to charge (golden zone = crit)
--- -> release -> the camera follows the meteor into the planet -> back to the bridge.
+-- The launch, client side.
+-- Step on a LAUNCH pad -> you instantly rise above the void, the camera frames the planet and a
+-- crosshair appears. Aim with the mouse (or your finger), HOLD to charge the ring (gold = critical),
+-- RELEASE to throw. The camera chases the meteor and gives a cinematic shot of the impact.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,14 +11,15 @@ local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
-local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 local MeteorVisual = require(Shared.MeteorVisual)
+local PlanetMath = require(Shared.Util.PlanetMath)
 
 local UI = require(script.Parent.UI)
 local Anim = require(script.Parent.Anim)
 local Sfx = require(script.Parent.Sfx)
-local Menu = require(script.Parent.Menu)
+local FX = require(script.Parent.FX)
+local State = require(script.Parent.State)
 
 local Launch = {}
 
@@ -25,43 +28,41 @@ local camera = workspace.CurrentCamera
 local controllers
 
 local L = Game.Launch
-local state = "idle" -- idle | requesting | hover | flying
-local nextRequestAt = 0
-local launchData -- result of BeginLaunch
+local SEGMENTS = 28
+local DOTS = 14
+
+-- idle | aiming | flying | cinematic
+local state = "idle"
+local nextTryAt = 0
+local launchData -- server answer to BeginLaunch
+local serverReady = false
+local pendingRelease = false
 local constraints = {}
+local ap -- AlignPosition
 local holding = false
-local chargeT = 0
-local charge = 0
-local hoverStart = 0
+local chargeT, charge = 0, 0
+local aimStart = 0
+local liftFrom, liftTo
+local reticlePos = Vector2.zero
+local aimPoint
+local flight -- FX.Flight handle
+local cinematic = {}
 local refs = {}
-local BASE_FOV = 70
+local baseFov = 70
 
-local function heldMeteor()
-	return workspace:FindFirstChild("Launch_" .. player.Name)
-end
-
-local function tweenFov(fov, time)
-	TweenService:Create(camera, TweenInfo.new(time or 0.3, Enum.EasingStyle.Quad), { FieldOfView = fov }):Play()
-end
-
-local function beginHold()
-	if state ~= "hover" or holding then
-		return
-	end
-	holding = true
-	Anim.Play("Charge", true)
-	Sfx.Play("ChargeLoop", 0.4)
-	tweenFov(BASE_FOV + 12, L.ChargePeriod)
-end
-
-local function flash()
-	refs.flash.BackgroundTransparency = 0.3
-	TweenService:Create(refs.flash, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
-end
+-- Helpers ------------------------------------------------------------------------
 
 local function getRoot()
 	local character = player.Character
 	return character and character:FindFirstChild("HumanoidRootPart"), character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function planetCenter()
+	return workspace:GetAttribute("PlanetCenter") or Game.World.PlanetPosition
+end
+
+local function planetRadius()
+	return workspace:GetAttribute("PlanetTargetRadius") or Game.World.PlanetRadius
 end
 
 local function onPad(position)
@@ -80,6 +81,33 @@ local function onPad(position)
 	return false
 end
 
+-- True when at least one altar meteor is off cooldown (avoids pointless lift-offs).
+local function hasReadyMeteor()
+	local snap = State.Snapshot
+	if not snap then
+		return true
+	end
+	for uid, m in pairs(snap.meteors) do
+		if m.altar and State.CooldownLeft(uid) <= 0 then
+			return true
+		end
+	end
+	return false
+end
+
+local function heldMeteor()
+	return workspace:FindFirstChild("Launch_" .. player.Name)
+end
+
+local function throwOrigin()
+	local model = heldMeteor()
+	if model and model.PrimaryPart then
+		return model.PrimaryPart.Position
+	end
+	local root = getRoot()
+	return root and (root.Position + Vector3.new(0, 7, 0)) or Vector3.zero
+end
+
 local function clearConstraints()
 	for _, c in ipairs(constraints) do
 		if c.Parent then
@@ -87,289 +115,454 @@ local function clearConstraints()
 		end
 	end
 	constraints = {}
+	ap = nil
 	local _, humanoid = getRoot()
 	if humanoid then
 		humanoid.PlatformStand = false
 		humanoid.AutoRotate = true
-		humanoid.CameraOffset = Vector3.zero
 	end
 end
 
-local function showChargeUI(visible)
-	refs.root.Visible = visible
-	refs.mobileButton.Visible = visible and UserInputService.TouchEnabled
+local function setAimUI(visible)
+	refs.reticle.Visible = visible
+	refs.hint.Visible = visible
+	refs.cancel.Visible = visible
+	for _, d in ipairs(refs.dots) do
+		d.Visible = visible
+	end
+	UserInputService.MouseIconEnabled = not visible
 end
 
-local function endLaunch()
+local function paintRing()
+	local lit = math.floor(charge * SEGMENTS + 0.5)
+	for i, seg in ipairs(refs.segments) do
+		local inCrit = (i / SEGMENTS) >= L.CritThreshold
+		if i <= lit then
+			seg.BackgroundColor3 = inCrit and Color3.fromRGB(255, 210, 60) or Color3.fromRGB(120, 220, 255)
+			seg.BackgroundTransparency = 0
+		else
+			seg.BackgroundColor3 = inCrit and Color3.fromRGB(255, 210, 60) or Color3.fromRGB(255, 255, 255)
+			seg.BackgroundTransparency = inCrit and 0.55 or 0.8
+		end
+	end
+	refs.center.BackgroundColor3 = charge >= L.CritThreshold and Color3.fromRGB(255, 210, 60) or Color3.fromRGB(255, 255, 255)
+end
+
+-- Leaving the launch ------------------------------------------------------------
+
+local function finish()
 	local root = getRoot()
 	clearConstraints()
 	Anim.Stop("Hover")
 	Anim.Stop("Charge")
 	Sfx.Stop("ChargeLoop")
-	tweenFov(BASE_FOV, 0.4)
+	setAimUI(false)
 	camera.CameraType = Enum.CameraType.Custom
+	camera.FieldOfView = baseFov
 	if root and launchData and launchData.returnCFrame then
 		root.AssemblyLinearVelocity = Vector3.zero
 		root.CFrame = launchData.returnCFrame
 	end
-	showChargeUI(false)
 	launchData = nil
+	flight = nil
 	holding = false
+	pendingRelease = false
+	serverReady = false
 	state = "idle"
-	nextRequestAt = os.clock() + 0.8
+	nextTryAt = os.clock() + 1
 end
 
-local function startHover(result)
-	local root, humanoid = getRoot()
-	if not root or not humanoid then
-		Remotes.Get("CancelLaunch"):FireServer()
-		state = "idle"
+local function cancel(reason)
+	if state ~= "aiming" then
 		return
 	end
-	launchData = result
-	state = "hover"
-	holding = false
-	chargeT = 0
-	charge = 0
-	hoverStart = os.clock()
-
-	local target = root.Position + Vector3.new(0, L.HoverHeight, 0)
-	local att = Instance.new("Attachment")
-	att.Name = "LaunchAttachment"
-	att.Parent = root
-	local ap = Instance.new("AlignPosition")
-	ap.Mode = Enum.PositionAlignmentMode.OneAttachment
-	ap.Attachment0 = att
-	ap.Position = target
-	ap.MaxForce = 1e7
-	ap.Responsiveness = 18
-	ap.Parent = root
-	local ao = Instance.new("AlignOrientation")
-	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	ao.Attachment0 = att
-	ao.CFrame = CFrame.lookAt(target, result.planetPosition)
-	ao.MaxTorque = 1e7
-	ao.Responsiveness = 20
-	ao.Parent = root
-	constraints = { att, ap, ao }
-
-	humanoid.AutoRotate = false
-	humanoid.PlatformStand = true
-
-	refs.meteorName.Text = (result.mutation and (result.mutation .. " ") or "") .. result.meteorType
-	showChargeUI(true)
-	Anim.Play("Hover", true)
-	BASE_FOV = camera.FieldOfView
-end
-
-local function requestLaunch()
-	state = "requesting"
-	local ok, result = pcall(function()
-		return Remotes.Get("BeginLaunch"):InvokeServer()
-	end)
-	if not ok or not result or not result.ok then
-		state = "idle"
-		nextRequestAt = os.clock() + 2.5
-		if ok and result and result.reason then
-			controllers.Notifications.Toast(result.reason, "bad")
-		end
-		return
+	Remotes.Get("CancelLaunch"):FireServer()
+	if reason then
+		controllers.Notifications.Toast(reason, "bad")
 	end
-	startHover(result)
+	finish()
 end
+
+-- Throw ------------------------------------------------------------------------
 
 local function release()
-	if state ~= "hover" then
+	if state ~= "aiming" then
+		return
+	end
+	if not serverReady then
+		pendingRelease = true -- fire as soon as the server confirms
+		holding = false
 		return
 	end
 	state = "flying"
 	holding = false
-	showChargeUI(false)
-	local _, humanoid = getRoot()
-	if humanoid then
-		humanoid.CameraOffset = Vector3.zero
-	end
-	Remotes.Get("FireLaunch"):FireServer(charge)
+	setAimUI(false)
 	Anim.Stop("Charge", 0.05)
 	Anim.Stop("Hover", 0.05)
 	Anim.Play("Throw", false, 0.05)
 	Sfx.Stop("ChargeLoop")
 	Sfx.Play("Throw")
-	flash()
-	tweenFov(BASE_FOV - 6, 0.15)
-	-- Safety net in case the result never arrives.
-	local myData = launchData
-	task.delay(L.FlightTime + 4, function()
-		if state == "flying" and launchData == myData then
-			endLaunch()
-		end
-	end)
-end
 
-local function followMeteor(result)
-	local model = result.model
-	local core = model and model.PrimaryPart
-	local impact = result.impact
-	camera.CameraType = Enum.CameraType.Scriptable
-	local start = os.clock()
-	local total = result.flightTime + 1.1
-	local conn
-	conn = RunService.RenderStepped:Connect(function()
-		local t = os.clock() - start
-		local focus
-		if core and core.Parent and t < result.flightTime then
-			focus = core.Position
-		else
-			focus = impact
-		end
-		local back = (camera.CFrame.Position - focus)
-		local dist = math.max(back.Magnitude, 1)
-		local desiredDist = t < result.flightTime and 34 or 90
-		local desired = focus + back.Unit * math.min(dist, desiredDist) + Vector3.new(0, 6, 0)
-		camera.CFrame = camera.CFrame:Lerp(CFrame.lookAt(desired, focus), 0.25)
-		if t >= total then
-			conn:Disconnect()
-			endLaunch()
-		end
-	end)
+	local origin = throwOrigin()
+	local aim = aimPoint or planetCenter()
+	Remotes.Get("FireLaunch"):FireServer(charge, aim)
 
-	if result.crit then
-		refs.critFlash.TextTransparency = 0
-		refs.critFlash.TextStrokeTransparency = 0
-		TweenService:Create(refs.critFlash, TweenInfo.new(1.2), { TextTransparency = 1, TextStrokeTransparency = 1 })
-			:Play()
+	-- Hide the held meteor locally: our own flight replaces it right away.
+	local held = heldMeteor()
+	if held then
+		for _, d in ipairs(held:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.LocalTransparencyModifier = 1
+			elseif d:IsA("BillboardGui") or d:IsA("Fire") or d:IsA("PointLight") then
+				d.Enabled = false
+			end
+		end
 	end
-	task.delay(result.flightTime, function()
-		Sfx.Play(result.crit and "Crit" or "Impact", 0.8)
-		if result.crit then
+
+	local predicted = PlanetMath.ImpactFromAim(origin, aim, planetCenter(), planetRadius())
+	flight = FX.Flight({
+		meteorType = launchData.meteorType,
+		mutation = launchData.mutation,
+		size = launchData.size,
+		from = origin,
+		to = predicted,
+		flightTime = PlanetMath.FlightTime((predicted - origin).Magnitude),
+	})
+	cinematic = { start = os.clock(), crit = charge >= L.CritThreshold }
+	if cinematic.crit then
+		refs.critText.TextTransparency = 0
+		refs.critText.TextStrokeTransparency = 0
+		TweenService:Create(refs.critText, TweenInfo.new(1.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+	end
+	TweenService:Create(camera, TweenInfo.new(0.15), { FieldOfView = baseFov + 8 }):Play()
+
+	flight.Done:Connect(function(impact)
+		if state ~= "flying" then
+			return
+		end
+		state = "cinematic"
+		cinematic.impact = impact
+		cinematic.impactAt = os.clock()
+		if cinematic.crit then
 			Anim.Play("Celebrate")
 		end
-		refs.damage.Text = "💥 " .. Format.Number(result.damage)
-		refs.damage.TextTransparency = 0
-		refs.damage.TextStrokeTransparency = 0
-		TweenService:Create(refs.damage, TweenInfo.new(1.4), { TextTransparency = 1, TextStrokeTransparency = 1 })
-			:Play()
+	end)
+	-- Safety net.
+	local myFlight = flight
+	task.delay(L.FlightMax + 4, function()
+		if flight == myFlight and state ~= "idle" then
+			finish()
+		end
 	end)
 end
 
-local function buildUI()
-	local gui = UI.Screen("Launch", 8)
-	local root = UI.New("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0.66, 0),
-		Size = UDim2.fromOffset(460, 110),
-		BackgroundTransparency = 1,
-		Visible = false,
-		Parent = gui,
-	})
-	refs.root = root
-	refs.meteorName = UI.Text({
-		Size = UDim2.new(1, 0, 0, 26),
-		Text = "",
-		TextColor3 = UI.Colors.Gold,
-		TextStrokeTransparency = 0.3,
-		MaxTextSize = 24,
-		Parent = root,
-	})
-	UI.Text({
-		Size = UDim2.new(1, 0, 0, 22),
-		Position = UDim2.fromOffset(0, 28),
-		Text = "TIENI PREMUTO e rilascia nella ZONA DORATA per un CRITICO!",
-		TextStrokeTransparency = 0.3,
-		MaxTextSize = 18,
-		Parent = root,
-	})
-	local back = UI.New("Frame", {
-		Size = UDim2.new(1, 0, 0, 30),
-		Position = UDim2.fromOffset(0, 58),
-		BackgroundColor3 = Color3.fromRGB(15, 10, 25),
-		BorderSizePixel = 0,
-		Parent = root,
-	})
-	UI.Corner(UDim.new(1, 0)).Parent = back
-	UI.Stroke(UI.Colors.Purple, 2, 0.2).Parent = back
-	local sweet = UI.New("Frame", {
-		Position = UDim2.fromScale(L.CritThreshold, 0),
-		Size = UDim2.fromScale(1 - L.CritThreshold, 1),
-		BackgroundColor3 = UI.Colors.Gold,
-		BorderSizePixel = 0,
-		Parent = back,
-	})
-	UI.Corner(UDim.new(1, 0)).Parent = sweet
-	refs.fill = UI.New("Frame", {
-		Size = UDim2.fromScale(0, 1),
-		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.15,
-		BorderSizePixel = 0,
-		ZIndex = 2,
-		Parent = back,
-	})
-	UI.Corner(UDim.new(1, 0)).Parent = refs.fill
+local function beginHold()
+	if state ~= "aiming" or holding then
+		return
+	end
+	holding = true
+	chargeT = 0
+	Anim.Play("Charge", true)
+	Sfx.Play("ChargeLoop", 0.4)
+end
 
-	refs.mobileButton = UI.Button({
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -20, 1, -120),
-		Size = UDim2.fromOffset(150, 150),
-		Text = "CARICA",
-		BackgroundColor3 = Color3.fromRGB(255, 120, 60),
-		MaxTextSize = 32,
-		Visible = false,
-		Parent = gui,
-	})
-	refs.mobileButton.MouseButton1Down:Connect(function()
-		beginHold()
-	end)
-	refs.mobileButton.MouseButton1Up:Connect(function()
-		if holding then
+-- Entering the launch -------------------------------------------------------------
+
+local function enterAim()
+	local root, humanoid = getRoot()
+	if not root or not humanoid then
+		return
+	end
+	state = "aiming"
+	serverReady = false
+	pendingRelease = false
+	holding = false
+	charge, chargeT = 0, 0
+	aimStart = os.clock()
+	baseFov = camera.FieldOfView
+	launchData = nil
+
+	-- Instant, rigid lift-off (tweened target for a smooth but fast rise).
+	local att = Instance.new("Attachment")
+	att.Name = "LaunchAttachment"
+	att.Parent = root
+	ap = Instance.new("AlignPosition")
+	ap.Mode = Enum.PositionAlignmentMode.OneAttachment
+	ap.Attachment0 = att
+	ap.RigidityEnabled = true
+	ap.Position = root.Position
+	ap.Parent = root
+	local ao = Instance.new("AlignOrientation")
+	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
+	ao.Attachment0 = att
+	ao.RigidityEnabled = true
+	local center = planetCenter()
+	local flatDir = Vector3.new(center.X - root.Position.X, 0, center.Z - root.Position.Z).Unit
+	ao.CFrame = CFrame.lookAt(Vector3.zero, flatDir)
+	ao.Parent = root
+	constraints = { att, ap, ao }
+	liftFrom = root.Position
+	liftTo = root.Position + Vector3.new(0, L.HoverHeight, 0)
+	humanoid.AutoRotate = false
+	humanoid.PlatformStand = true
+
+	local viewport = camera.ViewportSize
+	reticlePos = Vector2.new(viewport.X / 2, viewport.Y * 0.45)
+	camera.CameraType = Enum.CameraType.Scriptable
+	setAimUI(true)
+	paintRing()
+	Anim.Play("Hover", true)
+
+	task.spawn(function()
+		local ok, result = pcall(function()
+			return Remotes.Get("BeginLaunch"):InvokeServer()
+		end)
+		if state ~= "aiming" then
+			return
+		end
+		if not ok or not result or not result.ok then
+			cancel(ok and result and result.reason or nil)
+			nextTryAt = os.clock() + 2.5
+			return
+		end
+		launchData = result
+		serverReady = true
+		refs.meteorName.Text = (result.mutation and (result.mutation .. " ") or "") .. result.meteorType
+		if pendingRelease then
 			release()
 		end
 	end)
+end
 
-	refs.flash = UI.New("Frame", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(255, 240, 220),
+-- Per-frame update ---------------------------------------------------------------
+
+local function updateAiming(dt)
+	local root = getRoot()
+	if not root or not ap then
+		return
+	end
+	-- Rise, then gently bob above the void.
+	local rise = math.clamp((os.clock() - aimStart) / L.RiseTime, 0, 1)
+	local eased = 1 - (1 - rise) ^ 3
+	ap.Position = liftFrom:Lerp(liftTo, eased) + Vector3.new(0, math.sin(os.clock() * 2) * 0.6 * rise, 0)
+
+	-- Camera: over the shoulder, framing the planet, drifting towards the crosshair.
+	local center = planetCenter()
+	local viewport = camera.ViewportSize
+	local offset = (reticlePos - viewport / 2) / viewport
+	local toPlanet = (center - root.Position).Unit
+	local right = toPlanet:Cross(Vector3.new(0, 1, 0)).Unit
+	local camPos = root.Position - toPlanet * 20 + Vector3.new(0, 7, 0) + right * 5
+	local lookAt = center + right * offset.X * 900 - Vector3.new(0, 1, 0) * offset.Y * 700
+	local target = CFrame.lookAt(camPos, lookAt)
+	camera.CFrame = camera.CFrame:Lerp(target, math.min(1, dt * 10)) * FX.ShakeOffset()
+	camera.FieldOfView = baseFov - 8 * charge
+
+	-- Crosshair -> aim point on the planet.
+	local ray = camera:ViewportPointToRay(reticlePos.X, reticlePos.Y)
+	local hit = PlanetMath.Intersect(ray.Origin, ray.Direction, center, planetRadius())
+	if hit then
+		aimPoint = hit
+		refs.reticleStroke.Color = Color3.fromRGB(255, 120, 90)
+	else
+		aimPoint = ray.Origin + ray.Direction * (center - ray.Origin).Magnitude
+		refs.reticleStroke.Color = Color3.fromRGB(255, 255, 255)
+	end
+	refs.reticle.Position = UDim2.fromOffset(reticlePos.X, reticlePos.Y)
+
+	-- Trajectory preview dots.
+	local origin = throwOrigin()
+	local impact = PlanetMath.ImpactFromAim(origin, aimPoint, center, planetRadius())
+	for i, dot in ipairs(refs.dots) do
+		local t = i / (DOTS + 1)
+		local world = PlanetMath.ArcPoint(origin, impact, t * 0.35)
+		local screen, onScreen = camera:WorldToViewportPoint(world)
+		dot.Visible = onScreen
+		dot.Position = UDim2.fromOffset(screen.X, screen.Y)
+		dot.BackgroundTransparency = 0.2 + t
+	end
+
+	-- Charge (ping-pong so timing matters).
+	if holding then
+		chargeT += dt
+		local phase = (chargeT / L.ChargePeriod) % 2
+		charge = phase <= 1 and phase or 2 - phase
+		local model = heldMeteor()
+		if model and model.PrimaryPart and launchData then
+			MeteorVisual.SetSize(model, launchData.size * (1 + 0.7 * charge))
+		end
+		FX.Shake(0.4 + charge * 1.2, 0.1)
+	end
+	paintRing()
+
+	if os.clock() - aimStart > L.MaxHoldTime - 0.5 then
+		if charge == 0 then
+			charge = 0.5
+		end
+		release()
+	end
+end
+
+local function updateFlight(dt)
+	if not flight then
+		return
+	end
+	local pos = flight:GetPosition()
+	local center = planetCenter()
+	local travel = (center - pos).Unit
+	if state == "flying" then
+		-- Chase cam behind the meteor, then swing to a side shot just before impact.
+		local p = flight:Progress()
+		local chase = CFrame.lookAt(pos - travel * 30 + Vector3.new(0, 9, 0), pos + travel * 60)
+		if p > 0.72 then
+			local normal = (pos - center).Unit
+			local side = normal:Cross(Vector3.new(0, 1, 0))
+			side = side.Magnitude > 0.1 and side.Unit or Vector3.new(1, 0, 0)
+			local shotPos = pos + normal * 120 + side * 160 + Vector3.new(0, 40, 0)
+			chase = CFrame.lookAt(shotPos, pos)
+		end
+		camera.CFrame = camera.CFrame:Lerp(chase, math.min(1, dt * 8)) * FX.ShakeOffset()
+	elseif state == "cinematic" then
+		local impact = cinematic.impact or pos
+		local normal = (impact - center).Unit
+		local side = normal:Cross(Vector3.new(0, 1, 0))
+		side = side.Magnitude > 0.1 and side.Unit or Vector3.new(1, 0, 0)
+		local age = os.clock() - (cinematic.impactAt or os.clock())
+		local orbit = CFrame.fromAxisAngle(normal, age * 0.25)
+		local shotPos = impact + normal * (220 + age * 60) + orbit:VectorToWorldSpace(side) * 260
+		camera.CFrame = camera.CFrame:Lerp(CFrame.lookAt(shotPos, impact), math.min(1, dt * 4)) * FX.ShakeOffset()
+		if age > 1.8 then
+			finish()
+		end
+	end
+end
+
+-- UI ----------------------------------------------------------------------------------
+
+local function buildUI()
+	local gui = UI.Screen("Launch", 8)
+	gui.IgnoreGuiInset = true
+
+	local reticle = UI.New("Frame", {
+		Name = "Reticle",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(150, 150),
 		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = gui,
+	})
+	refs.reticle = reticle
+	local circle = UI.New("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(64, 64),
+		BackgroundTransparency = 1,
+		Parent = reticle,
+	})
+	UI.Corner(UDim.new(1, 0)).Parent = circle
+	refs.reticleStroke = UI.New("UIStroke", { Thickness = 2.5, Color = Color3.new(1, 1, 1), Parent = circle })
+	refs.center = UI.New("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(8, 8),
+		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderSizePixel = 0,
-		ZIndex = 0,
-		Parent = gui,
+		Parent = reticle,
 	})
-	refs.critFlash = UI.Text({
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.35),
-		Size = UDim2.fromOffset(500, 80),
-		Text = "CRITICO!",
-		TextColor3 = UI.Colors.Gold,
-		TextTransparency = 1,
-		TextStrokeTransparency = 1,
-		MaxTextSize = 72,
-		Parent = gui,
-	})
-	refs.damage = UI.Text({
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.45),
-		Size = UDim2.fromOffset(500, 70),
+	UI.Corner(UDim.new(1, 0)).Parent = refs.center
+	for i = 0, 3 do
+		local a = i * math.pi / 2
+		UI.New("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, math.cos(a) * 44, 0.5, math.sin(a) * 44),
+			Size = UDim2.fromOffset(i % 2 == 0 and 14 or 3, i % 2 == 0 and 3 or 14),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0,
+			Parent = reticle,
+		})
+	end
+	-- Charge ring: segments around the crosshair; the top ones (gold) are the critical zone.
+	refs.segments = {}
+	for i = 1, SEGMENTS do
+		local a = -math.pi / 2 + (i - 0.5) / SEGMENTS * math.pi * 2
+		local seg = UI.New("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, math.cos(a) * 62, 0.5, math.sin(a) * 62),
+			Size = UDim2.fromOffset(5, 12),
+			Rotation = math.deg(a) + 90,
+			BorderSizePixel = 0,
+			Parent = reticle,
+		})
+		UI.Corner(UDim.new(1, 0)).Parent = seg
+		refs.segments[i] = seg
+	end
+	refs.meteorName = UI.Text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, 4),
+		Size = UDim2.fromOffset(260, 22),
 		Text = "",
-		TextColor3 = Color3.fromRGB(255, 150, 80),
+		TextColor3 = UI.Colors.Gold,
+		TextStrokeTransparency = 0.2,
+		MaxTextSize = 18,
+		Parent = reticle,
+	})
+
+	refs.dots = {}
+	for i = 1, DOTS do
+		local d = UI.New("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Size = UDim2.fromOffset(7, 7),
+			BackgroundColor3 = Color3.fromRGB(255, 220, 150),
+			BorderSizePixel = 0,
+			Visible = false,
+			Parent = gui,
+		})
+		UI.Corner(UDim.new(1, 0)).Parent = d
+		refs.dots[i] = d
+	end
+
+	refs.hint = UI.Text({
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -40),
+		Size = UDim2.fromOffset(620, 30),
+		Text = "MIRA il pianeta  ·  TIENI PREMUTO per caricare  ·  RILASCIA nella zona dorata",
+		TextStrokeTransparency = 0.2,
+		MaxTextSize = 22,
+		Visible = false,
+		Parent = gui,
+	})
+	refs.cancel = UI.Button({
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -20, 1, -30),
+		Size = UDim2.fromOffset(150, 44),
+		Text = "Annulla (Q)",
+		BackgroundColor3 = UI.Colors.PanelLight,
+		TextColor3 = Color3.new(1, 1, 1),
+		Visible = false,
+		Parent = gui,
+	}, function()
+		cancel(nil)
+	end)
+	refs.critText = UI.Text({
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.3),
+		Size = UDim2.fromOffset(600, 90),
+		Text = "CRITICO!",
+		TextColor3 = Color3.fromRGB(255, 210, 60),
 		TextTransparency = 1,
 		TextStrokeTransparency = 1,
-		MaxTextSize = 60,
+		MaxTextSize = 80,
 		Parent = gui,
 	})
 end
 
-local CHARGE_INPUTS = {
-	[Enum.UserInputType.MouseButton1] = true,
-	[Enum.UserInputType.Touch] = true,
-}
+-- Lifecycle -----------------------------------------------------------------------------
+
 local CHARGE_KEYS = {
 	[Enum.KeyCode.Space] = true,
 	[Enum.KeyCode.ButtonR2] = true,
 	[Enum.KeyCode.ButtonA] = true,
 }
-
-local function isChargeInput(input)
-	return CHARGE_INPUTS[input.UserInputType] or CHARGE_KEYS[input.KeyCode]
-end
 
 function Launch:Init(c)
 	controllers = c
@@ -378,66 +571,96 @@ end
 
 function Launch:Start()
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if state == "hover" and not processed and isChargeInput(input) then
+		if state == "cinematic" and input.UserInputType == Enum.UserInputType.MouseButton1 then
+			finish() -- click to skip the replay
+			return
+		end
+		if state ~= "aiming" then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonB then
+			cancel(nil)
+			return
+		end
+		if processed then
+			return
+		end
+		if input.UserInputType == Enum.UserInputType.Touch then
+			reticlePos = Vector2.new(input.Position.X, input.Position.Y)
+			beginHold()
+		elseif input.UserInputType == Enum.UserInputType.MouseButton1 or CHARGE_KEYS[input.KeyCode] then
 			beginHold()
 		end
 	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if state ~= "aiming" then
+			return
+		end
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			reticlePos = Vector2.new(input.Position.X, input.Position.Y)
+		elseif input.KeyCode == Enum.KeyCode.Thumbstick1 or input.KeyCode == Enum.KeyCode.Thumbstick2 then
+			local v = Vector2.new(input.Position.X, -input.Position.Y)
+			if v.Magnitude > 0.15 then
+				local viewport = camera.ViewportSize
+				reticlePos = Vector2.new(
+					math.clamp(reticlePos.X + v.X * 18, 0, viewport.X),
+					math.clamp(reticlePos.Y + v.Y * 18, 0, viewport.Y)
+				)
+			end
+		end
+	end)
 	UserInputService.InputEnded:Connect(function(input)
-		if state == "hover" and holding and isChargeInput(input) then
-			release()
+		if state == "aiming" and holding then
+			if
+				input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch
+				or CHARGE_KEYS[input.KeyCode]
+			then
+				release()
+			end
 		end
 	end)
 
 	Remotes.Get("LaunchResult").OnClientEvent:Connect(function(result)
-		if state == "flying" then
-			followMeteor(result)
+		-- Snap our predicted flight onto the server's authoritative impact point.
+		if flight and result.impact then
+			flight:SetTarget(result.impact)
 		end
 	end)
 
 	player.CharacterAdded:Connect(function()
 		if state ~= "idle" then
 			constraints = {}
+			ap = nil
+			setAimUI(false)
 			camera.CameraType = Enum.CameraType.Custom
-			showChargeUI(false)
 			launchData = nil
+			flight = nil
 			state = "idle"
 		end
 	end)
 
-	RunService.Heartbeat:Connect(function(dt)
+	RunService.RenderStepped:Connect(function(dt)
 		if state == "idle" then
-			if os.clock() < nextRequestAt or workspace:GetAttribute("CyclePhase") ~= "Bombard" then
+			if os.clock() < nextTryAt then
+				return
+			end
+			if workspace:GetAttribute("CyclePhase") ~= "Bombard" or not workspace:GetAttribute("PlanetReady") then
 				return
 			end
 			local root = getRoot()
 			if root and onPad(root.Position) then
-				task.spawn(requestLaunch)
-			end
-		elseif state == "hover" then
-			if holding then
-				chargeT += dt
-				-- Ping-pong 0 -> 1 -> 0 so timing matters.
-				local phase = (chargeT / L.ChargePeriod) % 2
-				charge = phase <= 1 and phase or 2 - phase
-				local _, humanoid = getRoot()
-				if humanoid and Menu.Get("CameraShake") then
-					local s = 0.15 + charge * 0.35
-					humanoid.CameraOffset = Vector3.new(math.random() * s - s / 2, math.random() * s - s / 2, 0)
-				end
-				-- The meteor swells while charging (local visual only).
-				local model = heldMeteor()
-				if model and model.PrimaryPart and launchData then
-					MeteorVisual.SetSize(model, launchData.size * (1 + 0.6 * charge))
+				if hasReadyMeteor() then
+					enterAim()
+				else
+					nextTryAt = os.clock() + 2.5
+					controllers.Notifications.Toast("Nessun meteorite pronto: aspetta la ricarica!", "bad")
 				end
 			end
-			refs.fill.Size = UDim2.fromScale(charge, 1)
-			refs.fill.BackgroundColor3 = charge >= L.CritThreshold and UI.Colors.Gold or Color3.fromRGB(255, 255, 255)
-			if os.clock() - hoverStart > L.MaxHoldTime - 0.5 then
-				if charge == 0 then
-					charge = 0.5
-				end
-				release()
-			end
+		elseif state == "aiming" then
+			updateAiming(dt)
+		else
+			updateFlight(dt)
 		end
 	end)
 end
