@@ -87,7 +87,7 @@ local function computeDamage(player, meteor, charge, crit)
 	return math.floor(dmg)
 end
 
-local function beginLaunch(player)
+local function beginLaunch(player, padName)
 	if not RateLimit.Allow(player, "BeginLaunch", 0.3) then
 		return { ok = false }
 	end
@@ -109,7 +109,10 @@ local function beginLaunch(player)
 	if not root then
 		return { ok = false }
 	end
-	local pad = services.WorldService:PadAt(root.Position)
+	-- The client says which pad it lifted off from; accept it if the player is near it (the
+	-- position the server sees can lag behind the client's).
+	local pad = typeof(padName) == "string" and services.WorldService:PadNamed(padName, root.Position)
+		or services.WorldService:PadAt(root.Position)
 	if not pad then
 		return { ok = false, reason = "Go to a LAUNCH pad at the end of the bridge" }
 	end

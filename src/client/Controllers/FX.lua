@@ -644,6 +644,94 @@ function FX.Rift(p)
 	end)
 end
 
+-- Storm around a meteor: rings of wind swirling around it and lightning arcs jumping off it.
+-- Returns a handle: handle:SetIntensity(0..1), handle:Destroy(). Local only.
+function FX.Storm(core, color)
+	color = color or Color3.fromRGB(150, 220, 255)
+	local holder = Instance.new("Part")
+	holder.Anchored = true
+	holder.CanCollide = false
+	holder.CanQuery = false
+	holder.CanTouch = false
+	holder.Transparency = 1
+	holder.Size = Vector3.one
+	holder.Parent = folder
+	local rings = {}
+	for r = 1, 3 do
+		local spin = Instance.new("Part")
+		spin.Anchored = true
+		spin.CanCollide = false
+		spin.CanQuery = false
+		spin.CanTouch = false
+		spin.Transparency = 1
+		spin.Size = Vector3.one
+		spin.Parent = holder
+		local atts = {}
+		local n = 10
+		for i = 1, n do
+			local a = Instance.new("Attachment")
+			a.Parent = spin
+			atts[i] = a
+		end
+		-- A partial ring (swoosh): 7 of 10 segments, fading at both ends.
+		for i = 1, 7 do
+			local beam = Instance.new("Beam")
+			beam.Attachment0 = atts[i]
+			beam.Attachment1 = atts[i % n + 1]
+			beam.FaceCamera = true
+			beam.LightEmission = 0.7
+			beam.Segments = 4
+			beam.Color = ColorSequence.new(Color3.new(1, 1, 1):Lerp(color, 0.4))
+			local k0, k1 = (i - 1) / 7, i / 7
+			local function fade(k)
+				return 0.15 + 0.85 * math.abs(k - 0.5) * 2
+			end
+			beam.Transparency = NumberSequence.new(fade(k0), fade(k1))
+			beam.Parent = spin
+		end
+		rings[r] = { part = spin, atts = atts, tilt = CFrame.Angles(math.rad(25 + r * 40), math.rad(r * 70), 0), speed = 6 + r * 2.5 }
+	end
+	local intensity = 0.3
+	local handle = {}
+	local nextBolt = 0
+	local conn = RunService.RenderStepped:Connect(function()
+		if not core.Parent then
+			return
+		end
+		local size = core.Size.X
+		local pos = core.Position
+		local t = os.clock()
+		local radius = size * (0.75 + 0.35 * intensity)
+		for _, ring in ipairs(rings) do
+			ring.part.CFrame = CFrame.new(pos) * ring.tilt * CFrame.Angles(0, t * ring.speed * (0.5 + intensity), 0)
+			for i, a in ipairs(ring.atts) do
+				local ang = (i - 1) / #ring.atts * math.pi * 2
+				a.Position = Vector3.new(math.cos(ang) * radius, 0, math.sin(ang) * radius)
+			end
+			for _, b in ipairs(ring.part:GetChildren()) do
+				if b:IsA("Beam") then
+					b.Width0 = size * (0.12 + 0.2 * intensity)
+					b.Width1 = b.Width0
+				end
+			end
+		end
+		if t >= nextBolt then
+			nextBolt = t + (0.35 - 0.27 * intensity) * rng:NextNumber(0.6, 1.4)
+			local dir = rng:NextUnitVector()
+			bolt(pos + dir * size * 0.45, pos + (dir + rng:NextUnitVector() * 0.6).Unit * size * rng:NextNumber(1.2, 2.2 + intensity),
+				Color3.new(1, 1, 1):Lerp(color, 0.5), math.max(0.15, size * 0.05), 0.14)
+		end
+	end)
+	function handle:SetIntensity(x)
+		intensity = math.clamp(x, 0, 1)
+	end
+	function handle:Destroy()
+		conn:Disconnect()
+		holder:Destroy()
+	end
+	return handle
+end
+
 --[[
 	Animated meteor flight. Returns a handle:
 	  handle.model, handle:SetTarget(point), handle.Done (BindableEvent.Event), handle:GetPosition()
@@ -717,9 +805,19 @@ function FX.Flight(opts)
 	function handle:Progress()
 		return math.clamp((os.clock() - start) / duration, 0, 1)
 	end
+	local storm = FX.Storm(core, c1)
+	storm:SetIntensity(1)
+	local nextRing = 0
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local t = math.clamp((os.clock() - start) / duration, 0, 1)
+		-- Shockwave rings of wind left behind the meteor.
+		if os.clock() >= nextRing and t < 0.97 then
+			nextRing = os.clock() + 0.07
+			local p = core.Position
+			local dirToTarget = (to - p).Magnitude > 1 and (to - p).Unit or Vector3.new(0, 0, 1)
+			ring(p - dirToTarget * size, dirToTarget, size * 1.2, size * 5, Color3.new(1, 1, 1):Lerp(c1, 0.3), 0.45, 0.55)
+		end
 		local eased = t * t * (1.5 - 0.5 * t) -- accelerates into the planet
 		local pos = PlanetMath.ArcPoint(from, to, eased)
 		local ahead = PlanetMath.ArcPoint(from, to, math.min(1, eased + 0.02))
@@ -728,6 +826,7 @@ function FX.Flight(opts)
 		core.CFrame = look * CFrame.Angles(0, math.pi, math.sin(os.clock() * 6) * 0.4)
 		if t >= 1 then
 			conn:Disconnect()
+			storm:Destroy()
 			handle.impact = to
 			done:Fire(to)
 			fireTrail.Enabled = false

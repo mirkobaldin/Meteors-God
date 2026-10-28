@@ -802,6 +802,21 @@ function WorldService:GetAltar(player)
 	return nil
 end
 
+-- The pad with this name if `position` is reasonably close to it (lag tolerant), else nil.
+function WorldService:PadNamed(name, position)
+	for _, pad in ipairs(WorldService.LaunchPads) do
+		if pad.part.Name == name then
+			local p = pad.part.Position
+			local flat = Vector3.new(position.X - p.X, 0, position.Z - p.Z)
+			if flat.Magnitude <= W.LaunchPadRadius + 25 and math.abs(position.Y - p.Y) < 60 then
+				return pad
+			end
+			return nil
+		end
+	end
+	return nil
+end
+
 -- Returns the launch pad the position is standing on, if any.
 function WorldService:PadAt(position)
 	for _, pad in ipairs(WorldService.LaunchPads) do

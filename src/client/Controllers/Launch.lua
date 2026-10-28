@@ -13,6 +13,7 @@ local UserInputService = game:GetService("UserInputService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Planets = require(Shared.Config.Planets)
+local Meteors = require(Shared.Config.Meteors)
 local Evolutions = require(Shared.Config.Evolutions)
 local Remotes = require(Shared.Remotes)
 local MeteorVisual = require(Shared.MeteorVisual)
@@ -53,6 +54,7 @@ local tier = 1
 local flight -- FX.Flight handle
 local cinematic = {}
 local refs = {}
+local storm -- wind and lightning around the held meteor
 local marker, markerDot
 local dots = {}
 local baseFov = 70
@@ -175,7 +177,6 @@ end
 local function setAimUI(visible)
 	refs.reticle.Visible = visible
 	refs.hint.Visible = visible
-	refs.cancel.Visible = visible
 	marker.Parent = visible and camera or nil
 	for _, d in ipairs(dots) do
 		d.Parent = visible and camera or nil
@@ -214,6 +215,7 @@ end
 -- Leaving the launch ------------------------------------------------------------
 
 local function finish()
+	stopStorm()
 	local root = getRoot()
 	clearConstraints()
 	Anim.Stop("Hover")
@@ -248,6 +250,13 @@ end
 
 -- Throw ------------------------------------------------------------------------
 
+local function stopStorm()
+	if storm then
+		storm:Destroy()
+		storm = nil
+	end
+end
+
 local function release()
 	if state ~= "aiming" then
 		return
@@ -259,6 +268,7 @@ local function release()
 	end
 	state = "flying"
 	holding = false
+	stopStorm()
 	setAimUI(false)
 	Anim.Stop("Charge", 0.05)
 	Anim.Stop("Hover", 0.05)
@@ -385,7 +395,7 @@ local function enterAim(pad)
 
 	task.spawn(function()
 		local ok, result = pcall(function()
-			return Remotes.Get("BeginLaunch"):InvokeServer()
+			return Remotes.Get("BeginLaunch"):InvokeServer(pad.Name)
 		end)
 		if state ~= "aiming" then
 			return
@@ -397,6 +407,11 @@ local function enterAim(pad)
 		end
 		launchData = result
 		serverReady = true
+		local held = heldMeteor()
+		if held and held.PrimaryPart then
+			local def = Meteors.ByID[result.meteorType]
+			storm = FX.Storm(held.PrimaryPart, def and def.fire[1])
+		end
 		refs.meteorName.Text = (result.mutation and (result.mutation .. " ") or "") .. result.meteorType
 		if pendingRelease then
 			release()
@@ -476,6 +491,9 @@ local function updateAiming(dt)
 		FX.Shake(0.3 + charge * 1, 0.1)
 	end
 	paintRing()
+	if storm then
+		storm:SetIntensity(holding and (0.3 + charge * 0.7) or 0.2)
+	end
 
 	if t - aimStart > L.MaxHoldTime - 0.5 then
 		if charge == 0 then
@@ -605,24 +623,12 @@ local function buildUI()
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -40),
 		Size = UDim2.fromOffset(660, 30),
-		Text = "AIM with the red marker  ·  HOLD to charge  ·  RELEASE on the GOLD zone for a critical",
+		Text = "AIM with the red marker  ·  HOLD to charge  ·  RELEASE on the GOLD zone  ·  you stay here until you throw",
 		TextStrokeTransparency = 0.2,
 		MaxTextSize = 22,
 		Visible = false,
 		Parent = gui,
 	})
-	refs.cancel = UI.Button({
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -20, 1, -30),
-		Size = UDim2.fromOffset(150, 44),
-		Text = "Cancel (Q)",
-		BackgroundColor3 = UI.Colors.PanelLight,
-		TextColor3 = Color3.new(1, 1, 1),
-		Visible = false,
-		Parent = gui,
-	}, function()
-		cancel(nil)
-	end)
 	refs.critText = UI.Text({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.3),
@@ -678,10 +684,6 @@ function Launch:Start()
 			return
 		end
 		if state ~= "aiming" then
-			return
-		end
-		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonB then
-			cancel(nil)
 			return
 		end
 		if processed then
