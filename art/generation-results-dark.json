@@ -1,0 +1,278 @@
+{
+  "scope": "16 environment prop concept sheets; houses stopped at user's request.",
+  "method": "built-in image_gen",
+  "results": [
+    {
+      "index": 7,
+      "path": "art/concepts/props/obelisk.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-572c02a0-583b-4494-8c02-b8300088cb95.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a tall black obsidian obelisk with a gold tip and a vertical line of glowing cyan runes. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two clearly separated views of the SAME prop: front three-quarter on the left, strict side view on the right. Keep both complete silhouettes within the square frame with generous transparent margins. Medium detail, broad planar surfaces suitable for a Roblox Blender model. Actual transparent alpha PNG; no backdrop, gradient, ground plane or cast shadow.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 919512
+    },
+    {
+      "index": 8,
+      "path": "art/concepts/props/ruined_pillars.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-4ad44a21-4d59-4f10-9204-00dbc0b8b01b.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a group of three broken ancient stone pillars of different heights, cracked, with gold bands and fallen chunks at the base. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two clearly separated views of the SAME grouped prop: front three-quarter on the left, strict side view on the right. Each group contains precisely three broken pillars of different heights plus their fallen chunks. Keep both complete silhouettes inside the frame. Bold simple forms, moderate detail. Actual transparent alpha PNG, no backdrop or ground plane.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1229373
+    },
+    {
+      "index": 9,
+      "path": "art/concepts/props/brazier.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-bc20682d-c895-4fef-b493-a12325ffa147.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a heavy bronze brazier on three clawed legs, holding a violet cosmic fire. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two clearly separated views of the SAME prop: front three-quarter on the left, strict side view on the right. The bronze bowl stands on three clawed legs. Contain the violet cosmic fire within a compact flame silhouette. Keep both views complete inside generous transparent margins. Bold simple forms, moderate detail. Actual transparent alpha PNG, no backdrop or ground plane.",
+      "generated_size": [
+        1536,
+        1024
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 752811
+    },
+    {
+      "index": 10,
+      "path": "art/concepts/props/crystal_cluster.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-8374a7f7-d0b2-4b88-a8a4-a6ced6ba9bbe.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a cluster of large sharp dark-violet crystals growing out of a rock, faint inner glow. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two clearly separated views of the SAME crystal cluster: front three-quarter on the left, strict side view on the right. A few large dark-violet angular crystals with faint internal violet glow growing from one dark rock base. Keep both complete silhouettes inside the frame. Broad clean facets, no fine crystal dust or busy texture. Actual transparent alpha PNG, no background, no gradient, no ground plane.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1222606
+    },
+    {
+      "index": 11,
+      "path": "art/concepts/props/meteor_rock.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-28997cbe-37d3-427c-943a-a40c6ca89ef3.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a half-buried smoking meteorite rock with glowing orange cracks inside a small scorched crater. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two clearly separated views of the SAME environmental rock prop: front three-quarter on the left, strict side view on the right. Faceless decorative meteorite half buried in a compact scorched rocky crater, orange cracks and a little smoke. This is a static environment prop, no living meteor character. Keep complete crater silhouettes within generous transparent margins. Bold chunky forms, moderate detail. Actual transparent alpha PNG; no world scenery, background or ground outside the compact crater base.",
+      "generated_size": [
+        1774,
+        887
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 656841
+    },
+    {
+      "index": 12,
+      "path": "art/concepts/props/rune_stones.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-6c9e6b0c-6ec7-4a5a-98d5-b924fffccb16.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a ring of five floating carved rune stones around a small stone base, runes glowing cyan. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two clearly separated views of the SAME grouped prop: front three-quarter on the left, strict side view on the right. Each view shows precisely five levitating carved stone slabs forming a ring around a small stone pedestal, with small cyan rune accents. Strong angular monolithic forms, moderate detail. Keep complete silhouettes inside transparent margins. Actual transparent alpha PNG; no background, haze or ground plane.",
+      "generated_size": [
+        1774,
+        887
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 721291
+    },
+    {
+      "index": 13,
+      "path": "art/concepts/props/warrior_statue.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-b367cabc-7542-41ef-9e0a-555891874f61.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a large statue of an armored warrior god in dark stone, holding a meteor raised above the head, gold trims. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME statue prop: front three-quarter on the left, strict side view on the right. An unmistakable carved dark stone statue rather than a live character, with only burnished metal accent inlays. Bold monolithic silhouette and moderate geometric detail for Blender. Keep the whole statue and pedestal inside generous transparent margins. Actual transparent alpha PNG; no background or ground plane.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1481831
+    },
+    {
+      "index": 14,
+      "path": "art/concepts/props/gate_arch.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-0e132332-7572-489e-afa9-4d3f792f067c.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a massive ancient stone gate arch with gold inlays and two horn-shaped tips, broken on one side. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME arch prop: front three-quarter on the left, strict side view on the right. Open passage with transparent empty space through the opening, chunky angular construction and moderate detail suitable for Blender. Keep both complete silhouettes inside generous transparent margins. Actual transparent alpha PNG; no backdrop, ground, haze or cast shadow.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1294563
+    },
+    {
+      "index": 15,
+      "path": "art/concepts/props/banner.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-2863d5a8-691f-444d-86f6-136ee05e0a81.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a tall war standard pole of bronze with a long dark-violet banner showing a gold meteor emblem (symbol only, no text). Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME bronze war standard: front three-quarter on the left, strict side view on the right. Long dark-violet cloth banner, simple gold meteor emblem with no letters. Heavy angular pole planted in a compact dark stone foot. Keep both complete silhouettes within generous transparent margins. Moderate detail for Blender. Actual transparent alpha PNG; no background, haze or floor.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 818858
+    },
+    {
+      "index": 16,
+      "path": "art/concepts/props/sword_in_rock.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-9c680121-70e2-48e5-a0bd-f029451de9e5.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a giant broken divine sword stuck into a boulder, blade of dark metal with glowing runes. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME prop: front three-quarter on the left, strict side view on the right. Giant BROKEN divine sword embedded in a compact boulder, visibly fractured blade end, dark metal and small glowing runes, burnished bronze guard. Keep both complete silhouettes inside generous transparent margins. Bold angular shapes and moderate detail for Blender. Actual transparent alpha PNG; no backdrop, haze, ground or cast shadow.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1096649
+    },
+    {
+      "index": 17,
+      "path": "art/concepts/props/chained_meteor.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-dcb626b0-b596-4c98-8c1f-af6987209c28.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a captured meteor bound by thick gold chains to four stone posts, the meteor cracked and smoking. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME environment prop: front three-quarter on the left, strict side view on the right. Four short dark stone posts form the corners around one faceless cracked meteor, with four thick burnished gold chain connections securely anchoring it. Sparse smoke. Keep whole assembly within generous transparent margins. Chunky low-detail chain links and bold planar rock forms for Blender. Actual transparent alpha PNG; no background, ground plane or scenery.",
+      "generated_size": [
+        1774,
+        887
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 633338
+    },
+    {
+      "index": 18,
+      "path": "art/concepts/props/star_anvil.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-ece70993-fb44-418a-81d6-e622306b6cbb.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a star-forge anvil of black iron on a stone block, with a hammer leaning against it and sparks. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME anvil-and-hammer prop: front three-quarter on the left, strict side view on the right. Heavy black iron anvil on a chunky dark stone block, one heavy hammer leaning against the block, sparse small sparks. Burnished bronze accents and a few glowing runes. Keep both complete assemblies inside generous transparent margins. Bold chunky forms and moderate detail for Blender. Actual transparent alpha PNG; no background, haze or ground plane.",
+      "generated_size": [
+        1774,
+        887
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 745602
+    },
+    {
+      "index": 19,
+      "path": "art/concepts/props/lantern_post.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-ea6e4863-f51a-4a00-b119-3099424c3ebd.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a heavy stone lantern post with a caged blue flame, for lining the bridges. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME lantern post: front three-quarter on the left, strict side view on the right. Heavy angular dark stone upright and foot, burnished bronze cage housing a compact blue flame. This is a standalone bridge-side lantern; no bridge included. Keep both complete silhouettes inside generous transparent margins. Broad simple forms and moderate detail for Blender. Actual transparent alpha PNG; no background, haze, ground or shadow plane.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1071827
+    },
+    {
+      "index": 20,
+      "path": "art/concepts/props/observatory.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-f1016c91-c576-4ee7-92a8-605bdb826197.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a bronze star-gazing telescope device on a rotating stone platform, pointing at the sky. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME observatory prop: front three-quarter on the left, strict side view on the right. A rugged bronze astronomical telescope angled upwards on a mechanical pivot above a compact round dark stone turntable. Keep both complete silhouettes inside generous transparent margins. Heavy chunky forms, broad material regions and moderate detail for Blender. Actual transparent alpha PNG; no sky, scenery, background, haze or ground plane.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1172693
+    },
+    {
+      "index": 21,
+      "path": "art/concepts/props/cosmic_tree.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-f2514bfa-fcd6-4592-9997-61f2305e8f2f.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a twisted dead tree with dark bark and small glowing star-fruits hanging from it. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME dead tree prop: front three-quarter on the left, strict side view on the right. A few thick twisted dark bark branches, bare and leafless, with small sparse glowing star-shaped fruits hanging from them. Tough ancient silhouette, no face, moderate bark detail. Roots form the compact base. Keep both complete silhouettes inside generous transparent margins. Actual transparent alpha PNG; no background, scenery, sky, haze or ground plane.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1110284
+    },
+    {
+      "index": 22,
+      "path": "art/concepts/props/weapon_rack.png",
+      "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a1840b-3059-7c23-915c-c7db959d01f5\\exec-c896194c-634e-4cbd-a120-4198960051cc.png",
+      "prompt": "Use case: stylized-concept. Output canvas 1024x1024, square.\nGame: \"Meteor Gods\" (Roblox). Players are warrior gods at the edge of the universe who tame living meteors and hurl them at giant planets to shatter them. The world is floating islands of grass and dark rock in deep space, with bridges of dark cosmic glass.\r\nSingle environment PROP for the game: a rack of oversized divine weapons (spears, axes) of bronze and dark iron. Show a front 3/4 view and a side view on the same sheet.\r\nArt style: EPIC and TOUGH, not cute: stylized 3D game asset like the best Roblox showcase games, dark fantasy meets cosmic: heavy chunky shapes, sharp angular silhouettes, battle-worn divine architecture, black obsidian, dark weathered stone, burnished gold and bronze, small glowing cyan or violet runes as accents; NOT cartoon, NOT cuddly, NO pastel colors, NO big friendly shapes. Clear readable forms with moderate detail so it can be rebuilt in Blender with PBR materials. Neutral soft studio lighting. No text, no letters, no logos, no watermarks, no existing characters or brands. IMPORTANT: isolated subject only, NO background, NO scenery, NO sky, NO stars, NO nebula, NO floor shadow plane: fully transparent background, export as PNG.\nProduction constraints: exactly two separated views of the SAME weapons-rack prop: front three-quarter on the left, strict side view on the right. Sturdy low dark iron and bronze rack supporting a small collection of oversized divine spears and axes. All weapons clearly rest on the rack; large bold silhouettes, burnished metal and tiny rune accents. Keep whole assemblies inside generous transparent margins. Moderate detail for Blender, no tiny filigree. Actual transparent alpha PNG; no background, haze or floor.",
+      "generated_size": [
+        1254,
+        1254
+      ],
+      "saved_size": [
+        1024,
+        1024
+      ],
+      "status": "saved-and-validated",
+      "normalization": "Proportional resize with transparent padding; original alpha preserved.",
+      "bytes": 1094021
+    }
+  ]
+}
