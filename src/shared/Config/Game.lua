@@ -7,7 +7,7 @@ local IS_STUDIO = RunService:IsStudio()
 local Game = {}
 
 -- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
-Game.Version = "0.8.0"
+Game.Version = "0.9.0"
 
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
@@ -258,6 +258,10 @@ Game.Hunt = {
 	FlySpeed = 120,
 	BoostSpeed = 260,
 	StardustPerPlanet = 6, -- x planet size factor
+	PlanetHits = { 2, 6 }, -- hits to break the smallest / biggest planet (fed and rarer meteors hit harder)
+	ProjectileSpeed = 900, -- studs/s of a thrown meteor (the crater appears when it lands)
+	ShatterDelay = 0.9, -- seconds a broken planet glows and cracks before it explodes
+	RespawnDelay = 4,
 	PortalPosition = Vector3.new(330, 0, -150),
 }
 

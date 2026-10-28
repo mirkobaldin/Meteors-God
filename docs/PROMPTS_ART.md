@@ -5,55 +5,10 @@ Il codice del gioco lo gestisce la sessione cloud: il Claude locale lavora **sol
 
 ---
 
-## PROMPT 1 — Concept art con Codex
+## PROMPT 1 — Concept art
 
-```
-Lavoriamo su un SECONDO progetto, separato da DeadPlanet. Non toccare niente di DeadPlanet.
-Cartella: C:\Users\mirko\Desktop\Meteors-God (repo GitHub mirkobaldin/Meteors-God).
-Prima di tutto leggi docs/GDD.md e docs/ASSET_PIPELINE.md in quella cartella.
-Lavora SOLO dentro art/ (non modificare src/: ci lavora un'altra sessione).
-
-Il gioco: "Meteor Gods", Roblox. Sei una piccola divinità ai confini dell'universo. Allevi meteoriti VIVI
-con la faccia, li lanci dai Ponti Stellari (stile Bifrost) contro pianeti giganti che si sbriciolano.
-
-Usa Codex (o lo strumento di generazione immagini che hai a disposizione) per creare i CONCEPT ART.
-Stile unico per tutto: cartoon/toon Roblox moderno, colori saturi, forme morbide e grosse, contorni leggibili,
-luci al neon; palette: marmo bianco e oro + viola/magenta + ciano su cielo stellato blu-viola.
-Riferimento di "pulizia e leggibilità" (NON da copiare): i giochi Roblox simulator più curati del 2025-2026.
-Niente personaggi o marchi esistenti; le facce dei meteoriti NON devono ricordare Calcifer (Il castello errante di Howl).
-
-Crea queste tavole, salvale come PNG in art/concepts/<categoria>/ con nomi chiari:
-
-1. MAPPA (art/concepts/map/): 3 varianti della "Cittadella degli Dei": piattaforma circolare fluttuante nel vuoto
-   ai confini dell'universo (raggio ~120 stud), spawn al centro, 8 case dei giocatori ad anello,
-   4 Ponti Stellari arcobaleno che partono da un lato e finiscono nel nulla con un pad di LANCIO,
-   un pianeta gigante sullo sfondo. Per ognuna: vista dall'alto + vista prospettica da un giocatore.
-
-2. METEORITI (art/concepts/meteors/): un foglio per ogni tipo in src/shared/Config/Meteors.lua
-   (Pebble, Ember, Frost, Spark, Venom, Crystal, Magma, Aurora, Solar, Royal Comet, Void,
-   Supernova, Blue Comet). Ogni meteorite è una palla-roccia infuocata carina con faccia semplice
-   (occhi grandi, bocca, guance), capelli/aura di fiamme del colore dell'elemento, leggibile anche piccolissima.
-   Per ognuno: 5 espressioni (assonnato, felice, arrabbiato, furioso, stordito con occhi a spirale)
-   + versione "Dorata", "Arcobaleno", "Eclissata". La rarità deve vedersi dalla forma (comune = sasso semplice,
-   mitico = forma unica e spettacolare).
-
-3. CASE DIVINE (art/concepts/houses/): il "Santuario" del giocatore in 6 livelli, uno per Evoluzione
-   (Star Spirit → Minor Deity → Demigod → Titan → Cosmic God → Supreme Deity):
-   da piccolo altare di pietra a tempio fluttuante con anelli che orbitano. Ogni santuario ha 3-4 piedistalli
-   dove fluttuano i meteoriti e un'insegna con il nome del giocatore. Ingombro massimo raggio 14 stud.
-
-4. PIANETI (art/concepts/planets/): Rocky Planet, di Ghiaccio, di Lava, Caramella, Crystal, Ombra
-   + Legendary Planet dorato. Per ognuno: vista intera + spaccato con 3 strati (crosta a pezzi, mantello, nucleo luminoso).
-
-5. INTERFACCIA (art/concepts/ui/): un mockup dell'HUD in stile "+1 Venom Evolution" come STRUTTURA
-   (bottoni grandi a griglia a sinistra, offerte a destra, barra del Potere in basso con bottoni di acquisto rapido,
-   menu a tendina in alto a destra), ma con la NOSTRA grafica cosmica. Poi le ICONE singole, PNG 512x512
-   sfondo trasparente, in art/icons/: Meteors, Evolution, Shop, Daily, Trade, Upgrades, Index, Codes,
-   Settings, Menu, Power, Shards, Planets, StarterPack, Wrath, Boost (nomi file = questi nomi).
-
-Alla fine scrivi art/concepts/README.md con l'elenco delle immagini e 2 righe di descrizione per ognuna,
-fai commit (solo art/), "git pull --rebase" e push su main. Poi dimmi quali varianti consigli per la mappa.
-```
+I concept (case, props, strutture) li fa **Codex** con i prompt di `docs/PROMPTS_CODEX.md`. Manda i prompt qui sotto
+al Claude locale **solo dopo** aver approvato le immagini.
 
 ---
 
@@ -78,14 +33,19 @@ Ordine di lavoro (fermati dopo ogni punto e mostrami un render):
    Crystal gemme, Magma basalto e lava con corna, Aurora, Solar con corona, Royal Comet, Void (un solo occhio),
    Supernova, Blue Comet.
    I concept delle case, dei props e delle strutture sono in art/concepts/ (fatti con Codex).
-2. Houses/House1 … House6: le 6 case, ingombro max raggio 100 stud, fronte -Z verso l'isola centrale,
-   Part "Sign" opzionale per il nome. Niente slot: i meteoriti stanno sui piedistalli dell'isoletta.
+2. Houses/House1 … House6: le 6 ville moderne dei concept approvati, ingombro max raggio 100 stud, fronte vetrato
+   -Z verso l'isola centrale, Part "Sign" opzionale per il nome. Vetrate vere (materiale Glass, trasparenza ~0.4)
+   e INTERNI arredati semplici ma leggibili (divani, lampade calde, tavolo, piedistallo con meteorite, scale):
+   si deve vedere dentro. Legno chiaro, travertino, marmo chiaro, oro spazzolato; niente ossidiana.
+   Niente slot: i meteoriti stanno sui piedistalli dell'isoletta.
+   Poi i props (Props/<nome>) e le strutture (Structures/<nome>) con i nomi dei file in art/concepts/props e
+   art/concepts/structures.
 3. Map/Citadel (opzionale): SOLO decorazioni sopra il terreno (torri dorate, archi, rifiniture del Bifrost,
    rocce decorative) alle coordinate di Game.World. Le isole e i PIANETI sono Terrain generato dal codice:
    non modellarli (vedi "Terreno" in docs/ASSET_PIPELINE.md).
 
 Regole: 1 unità Blender = 1 stud, Apply All Transforms prima di esportare, fronte verso -Z di Roblox,
-max 20.000 triangoli per mesh, texture palette unica 1024x1024 stile toon, nomi ESATTI come nel contratto.
+max 20.000 triangoli per mesh, materiali PBR (vetro, legno, pietra, metallo), nomi ESATTI come nel contratto.
 
 Dopo ogni export scrivimi i passi per importarlo in Roblox Studio (File > Import 3D), come raggrupparlo
 con i nomi giusti e come salvarlo con "Save to File" in assets/<Categoria>/<Nome>.rbxm.

@@ -188,8 +188,10 @@ Shadow, Legendary), lune (Rocky, Ice, Shadow), strisce (Candy), spuntoni giganti
   Crystal → cristalli rosa; Solar → vetro dorato; Void → buco nero più grande; Supernova → cratere più grande con lava.
 - **VFX per elemento** (client): ghiaccio che spunta, schizzi di lava ad arco, fulmini, nube tossica con bolle,
   schegge di cristallo, nastri d'aurora, raggi solari, implosione nera, onde arcobaleno.
-- **Arrivo**: si apre una **spaccatura spazio-temporale** (crepa luminosa a zig-zag + disco nero), il pianeta esce
-  in un lampo, la spaccatura si richiude.
+- **Arrivo** (2,4 s, stile "terremoto che spacca l'aria"): una **linea sottile** si disegna nello spazio, poi partono
+  le **crepe come vetro rotto** (rami + ragnatela) con un'onda d'urto; la crepa **si apre** su un **tunnel azzurro**
+  ("quantum leap") da cui esce luce, i **frammenti di vetro** volano via, il pianeta esce in un lampo azzurro (lo
+  schermo si tinge di azzurro per un attimo) e la crepa si richiude in una linea.
 - Pianeti a ~1.750 stud dalla loro piattaforma (grandi ~40° nel campo visivo). Il terreno del pianeta viene
   creato e cancellato a fette su più frame, così l'esplosione non blocca più il gioco.
 - **Fine**: supernova, il pianeta si frantuma in pezzi di crosta e lava; annuncio con chi ha dato il **colpo finale** e l'MVP.
@@ -266,10 +268,15 @@ Casa. Con i modelli in `Assets/Houses/House1..6` la casa **cresce con l'Evoluzio
 
 ## 12c. Cosmic Hunt (modalità volo)
 
-Portale sull'isola centrale → 120 s nello spazio profondo (6.000 stud sopra la mappa). Voli liberamente (WASD,
-Spazio su, Ctrl giù, Shift turbo; su mobile il joystick vola dove guarda la camera) e clicchi per lanciare il
-meteorite equipaggiato contro 26 pianetini condivisi. Ogni pianeta distrutto dà Stardust (più grande = di più) e
-ricompare altrove. Record personale salvato (`bestHunt`).
+Portale sull'isola centrale → 120 s nello spazio profondo (6.000 stud sopra la mappa). Telecamera dietro la spalla,
+il mouse gira la visuale (bloccato al centro, mirino fisso), WASD vola dove guardi, Spazio su, Ctrl giù, Shift turbo.
+Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lanciare. Gamepad: levette e R2.
+- **Posa**: fermo fluttua con le braccia aperte; in volo veloce si stende col **pugno avanti** stile supereroe; a ogni
+  lancio fa lo **swing del braccio**. La cometa equipaggiata sta **in mano** (si vede anche dagli altri) e parte da lì.
+- **Pianetini** di Terrain (materiali dei pianeti grandi, nucleo di lava) con **barra della vita**: servono 2-6 colpi
+  (comete più rare e nutrite colpiscono più forte); ogni colpo scava un **cratere** quando la cometa arriva.
+- **Rottura**: crepe luminose e nucleo che si gonfia per 0,9 s, poi esplode in pezzi; lo **Stardust vola verso di te**.
+  Ricompare altrove dopo 4 s con un lampo azzurro. Record personale salvato (`bestHunt`).
 
 ## 12b. Extra (fatti)
 
@@ -305,6 +312,10 @@ ricompare altrove. Record personale salvato (`bestHunt`).
 - **v0.1 (questa)**: cittadella, ponti, ciclo, pioggia, altari e crescita, lancio, pianeti a strati, Potere +1, evoluzioni, ascensione, upgrade, negozio, trading, salvataggi.
 - **Prossimo**: suoni e animazioni (ID in `Config/Assets.lua`), eventi cosmici (Eclissi → mutazioni), indice con ricompense, classifica globale, maxischermo replay nell'hub.
 - **v0.2 (fatto)**: nuova interfaccia, premi giornalieri, regalo a tempo, codici, indice, hook per modelli/animazioni/suoni.
+- **v0.9**: nuova spaccatura (linea → vetro rotto → tunnel azzurro), fix della telecamera bloccata sul pianeta,
+  molti meno messaggi (annunci in coda, toast max 2, numeri di danno solo tuoi, i successi degli altri solo in chat),
+  Cosmic Hunt rifatta (camera, posa da supereroe, cometa in mano, pianetini di terreno con crateri ed esplosioni),
+  prompt di Codex rifatti in stile ville moderne di lusso.
 - **v0.8**: 12 giocatori, isolette dei pad, ponti più larghi, pianeti diversi che crescono, meno lag, resti sul pad finché lanci, VFX vento e fulmini, equip/nutrire/abilità, facce cattive, Reattore a Fusione, Cosmic Hunt, Stardust.
 - **v0.7**: mappa ×3, tre ponti separati con piattaforme da 4 pad, pianeti più grandi e vicini, luce diurna e skybox del proprietario, accessori non più al neon, fine del blocco all'esplosione.
 - **v0.6**: mappa dallo schizzo, pianeti di Terrain a 3 tier con crateri e spaccatura, lancio rifatto, VFX per elemento, facce 3D, pet, titoli, fusione, eventi cosmici.

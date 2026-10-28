@@ -59,6 +59,13 @@ local function watch(player)
 	refresh(player)
 end
 
+local hiddenUntil = {} -- [player] = os.clock(): the pet was just thrown (Cosmic Hunt)
+
+-- Hides a player's pet for a moment (it's flying at a planet), then it pops back.
+function Pets.Hide(player, seconds)
+	hiddenUntil[player] = os.clock() + seconds
+end
+
 function Pets:Init()
 	folder = Instance.new("Folder")
 	folder.Name = "Pets"
@@ -76,7 +83,17 @@ function Pets:Start()
 		for player, p in pairs(pets) do
 			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 			local core = p.model.PrimaryPart
-			if root and core then
+			local hand = player.Character and (player.Character:FindFirstChild("RightHand") or player.Character:FindFirstChild("Right Arm"))
+			if root and core and (hiddenUntil[player] or 0) > t then
+				p.pos = nil
+				core.CFrame = CFrame.new(0, -1e4, 0)
+			elseif root and core and hand and player:GetAttribute("Hunting") then
+				-- Cosmic Hunt: held just past the fist, ready to be thrown.
+				local target = hand.Position + root.CFrame.UpVector * 3
+				p.pos = p.pos and p.pos:Lerp(target, math.min(1, dt * 25)) or target
+				local camPos = camera.CFrame.Position
+				core.CFrame = CFrame.lookAt(p.pos, camPos) * CFrame.Angles(0, 0, math.sin(t * 3) * 0.2)
+			elseif root and core then
 				-- Behind the right shoulder, bobbing; follows smoothly.
 				local target = (root.CFrame * CFrame.new(3.2, 2.2 + math.sin(t * 2.4 + player.UserId % 7) * 0.5, 2.2)).Position
 				p.pos = p.pos and p.pos:Lerp(target, math.min(1, dt * 6)) or target
