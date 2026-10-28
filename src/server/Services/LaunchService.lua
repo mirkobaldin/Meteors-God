@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Meteors = require(Shared.Config.Meteors)
+local Planets = require(Shared.Config.Planets)
 local Evolutions = require(Shared.Config.Evolutions)
 local MeteorMath = require(Shared.Util.MeteorMath)
 local PlanetMath = require(Shared.Util.PlanetMath)
@@ -26,6 +27,7 @@ local resultRemote
 local launchFxRemote
 
 local L = Game.Launch
+local rng = Random.new()
 
 local function setAuraBoost(player, boosted)
 	local character = player.Character
@@ -99,9 +101,6 @@ local function beginLaunch(player)
 	if not services.CycleService:IsBombard() then
 		return { ok = false, reason = "Wait for the Bombardment to throw!" }
 	end
-	if not services.PlanetService:IsTargetable() then
-		return { ok = false, reason = "The planet is forming..." }
-	end
 	if services.TradeService:IsTrading(player) then
 		return { ok = false, reason = "Close the trade before throwing" }
 	end
@@ -113,6 +112,13 @@ local function beginLaunch(player)
 	local pad = services.WorldService:PadAt(root.Position)
 	if not pad then
 		return { ok = false, reason = "Go to a LAUNCH pad at the end of the bridge" }
+	end
+	local tierDef = Planets.Tiers[pad.tier]
+	if data.evolution < tierDef.requiredEvolution then
+		return { ok = false, reason = tierDef.name .. " requires " .. Evolutions.Get(tierDef.requiredEvolution).name .. "!" }
+	end
+	if not services.PlanetService:IsTargetable(pad.tier) then
+		return { ok = false, reason = "The planet is coming through the rift..." }
 	end
 	local uid = services.MeteorService:BestReady(player)
 	if not uid then
@@ -138,7 +144,18 @@ local function beginLaunch(player)
 	model.Name = "Launch_" .. player.Name
 	model.Parent = workspace
 
-	active[player] = { uid = uid, startedAt = os.clock(), model = model, fired = false, size = size }
+	-- The golden (critical) zone of the charge ring moves every throw and is narrow.
+	local critFrom = rng:NextNumber(L.CritZoneMin, L.CritZoneMax - L.CritWindow)
+	active[player] = {
+		uid = uid,
+		startedAt = os.clock(),
+		model = model,
+		fired = false,
+		size = size,
+		tier = pad.tier,
+		critFrom = critFrom,
+		critTo = critFrom + L.CritWindow,
+	}
 	services.MeteorService:SetCooldown(player, uid, L.MaxHoldTime + L.FlightMax + 5)
 	setAuraBoost(player, true)
 	Poses.Set(character, "charge", 0.25)
@@ -156,6 +173,9 @@ local function beginLaunch(player)
 		mutation = meteor.m,
 		size = size,
 		returnCFrame = pad.returnCFrame,
+		tier = pad.tier,
+		critFrom = critFrom,
+		critTo = critFrom + L.CritWindow,
 	}
 end
 
@@ -186,13 +206,13 @@ local function fireLaunch(player, charge, aim)
 
 	local origin = core.Position
 	if not isFiniteVector(aim) then
-		aim = workspace:GetAttribute("PlanetCenter") or Game.World.PlanetPosition
+		aim = Planets.Tiers[a.tier].position
 	end
-	local crit = charge >= L.CritThreshold
+	local crit = charge >= a.critFrom - 0.01 and charge <= a.critTo + 0.01 and os.clock() - a.startedAt >= L.MinChargeTime
 	local damage = computeDamage(player, meteor, charge, crit)
 	local def = Meteors.ByID[meteor.t]
 	local color = def and def.fire[1] or Color3.new(1, 1, 1)
-	local impact, normal = services.PlanetService:ResolveImpact(origin, aim)
+	local impact, normal = services.PlanetService:ResolveImpact(a.tier, origin, aim)
 	local flightTime = PlanetMath.FlightTime((impact - origin).Magnitude)
 
 	-- The flight itself is animated by each client; the server only keeps time.
@@ -218,6 +238,7 @@ local function fireLaunch(player, charge, aim)
 		meteorType = meteor.t,
 		mutation = meteor.m,
 		size = a.size,
+		tier = a.tier,
 	}
 	for _, other in ipairs(Players:GetPlayers()) do
 		if other ~= player then
@@ -227,7 +248,7 @@ local function fireLaunch(player, charge, aim)
 	services.MeteorService:SetCooldown(player, a.uid, flightTime + MeteorMath.Cooldown(data))
 
 	task.delay(flightTime, function()
-		local dealt = services.PlanetService:ApplyHit(player, damage, impact, normal, crit, color)
+		local dealt = services.PlanetService:ApplyHit(a.tier, player, damage, impact, normal, crit, color, meteor.t)
 		if active[player] == a then
 			active[player] = nil
 		end

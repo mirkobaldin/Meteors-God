@@ -12,6 +12,8 @@ local Assets = require(Shared.Config.Assets)
 local Evolutions = require(Shared.Config.Evolutions)
 local Monetization = require(Shared.Config.Monetization)
 local Format = require(Shared.Util.Format)
+local PlanetInfo = require(Shared.Util.PlanetInfo)
+local Planets = require(Shared.Config.Planets)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
@@ -490,16 +492,14 @@ local function update()
 		refs.phase.TextColor3 = Color3.fromRGB(255, 200, 120)
 		refs.phaseStroke.Color = UI.Colors.Gold
 	end
-	local hp = workspace:GetAttribute("PlanetHP") or 0
-	local maxHP = math.max(1, workspace:GetAttribute("PlanetMaxHP") or 1)
-	refs.planetFill.Size = UDim2.fromScale(math.clamp(hp / maxHP, 0, 1), 1)
-	refs.planetName.Text = (workspace:GetAttribute("PlanetName") or "")
-		.. "  ·  "
-		.. (workspace:GetAttribute("PlanetLayer") or "")
-		.. "  ·  "
-		.. Format.Number(hp)
-		.. " / "
-		.. Format.Number(maxHP)
+	-- Planet of the lane you're on, otherwise the highest tier you unlocked.
+	local tier = player:GetAttribute("FocusTier") or PlanetInfo.TierForEvolution(player:GetAttribute("Evolution"))
+	local info = PlanetInfo.Get(tier)
+	if info then
+		refs.planetFill.Size = UDim2.fromScale(math.clamp(info.hp / info.maxHP, 0, 1), 1)
+		refs.planetName.Text = Planets.Tiers[tier].name .. " · " .. info.name .. "  ·  "
+			.. (info.ready and (info.layer .. "  ·  " .. Format.Number(info.hp) .. " / " .. Format.Number(info.maxHP)) or "coming through the rift...")
+	end
 	local wrathLeft = (workspace:GetAttribute("WrathUntil") or 0) - now
 	refs.wrath.Text = wrathLeft > 0 and ("DIVINE WRATH · x3 DAMAGE · " .. Format.Time(wrathLeft)) or ""
 

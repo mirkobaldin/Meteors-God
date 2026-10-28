@@ -12,11 +12,14 @@ Meteors.Rarities = {
 	{ id = "Mythic", weight = 0.1, color = Color3.fromRGB(255, 60, 140), order = 6 },
 }
 
+-- impact: crater effect and the mark left on the planet
+--   rock | magma | frost | spark | venom | crystal | aurora | solar | void | nova
 -- face.eyes: "normal" | "cyclops"
 -- face.extra: nil | "crown" | "sunglasses" | "horns"
 Meteors.Types = {
 	{
 		id = "Pebble",
+		impact = "rock",
 		rarity = "Common",
 		body = Color3.fromRGB(120, 110, 105),
 		fire = { Color3.fromRGB(255, 140, 40), Color3.fromRGB(255, 60, 20) },
@@ -28,6 +31,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Ember",
+		impact = "magma",
 		rarity = "Common",
 		body = Color3.fromRGB(200, 70, 40),
 		fire = { Color3.fromRGB(255, 120, 30), Color3.fromRGB(200, 30, 10) },
@@ -39,6 +43,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Frost",
+		impact = "frost",
 		rarity = "Uncommon",
 		body = Color3.fromRGB(150, 220, 255),
 		fire = { Color3.fromRGB(180, 240, 255), Color3.fromRGB(60, 140, 255) },
@@ -50,6 +55,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Spark",
+		impact = "spark",
 		rarity = "Uncommon",
 		body = Color3.fromRGB(255, 230, 80),
 		fire = { Color3.fromRGB(255, 255, 150), Color3.fromRGB(255, 200, 0) },
@@ -61,6 +67,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Venom",
+		impact = "venom",
 		rarity = "Rare",
 		body = Color3.fromRGB(110, 220, 60),
 		fire = { Color3.fromRGB(180, 255, 80), Color3.fromRGB(40, 160, 20) },
@@ -72,6 +79,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Crystal",
+		impact = "crystal",
 		rarity = "Rare",
 		body = Color3.fromRGB(255, 140, 230),
 		fire = { Color3.fromRGB(255, 200, 255), Color3.fromRGB(200, 80, 255) },
@@ -83,6 +91,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Magma",
+		impact = "magma",
 		rarity = "Epic",
 		body = Color3.fromRGB(90, 20, 15),
 		fire = { Color3.fromRGB(255, 90, 0), Color3.fromRGB(150, 0, 0) },
@@ -94,6 +103,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Aurora",
+		impact = "aurora",
 		rarity = "Epic",
 		body = Color3.fromRGB(60, 230, 200),
 		fire = { Color3.fromRGB(120, 255, 200), Color3.fromRGB(140, 80, 255) },
@@ -105,6 +115,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Solar",
+		impact = "solar",
 		rarity = "Legendary",
 		body = Color3.fromRGB(255, 190, 40),
 		fire = { Color3.fromRGB(255, 240, 120), Color3.fromRGB(255, 120, 0) },
@@ -116,6 +127,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Royal Comet",
+		impact = "frost",
 		rarity = "Legendary",
 		body = Color3.fromRGB(220, 240, 255),
 		fire = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(80, 160, 255) },
@@ -127,6 +139,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Void",
+		impact = "void",
 		rarity = "Mythic",
 		body = Color3.fromRGB(20, 10, 35),
 		fire = { Color3.fromRGB(170, 80, 255), Color3.fromRGB(30, 0, 60) },
@@ -138,6 +151,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Supernova",
+		impact = "nova",
 		rarity = "Mythic",
 		body = Color3.fromRGB(255, 255, 240),
 		fire = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 80, 200) },
@@ -149,6 +163,7 @@ Meteors.Types = {
 	},
 	{
 		id = "Blue Comet",
+		impact = "frost",
 		rarity = "Epic",
 		body = Color3.fromRGB(40, 90, 255),
 		fire = { Color3.fromRGB(120, 200, 255), Color3.fromRGB(20, 40, 200) },

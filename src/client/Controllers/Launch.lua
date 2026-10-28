@@ -1,7 +1,8 @@
 -- The launch, client side.
--- Step on a LAUNCH pad -> you instantly rise above the void, the camera frames the planet and a
--- crosshair appears. Aim with the mouse (or your finger), HOLD to charge the ring (gold = critical),
--- RELEASE to throw. The camera chases the meteor and gives a cinematic shot of the impact.
+-- Step on a LAUNCH pad of a lane -> you rise above the void facing that lane's planet. A 3D target
+-- marker shows exactly where the meteor will land and a dotted arc shows its path. HOLD to charge:
+-- the needle runs back and forth on the ring, RELEASE inside the small golden zone for a critical
+-- (the zone moves every throw). The camera chases the meteor and holds on the crater it leaves.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,9 +12,12 @@ local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
+local Planets = require(Shared.Config.Planets)
+local Evolutions = require(Shared.Config.Evolutions)
 local Remotes = require(Shared.Remotes)
 local MeteorVisual = require(Shared.MeteorVisual)
 local PlanetMath = require(Shared.Util.PlanetMath)
+local PlanetInfo = require(Shared.Util.PlanetInfo)
 
 local UI = require(script.Parent.UI)
 local Anim = require(script.Parent.Anim)
@@ -28,8 +32,8 @@ local camera = workspace.CurrentCamera
 local controllers
 
 local L = Game.Launch
-local SEGMENTS = 28
-local DOTS = 14
+local SEGMENTS = 36
+local DOTS = 22
 
 -- idle | aiming | flying | cinematic
 local state = "idle"
@@ -38,16 +42,19 @@ local launchData -- server answer to BeginLaunch
 local serverReady = false
 local pendingRelease = false
 local constraints = {}
-local ap -- AlignPosition
+local ap, ao -- AlignPosition / AlignOrientation
 local holding = false
 local chargeT, charge = 0, 0
 local aimStart = 0
 local liftFrom, liftTo
 local reticlePos = Vector2.zero
-local aimPoint
+local aimPoint, predicted, predictedNormal
+local tier = 1
 local flight -- FX.Flight handle
 local cinematic = {}
 local refs = {}
+local marker, markerDot
+local dots = {}
 local baseFov = 70
 
 -- Helpers ------------------------------------------------------------------------
@@ -57,28 +64,36 @@ local function getRoot()
 	return character and character:FindFirstChild("HumanoidRootPart"), character and character:FindFirstChildOfClass("Humanoid")
 end
 
+local function planet()
+	return PlanetInfo.Get(tier)
+end
+
 local function planetCenter()
-	return workspace:GetAttribute("PlanetCenter") or Game.World.PlanetPosition
+	local info = planet()
+	return info and info.center or Planets.Tiers[tier].position
 end
 
 local function planetRadius()
-	return workspace:GetAttribute("PlanetTargetRadius") or Game.World.PlanetRadius
+	local info = planet()
+	return info and info.radius or Planets.Tiers[tier].radius
 end
 
-local function onPad(position)
+local function padAt(position)
 	local world = workspace:FindFirstChild("World")
 	local pads = world and world:FindFirstChild("LaunchPads")
 	if not pads then
-		return false
+		return nil
 	end
 	for _, pad in ipairs(pads:GetChildren()) do
-		local p = pad.Position
-		local flat = Vector3.new(position.X - p.X, 0, position.Z - p.Z)
-		if flat.Magnitude <= Game.World.LaunchPadRadius and math.abs(position.Y - p.Y) < 10 then
-			return true
+		if pad:GetAttribute("Tier") then
+			local p = pad.Position
+			local flat = Vector3.new(position.X - p.X, 0, position.Z - p.Z)
+			if flat.Magnitude <= Game.World.LaunchPadRadius and math.abs(position.Y - p.Y) < 10 then
+				return pad
+			end
 		end
 	end
-	return false
+	return nil
 end
 
 -- True when at least one altar meteor is off cooldown (avoids pointless lift-offs).
@@ -108,6 +123,40 @@ local function throwOrigin()
 	return root and (root.Position + Vector3.new(0, 7, 0)) or Vector3.zero
 end
 
+local function chargeHeld()
+	return UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+		or UserInputService:IsKeyDown(Enum.KeyCode.Space)
+		or UserInputService:IsGamepadButtonDown(Enum.UserInputType.Gamepad1, Enum.KeyCode.ButtonR2)
+end
+
+-- Where the meteor will land: follows the real terrain (craters included), like the server.
+local function predictImpact(origin, aim)
+	local center, radius = planetCenter(), planetRadius()
+	local folder = PlanetInfo.Folder(tier)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { workspace.Terrain, folder and folder:FindFirstChild("Core") or workspace.Terrain }
+	local function cast(dir)
+		local r = workspace:Raycast(origin, dir * ((center - origin).Magnitude + radius * 1.5), params)
+		if r and (r.Position - center).Magnitude <= radius * 1.5 then
+			return r.Position
+		end
+		return nil
+	end
+	local delta = aim - origin
+	local dir = delta.Magnitude > 1e-3 and delta.Unit or (center - origin).Unit
+	local hit = cast(dir)
+	if not hit then
+		local snapped = PlanetMath.ImpactFromAim(origin, aim, center, radius)
+		hit = cast((snapped - origin).Unit) or snapped
+	end
+	return hit, (hit - center).Unit
+end
+
+local function inCritZone(value)
+	return launchData ~= nil and value >= launchData.critFrom and value <= launchData.critTo
+end
+
 local function clearConstraints()
 	for _, c in ipairs(constraints) do
 		if c.Parent then
@@ -115,7 +164,7 @@ local function clearConstraints()
 		end
 	end
 	constraints = {}
-	ap = nil
+	ap, ao = nil, nil
 	local _, humanoid = getRoot()
 	if humanoid then
 		humanoid.PlatformStand = false
@@ -127,25 +176,39 @@ local function setAimUI(visible)
 	refs.reticle.Visible = visible
 	refs.hint.Visible = visible
 	refs.cancel.Visible = visible
-	for _, d in ipairs(refs.dots) do
-		d.Visible = visible
+	marker.Parent = visible and camera or nil
+	for _, d in ipairs(dots) do
+		d.Parent = visible and camera or nil
 	end
 	UserInputService.MouseIconEnabled = not visible
 end
 
+local GOLD = Color3.fromRGB(255, 210, 60)
+
 local function paintRing()
 	local lit = math.floor(charge * SEGMENTS + 0.5)
 	for i, seg in ipairs(refs.segments) do
-		local inCrit = (i / SEGMENTS) >= L.CritThreshold
-		if i <= lit then
-			seg.BackgroundColor3 = inCrit and Color3.fromRGB(255, 210, 60) or Color3.fromRGB(120, 220, 255)
+		local v = (i - 0.5) / SEGMENTS
+		local crit = inCritZone(v)
+		local isNeedle = i == math.max(1, lit)
+		if isNeedle and holding then
+			seg.BackgroundColor3 = Color3.new(1, 1, 1)
 			seg.BackgroundTransparency = 0
+			seg.Size = UDim2.fromOffset(9, 22)
 		else
-			seg.BackgroundColor3 = inCrit and Color3.fromRGB(255, 210, 60) or Color3.fromRGB(255, 255, 255)
-			seg.BackgroundTransparency = inCrit and 0.55 or 0.8
+			seg.Size = UDim2.fromOffset(6, 13)
+			if i <= lit then
+				seg.BackgroundColor3 = crit and GOLD or Color3.fromRGB(120, 220, 255)
+				seg.BackgroundTransparency = 0
+			else
+				seg.BackgroundColor3 = crit and GOLD or Color3.fromRGB(255, 255, 255)
+				seg.BackgroundTransparency = crit and 0.15 or 0.8
+			end
 		end
 	end
-	refs.center.BackgroundColor3 = charge >= L.CritThreshold and Color3.fromRGB(255, 210, 60) or Color3.fromRGB(255, 255, 255)
+	local ready = holding and inCritZone(charge)
+	refs.center.BackgroundColor3 = ready and GOLD or Color3.new(1, 1, 1)
+	marker.Color = ready and GOLD or Color3.fromRGB(255, 90, 70)
 end
 
 -- Leaving the launch ------------------------------------------------------------
@@ -213,28 +276,28 @@ local function release()
 		for _, d in ipairs(held:GetDescendants()) do
 			if d:IsA("BasePart") then
 				d.LocalTransparencyModifier = 1
-			elseif d:IsA("BillboardGui") or d:IsA("Fire") or d:IsA("PointLight") then
+			elseif d:IsA("BillboardGui") or d:IsA("Fire") or d:IsA("PointLight") or d:IsA("ParticleEmitter") then
 				d.Enabled = false
 			end
 		end
 	end
 
-	local predicted = PlanetMath.ImpactFromAim(origin, aim, planetCenter(), planetRadius())
+	local target = predicted or PlanetMath.ImpactFromAim(origin, aim, planetCenter(), planetRadius())
 	flight = FX.Flight({
 		meteorType = launchData.meteorType,
 		mutation = launchData.mutation,
-		size = launchData.size,
+		size = math.max(launchData.size * 1.6, 9),
 		from = origin,
-		to = predicted,
-		flightTime = PlanetMath.FlightTime((predicted - origin).Magnitude),
+		to = target,
+		flightTime = PlanetMath.FlightTime((target - origin).Magnitude),
 	})
-	cinematic = { start = os.clock(), crit = charge >= L.CritThreshold }
+	cinematic = { start = os.clock(), crit = inCritZone(charge) }
 	if cinematic.crit then
 		refs.critText.TextTransparency = 0
 		refs.critText.TextStrokeTransparency = 0
 		TweenService:Create(refs.critText, TweenInfo.new(1.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 	end
-	TweenService:Create(camera, TweenInfo.new(0.15), { FieldOfView = baseFov + 8 }):Play()
+	TweenService:Create(camera, TweenInfo.new(0.15), { FieldOfView = baseFov + 10 }):Play()
 
 	flight.Done:Connect(function(impact)
 		if state ~= "flying" then
@@ -249,7 +312,7 @@ local function release()
 	end)
 	-- Safety net.
 	local myFlight = flight
-	task.delay(L.FlightMax + 4, function()
+	task.delay(L.FlightMax + 5, function()
 		if flight == myFlight and state ~= "idle" then
 			finish()
 		end
@@ -268,11 +331,13 @@ end
 
 -- Entering the launch -------------------------------------------------------------
 
-local function enterAim()
+local function enterAim(pad)
 	local root, humanoid = getRoot()
 	if not root or not humanoid then
 		return
 	end
+	tier = pad:GetAttribute("Tier") or 1
+	player:SetAttribute("FocusTier", tier)
 	state = "aiming"
 	serverReady = false
 	pendingRelease = false
@@ -282,7 +347,7 @@ local function enterAim()
 	baseFov = camera.FieldOfView
 	launchData = nil
 
-	-- Instant, rigid lift-off (tweened target for a smooth but fast rise).
+	-- Fast, rigid lift-off (tweened target for a smooth but quick rise).
 	local att = Instance.new("Attachment")
 	att.Name = "LaunchAttachment"
 	att.Parent = root
@@ -292,10 +357,11 @@ local function enterAim()
 	ap.RigidityEnabled = true
 	ap.Position = root.Position
 	ap.Parent = root
-	local ao = Instance.new("AlignOrientation")
+	ao = Instance.new("AlignOrientation")
 	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
 	ao.Attachment0 = att
-	ao.RigidityEnabled = true
+	ao.MaxTorque = math.huge
+	ao.Responsiveness = 25
 	local center = planetCenter()
 	local flatDir = Vector3.new(center.X - root.Position.X, 0, center.Z - root.Position.Z).Unit
 	ao.CFrame = CFrame.lookAt(Vector3.zero, flatDir)
@@ -307,11 +373,15 @@ local function enterAim()
 	humanoid.PlatformStand = true
 
 	local viewport = camera.ViewportSize
-	reticlePos = Vector2.new(viewport.X / 2, viewport.Y * 0.45)
+	reticlePos = Vector2.new(viewport.X / 2, viewport.Y * 0.42)
 	camera.CameraType = Enum.CameraType.Scriptable
 	setAimUI(true)
 	paintRing()
 	Anim.Play("Hover", true)
+	-- Already holding the button when stepping on the pad: start charging right away.
+	if chargeHeld() then
+		beginHold()
+	end
 
 	task.spawn(function()
 		local ok, result = pcall(function()
@@ -341,48 +411,60 @@ local function updateAiming(dt)
 	if not root or not ap then
 		return
 	end
-	-- Rise, then gently bob above the void.
-	local rise = math.clamp((os.clock() - aimStart) / L.RiseTime, 0, 1)
+	local t = os.clock()
+	-- Rise, then float with a gentle sway.
+	local rise = math.clamp((t - aimStart) / L.RiseTime, 0, 1)
 	local eased = 1 - (1 - rise) ^ 3
-	ap.Position = liftFrom:Lerp(liftTo, eased) + Vector3.new(0, math.sin(os.clock() * 2) * 0.6 * rise, 0)
+	ap.Position = liftFrom:Lerp(liftTo, eased)
+		+ Vector3.new(math.sin(t * 1.3) * 0.8 * rise, math.sin(t * 2) * 0.8 * rise, 0)
 
-	-- Camera: over the shoulder, framing the planet, drifting towards the crosshair.
 	local center = planetCenter()
+	local radius = planetRadius()
 	local viewport = camera.ViewportSize
 	local offset = (reticlePos - viewport / 2) / viewport
-	local toPlanet = (center - root.Position).Unit
-	local right = toPlanet:Cross(Vector3.new(0, 1, 0)).Unit
-	local camPos = root.Position - toPlanet * 20 + Vector3.new(0, 7, 0) + right * 5
-	local lookAt = center + right * offset.X * 900 - Vector3.new(0, 1, 0) * offset.Y * 700
-	local target = CFrame.lookAt(camPos, lookAt)
-	camera.CFrame = camera.CFrame:Lerp(target, math.min(1, dt * 10)) * FX.ShakeOffset()
-	camera.FieldOfView = baseFov - 8 * charge
 
-	-- Crosshair -> aim point on the planet.
+	-- Crosshair -> aim point (on the planet sphere, or in space beside it).
 	local ray = camera:ViewportPointToRay(reticlePos.X, reticlePos.Y)
-	local hit = PlanetMath.Intersect(ray.Origin, ray.Direction, center, planetRadius())
-	if hit then
-		aimPoint = hit
-		refs.reticleStroke.Color = Color3.fromRGB(255, 120, 90)
-	else
-		aimPoint = ray.Origin + ray.Direction * (center - ray.Origin).Magnitude
-		refs.reticleStroke.Color = Color3.fromRGB(255, 255, 255)
-	end
+	local hit = PlanetMath.Intersect(ray.Origin, ray.Direction, center, radius)
+	aimPoint = hit or (ray.Origin + ray.Direction * (center - ray.Origin).Magnitude)
+	refs.reticleStroke.Color = hit and Color3.fromRGB(255, 120, 90) or Color3.fromRGB(255, 255, 255)
 	refs.reticle.Position = UDim2.fromOffset(reticlePos.X, reticlePos.Y)
 
-	-- Trajectory preview dots.
-	local origin = throwOrigin()
-	local impact = PlanetMath.ImpactFromAim(origin, aimPoint, center, planetRadius())
-	for i, dot in ipairs(refs.dots) do
-		local t = i / (DOTS + 1)
-		local world = PlanetMath.ArcPoint(origin, impact, t * 0.35)
-		local screen, onScreen = camera:WorldToViewportPoint(world)
-		dot.Visible = onScreen
-		dot.Position = UDim2.fromOffset(screen.X, screen.Y)
-		dot.BackgroundTransparency = 0.2 + t
+	-- The god turns towards the target and leans back while charging.
+	local aimDir = (aimPoint - root.Position).Unit
+	local flat = Vector3.new(aimDir.X, 0, aimDir.Z)
+	if flat.Magnitude > 0.01 then
+		ao.CFrame = CFrame.lookAt(Vector3.zero, flat.Unit) * CFrame.Angles(math.rad(10 * charge), 0, 0)
 	end
 
-	-- Charge (ping-pong so timing matters).
+	-- Camera: pulled back over the shoulder, the god in the lower-left of the screen,
+	-- drifting towards the crosshair so you can aim across the whole planet.
+	local toPlanet = (center - root.Position).Unit
+	local right = toPlanet:Cross(Vector3.new(0, 1, 0)).Unit
+	local camPos = root.Position - toPlanet * 34 + Vector3.new(0, 11, 0) + right * 11
+	local lookAt = center + right * offset.X * radius * 2.2 - Vector3.new(0, 1, 0) * offset.Y * radius * 1.8
+	camera.CFrame = camera.CFrame:Lerp(CFrame.lookAt(camPos, lookAt), math.min(1, dt * 10)) * FX.ShakeOffset()
+	camera.FieldOfView = baseFov - 6 * charge
+
+	-- 3D target marker on the surface + dotted arc to it.
+	local origin = throwOrigin()
+	predicted, predictedNormal = predictImpact(origin, aimPoint)
+	local markerSize = radius * 0.16 * (1 + math.sin(t * 6) * 0.06)
+	marker.Size = Vector3.new(1.5, markerSize, markerSize)
+	marker.CFrame = CFrame.lookAt(predicted + predictedNormal * 3, predicted + predictedNormal * 10) * CFrame.Angles(0, math.rad(90), 0)
+	markerDot.Size = Vector3.new(2, markerSize * 0.25, markerSize * 0.25)
+	markerDot.CFrame = marker.CFrame * CFrame.new(0.3, 0, 0)
+	for i, dot in ipairs(dots) do
+		local k = i / (DOTS + 1)
+		local world = PlanetMath.ArcPoint(origin, predicted, k)
+		local d = (world - camera.CFrame.Position).Magnitude
+		local s = math.clamp(d * 0.006, 0.6, 18)
+		dot.Size = Vector3.new(s, s, s)
+		dot.CFrame = CFrame.new(world)
+		dot.Transparency = 0.15 + 0.5 * k
+	end
+
+	-- Charge: the needle runs 0 -> 1 -> 0 so timing matters.
 	if holding then
 		chargeT += dt
 		local phase = (chargeT / L.ChargePeriod) % 2
@@ -391,11 +473,11 @@ local function updateAiming(dt)
 		if model and model.PrimaryPart and launchData then
 			MeteorVisual.SetSize(model, launchData.size * (1 + 0.7 * charge))
 		end
-		FX.Shake(0.4 + charge * 1.2, 0.1)
+		FX.Shake(0.3 + charge * 1, 0.1)
 	end
 	paintRing()
 
-	if os.clock() - aimStart > L.MaxHoldTime - 0.5 then
+	if t - aimStart > L.MaxHoldTime - 0.5 then
 		if charge == 0 then
 			charge = 0.5
 		end
@@ -409,35 +491,58 @@ local function updateFlight(dt)
 	end
 	local pos = flight:GetPosition()
 	local center = planetCenter()
-	local travel = (center - pos).Unit
+	local radius = planetRadius()
 	if state == "flying" then
-		-- Chase cam behind the meteor, then swing to a side shot just before impact.
+		-- Chase cam close behind the meteor, then a wide shot of the impact area.
 		local p = flight:Progress()
-		local chase = CFrame.lookAt(pos - travel * 30 + Vector3.new(0, 9, 0), pos + travel * 60)
-		if p > 0.72 then
-			local normal = (pos - center).Unit
+		local travel = (center - pos).Unit
+		local shot = CFrame.lookAt(pos - travel * 26 + Vector3.new(0, 7, 0), pos + travel * 80)
+		local target = cinematic.target or (predicted or pos)
+		if p > 0.65 then
+			local normal = (target - center).Unit
 			local side = normal:Cross(Vector3.new(0, 1, 0))
 			side = side.Magnitude > 0.1 and side.Unit or Vector3.new(1, 0, 0)
-			local shotPos = pos + normal * 120 + side * 160 + Vector3.new(0, 40, 0)
-			chase = CFrame.lookAt(shotPos, pos)
+			local shotPos = target + normal * radius * 0.55 + side * radius * 0.35 + Vector3.new(0, radius * 0.1, 0)
+			shot = CFrame.lookAt(shotPos, pos:Lerp(target, 0.5))
 		end
-		camera.CFrame = camera.CFrame:Lerp(chase, math.min(1, dt * 8)) * FX.ShakeOffset()
+		camera.CFrame = camera.CFrame:Lerp(shot, math.min(1, dt * 7)) * FX.ShakeOffset()
 	elseif state == "cinematic" then
+		-- Hold on the crater: slow orbit and push-in so you see the damage you did.
 		local impact = cinematic.impact or pos
 		local normal = (impact - center).Unit
 		local side = normal:Cross(Vector3.new(0, 1, 0))
 		side = side.Magnitude > 0.1 and side.Unit or Vector3.new(1, 0, 0)
 		local age = os.clock() - (cinematic.impactAt or os.clock())
-		local orbit = CFrame.fromAxisAngle(normal, age * 0.25)
-		local shotPos = impact + normal * (220 + age * 60) + orbit:VectorToWorldSpace(side) * 260
+		local orbit = CFrame.fromAxisAngle(normal, age * 0.3)
+		local dist = radius * (0.5 - math.min(age, 2) * 0.06)
+		local shotPos = impact + normal * dist + orbit:VectorToWorldSpace(side) * dist * 0.6
 		camera.CFrame = camera.CFrame:Lerp(CFrame.lookAt(shotPos, impact), math.min(1, dt * 4)) * FX.ShakeOffset()
-		if age > 1.8 then
+		if age > 2.6 then
 			finish()
 		end
 	end
 end
 
 -- UI ----------------------------------------------------------------------------------
+
+local function worldPart(props)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Material = Enum.Material.Neon
+	if props.Shape then
+		p.Shape = props.Shape
+	end
+	for k, v in pairs(props) do
+		if k ~= "Shape" then
+			p[k] = v
+		end
+	end
+	return p
+end
 
 local function buildUI()
 	local gui = UI.Screen("Launch", 8)
@@ -446,7 +551,7 @@ local function buildUI()
 	local reticle = UI.New("Frame", {
 		Name = "Reticle",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(150, 150),
+		Size = UDim2.fromOffset(170, 170),
 		BackgroundTransparency = 1,
 		Visible = false,
 		Parent = gui,
@@ -455,40 +560,29 @@ local function buildUI()
 	local circle = UI.New("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(64, 64),
+		Size = UDim2.fromOffset(44, 44),
 		BackgroundTransparency = 1,
 		Parent = reticle,
 	})
 	UI.Corner(UDim.new(1, 0)).Parent = circle
-	refs.reticleStroke = UI.New("UIStroke", { Thickness = 2.5, Color = Color3.new(1, 1, 1), Parent = circle })
+	refs.reticleStroke = UI.New("UIStroke", { Thickness = 2, Color = Color3.new(1, 1, 1), Parent = circle })
 	refs.center = UI.New("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(8, 8),
+		Size = UDim2.fromOffset(6, 6),
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderSizePixel = 0,
 		Parent = reticle,
 	})
 	UI.Corner(UDim.new(1, 0)).Parent = refs.center
-	for i = 0, 3 do
-		local a = i * math.pi / 2
-		UI.New("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, math.cos(a) * 44, 0.5, math.sin(a) * 44),
-			Size = UDim2.fromOffset(i % 2 == 0 and 14 or 3, i % 2 == 0 and 3 or 14),
-			BackgroundColor3 = Color3.new(1, 1, 1),
-			BorderSizePixel = 0,
-			Parent = reticle,
-		})
-	end
-	-- Charge ring: segments around the crosshair; the top ones (gold) are the critical zone.
+	-- Charge ring around the crosshair: the golden segments are the critical zone.
 	refs.segments = {}
 	for i = 1, SEGMENTS do
 		local a = -math.pi / 2 + (i - 0.5) / SEGMENTS * math.pi * 2
 		local seg = UI.New("Frame", {
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, math.cos(a) * 62, 0.5, math.sin(a) * 62),
-			Size = UDim2.fromOffset(5, 12),
+			Position = UDim2.new(0.5, math.cos(a) * 66, 0.5, math.sin(a) * 66),
+			Size = UDim2.fromOffset(6, 13),
 			Rotation = math.deg(a) + 90,
 			BorderSizePixel = 0,
 			Parent = reticle,
@@ -507,25 +601,11 @@ local function buildUI()
 		Parent = reticle,
 	})
 
-	refs.dots = {}
-	for i = 1, DOTS do
-		local d = UI.New("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Size = UDim2.fromOffset(7, 7),
-			BackgroundColor3 = Color3.fromRGB(255, 220, 150),
-			BorderSizePixel = 0,
-			Visible = false,
-			Parent = gui,
-		})
-		UI.Corner(UDim.new(1, 0)).Parent = d
-		refs.dots[i] = d
-	end
-
 	refs.hint = UI.Text({
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -40),
-		Size = UDim2.fromOffset(620, 30),
-		Text = "AIM at the planet  ·  HOLD to charge  ·  RELEASE in the golden zone",
+		Size = UDim2.fromOffset(660, 30),
+		Text = "AIM with the red marker  ·  HOLD to charge  ·  RELEASE on the GOLD zone for a critical",
 		TextStrokeTransparency = 0.2,
 		MaxTextSize = 22,
 		Visible = false,
@@ -548,12 +628,19 @@ local function buildUI()
 		Position = UDim2.fromScale(0.5, 0.3),
 		Size = UDim2.fromOffset(600, 90),
 		Text = "CRITICAL!",
-		TextColor3 = Color3.fromRGB(255, 210, 60),
+		TextColor3 = GOLD,
 		TextTransparency = 1,
 		TextStrokeTransparency = 1,
 		MaxTextSize = 80,
 		Parent = gui,
 	})
+
+	-- 3D aim helpers (local parts, parented to the camera while aiming).
+	marker = worldPart({ Name = "AimMarker", Shape = Enum.PartType.Cylinder, Color = Color3.fromRGB(255, 90, 70), Transparency = 0.35 })
+	markerDot = worldPart({ Name = "AimDot", Shape = Enum.PartType.Cylinder, Color = Color3.new(1, 1, 1), Transparency = 0.1, Parent = marker })
+	for i = 1, DOTS do
+		dots[i] = worldPart({ Name = "ArcDot", Shape = Enum.PartType.Ball, Color = Color3.fromRGB(255, 225, 150) })
+	end
 end
 
 -- Lifecycle -----------------------------------------------------------------------------
@@ -625,13 +712,14 @@ function Launch:Start()
 		-- Snap our predicted flight onto the server's authoritative impact point.
 		if flight and result.impact then
 			flight:SetTarget(result.impact)
+			cinematic.target = result.impact
 		end
 	end)
 
 	player.CharacterAdded:Connect(function()
 		if state ~= "idle" then
 			constraints = {}
-			ap = nil
+			ap, ao = nil, nil
 			setAimUI(false)
 			camera.CameraType = Enum.CameraType.Custom
 			launchData = nil
@@ -645,17 +733,35 @@ function Launch:Start()
 			if os.clock() < nextTryAt then
 				return
 			end
-			if workspace:GetAttribute("CyclePhase") ~= "Bombard" or not workspace:GetAttribute("PlanetReady") then
+			local root = getRoot()
+			local pad = root and padAt(root.Position)
+			if not pad then
 				return
 			end
-			local root = getRoot()
-			if root and onPad(root.Position) then
-				if hasReadyMeteor() then
-					enterAim()
-				else
-					nextTryAt = os.clock() + 2.5
-					controllers.Notifications.Toast("No meteor ready: wait for the recharge!", "bad")
-				end
+			nextTryAt = os.clock() + 0.25
+			local padTier = pad:GetAttribute("Tier") or 1
+			player:SetAttribute("FocusTier", padTier)
+			local required = pad:GetAttribute("RequiredEvolution") or 1
+			if (player:GetAttribute("Evolution") or 1) < required then
+				nextTryAt = os.clock() + 3
+				controllers.Notifications.Toast(
+					Planets.Tiers[padTier].name .. " requires " .. Evolutions.Get(required).name .. "!",
+					"bad"
+				)
+				return
+			end
+			if workspace:GetAttribute("CyclePhase") ~= "Bombard" then
+				return
+			end
+			local info = PlanetInfo.Get(padTier)
+			if not info or not info.ready then
+				return
+			end
+			if hasReadyMeteor() then
+				enterAim(pad)
+			else
+				nextTryAt = os.clock() + 2.5
+				controllers.Notifications.Toast("No meteor ready: wait for the recharge!", "bad")
 			end
 		elseif state == "aiming" then
 			updateAiming(dt)

@@ -1,5 +1,5 @@
--- Client-side visual effects: meteor flights, planet impacts, crust plates flying into space,
--- mantle shatter, supernova and planet arrival. Everything is local (smooth, no replication cost).
+-- Client-side visual effects: meteor flights, planet impacts with an effect per meteor element,
+-- layer breaks, supernova and the space-time rift planets arrive from. Everything is local (smooth, no replication cost).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,6 +34,11 @@ local TEX = {
 
 local function tex(name)
 	return Assets.Image(Assets.Particles[name]) or TEX[name] or TEX.Spark
+end
+
+-- Roblox parts can't be bigger than 2048 studs on any axis.
+local function clampSize(v)
+	return Vector3.new(math.min(v.X, 2048), math.min(v.Y, 2048), math.min(v.Z, 2048))
 end
 
 local function anchorPart(position)
@@ -75,7 +80,7 @@ local function neonBall(position, diameter, color, transparency)
 	p.Material = Enum.Material.Neon
 	p.Color = color
 	p.Transparency = transparency or 0
-	p.Size = Vector3.new(diameter, diameter, diameter)
+	p.Size = clampSize(Vector3.new(diameter, diameter, diameter))
 	p.CFrame = CFrame.new(position)
 	p.Parent = folder
 	return p
@@ -83,7 +88,7 @@ end
 
 local function expandAndFade(part, size, time, style)
 	local t = TweenService:Create(part, TweenInfo.new(time, style or Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-		Size = size,
+		Size = clampSize(size),
 		Transparency = 1,
 	})
 	t:Play()
@@ -104,7 +109,7 @@ local function ring(position, normal, fromSize, toSize, color, time, transparenc
 	p.Material = Enum.Material.Neon
 	p.Color = color
 	p.Transparency = transparency or 0.15
-	p.Size = Vector3.new(0.6, fromSize, fromSize)
+	p.Size = clampSize(Vector3.new(0.6, fromSize, fromSize))
 	p.CFrame = CFrame.lookAt(position, position + normal) * CFrame.Angles(0, math.rad(90), 0)
 	p.Parent = folder
 	expandAndFade(p, Vector3.new(0.6, toSize, toSize), time)
@@ -148,40 +153,7 @@ function FX.ScreenFlash(color, strength)
 	TweenService:Create(screenFlash, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
 end
 
--- Copies of removed crust plates flying into space.
-local function flingPlates(tiles, center, speed)
-	for _, data in ipairs(tiles or {}) do
-		local p = Instance.new(data.wedge and "WedgePart" or "Part")
-		p.Anchored = true
-		p.CanCollide = false
-		p.CanQuery = false
-		p.CanTouch = false
-		p.CastShadow = false
-		p.Size = data.size
-		p.CFrame = data.cf
-		p.Color = data.color
-		p.Material = data.mat
-		p.Parent = folder
-		local out = (data.cf.Position - center)
-		out = out.Magnitude > 0 and out.Unit or Vector3.new(0, 1, 0)
-		local lateral = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1)) * 0.35
-		local dist = rng:NextNumber(0.6, 1.4) * speed
-		local spin = CFrame.Angles(rng:NextNumber(-4, 4), rng:NextNumber(-4, 4), rng:NextNumber(-4, 4))
-		local time = rng:NextNumber(2.8, 4.5)
-		local t = TweenService:Create(p, TweenInfo.new(time, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-			CFrame = CFrame.new(data.cf.Position + (out + lateral).Unit * dist) * data.cf.Rotation * spin,
-		})
-		t:Play()
-		TweenService:Create(p, TweenInfo.new(time * 0.4, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, time * 0.6), {
-			Transparency = 1,
-		}):Play()
-		t.Completed:Connect(function()
-			p:Destroy()
-		end)
-	end
-end
-
-local function rocks(position, normal, count, size, color, speed)
+local function rocks(position, normal, count, size, color, speed, material)
 	for _ = 1, count do
 		local p = Instance.new("Part")
 		p.Anchored = true
@@ -189,7 +161,7 @@ local function rocks(position, normal, count, size, color, speed)
 		p.CanQuery = false
 		p.CanTouch = false
 		p.CastShadow = false
-		p.Material = Enum.Material.Slate
+		p.Material = material or Enum.Material.Slate
 		p.Color = color
 		local s = rng:NextNumber(0.4, 1) * size
 		p.Size = Vector3.new(s, s * rng:NextNumber(0.5, 1), s * rng:NextNumber(0.5, 1))
@@ -245,63 +217,319 @@ local function damageNumber(position, damage, crit, color)
 	end)
 end
 
--- Meteor impact on the planet.
+-- Random direction on the plane perpendicular to `normal`.
+local function tangent(normal)
+	local v = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1))
+	v = v - normal * v:Dot(normal)
+	return v.Magnitude > 0.01 and v.Unit or normal:Cross(Vector3.new(0, 1, 0)).Unit
+end
+
+local function basePart(props)
+	local p = Instance.new(props.ClassName or "Part")
+	props.ClassName = nil
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	if props.Shape then
+		p.Shape = props.Shape
+		props.Shape = nil
+	end
+	for k, v in pairs(props) do
+		p[k] = v
+	end
+	p.Parent = folder
+	return p
+end
+
+local function fadeAndDestroy(part, delay, time)
+	task.delay(delay, function()
+		local t = TweenService:Create(part, TweenInfo.new(time), { Transparency = 1 })
+		t:Play()
+		t.Completed:Connect(function()
+			part:Destroy()
+		end)
+	end)
+end
+
+-- Jagged lightning bolt from `a` to `b` made of neon segments; flashes and disappears.
+local function bolt(a, b, color, width, life)
+	local points = { a }
+	local n = 7
+	local dir = b - a
+	local side = tangent(dir.Unit)
+	for i = 1, n - 1 do
+		local off = side * rng:NextNumber(-1, 1) * dir.Magnitude * 0.08 + tangent(dir.Unit) * rng:NextNumber(-1, 1) * dir.Magnitude * 0.05
+		table.insert(points, a + dir * (i / n) + off)
+	end
+	table.insert(points, b)
+	for i = 1, #points - 1 do
+		local p0, p1 = points[i], points[i + 1]
+		local seg = basePart({
+			Material = Enum.Material.Neon,
+			Color = color,
+			Size = Vector3.new(width, width, (p1 - p0).Magnitude),
+			CFrame = CFrame.lookAt((p0 + p1) / 2, p1),
+		})
+		fadeAndDestroy(seg, life * 0.5, life * 0.5)
+	end
+end
+
+-- Element effects, scaled by the crater radius `s`.
+local ELEMENT = {}
+
+function ELEMENT.frost(point, normal, s)
+	-- Ice crystals shooting out of the crater.
+	for _ = 1, 9 do
+		local dir = (normal + tangent(normal) * rng:NextNumber(0, 0.6)).Unit
+		local length = s * rng:NextNumber(0.6, 1.3)
+		local w = length * 0.18
+		local base = point - normal * s * 0.3 + tangent(normal) * rng:NextNumber(0, s * 0.5)
+		local shard = basePart({
+			Material = Enum.Material.Glass,
+			Color = Color3.fromRGB(170, 235, 255),
+			Transparency = 0.15,
+			Reflectance = 0.2,
+			Size = Vector3.new(w, 0.5, w),
+			CFrame = CFrame.lookAt(base, base + dir) * CFrame.Angles(math.rad(-90), math.rad(45), 0),
+		})
+		local grown = CFrame.lookAt(base + dir * length / 2, base + dir * length) * CFrame.Angles(math.rad(-90), math.rad(45), 0)
+		TweenService:Create(shard, TweenInfo.new(rng:NextNumber(0.25, 0.5), Enum.EasingStyle.Back), {
+			Size = Vector3.new(w, length, w),
+			CFrame = grown,
+		}):Play()
+		fadeAndDestroy(shard, 3.5, 1.2)
+	end
+	burst(point + normal * 8, {
+		Texture = tex("Spark"),
+		Color = ColorSequence.new(Color3.fromRGB(230, 250, 255)),
+		LightEmission = 0.8,
+		Size = NumberSequence.new(s * 0.05, 0),
+		Lifetime = NumberRange.new(1.5, 3),
+		Speed = NumberRange.new(s * 0.5, s * 1.5),
+		SpreadAngle = Vector2.new(90, 90),
+		Acceleration = -normal * s * 0.3,
+	}, 80, 4)
+end
+
+function ELEMENT.magma(point, normal, s)
+	-- Lava blobs thrown out in arcs, landing around the crater.
+	for _ = 1, 16 do
+		local blob = basePart({ Shape = Enum.PartType.Ball, Material = Enum.Material.Neon, Color = Color3.fromRGB(255, rng:NextInteger(80, 160), 20), Size = Vector3.one * s * rng:NextNumber(0.06, 0.14), CFrame = CFrame.new(point) })
+		local side = tangent(normal) * s * rng:NextNumber(0.8, 2)
+		local up = normal * s * rng:NextNumber(0.8, 1.8)
+		local start, time = os.clock(), rng:NextNumber(1, 1.6)
+		local conn
+		conn = RunService.Heartbeat:Connect(function()
+			local k = math.min(1, (os.clock() - start) / time)
+			blob.CFrame = CFrame.new(point + side * k + up * 4 * k * (1 - k))
+			if k >= 1 then
+				conn:Disconnect()
+				fadeAndDestroy(blob, 0.4, 1)
+			end
+		end)
+	end
+	expandAndFade(neonBall(point, s * 0.8, Color3.fromRGB(255, 120, 20), 0.3), Vector3.one * s * 2.4, 2.5)
+end
+
+function ELEMENT.spark(point, normal, s)
+	for k = 0, 2 do
+		task.delay(k * 0.15, function()
+			for _ = 1, 4 do
+				local from = point + normal * s * rng:NextNumber(1.5, 3) + tangent(normal) * s * rng:NextNumber(0, 1.5)
+				bolt(from, point + tangent(normal) * rng:NextNumber(0, s * 0.6), Color3.fromRGB(255, 250, 150), math.max(1, s * 0.035), 0.35)
+			end
+			FX.ScreenFlash(Color3.fromRGB(255, 255, 200), 0.12)
+		end)
+	end
+	for _ = 1, 6 do
+		local dir = tangent(normal)
+		bolt(point, point + dir * s * rng:NextNumber(1, 2), Color3.fromRGB(200, 240, 255), math.max(0.8, s * 0.025), 0.5)
+	end
+end
+
+function ELEMENT.venom(point, normal, s)
+	burst(point + normal * s * 0.2, {
+		Texture = tex("Smoke"),
+		Color = ColorSequence.new(Color3.fromRGB(160, 255, 80), Color3.fromRGB(40, 120, 20)),
+		LightEmission = 0.3,
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 0.4), NumberSequenceKeypoint.new(1, s * 1.2) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) }),
+		Lifetime = NumberRange.new(3, 5),
+		Speed = NumberRange.new(s * 0.2, s * 0.6),
+		SpreadAngle = Vector2.new(80, 80),
+		Rotation = NumberRange.new(0, 360),
+		RotSpeed = NumberRange.new(-20, 20),
+	}, 30, 6)
+	for _ = 1, 14 do
+		local base = point + tangent(normal) * rng:NextNumber(0, s * 0.8)
+		local b = basePart({ Shape = Enum.PartType.Ball, Material = Enum.Material.Neon, Color = Color3.fromRGB(140, 255, 60), Transparency = 0.3, Size = Vector3.one * 0.5, CFrame = CFrame.new(base) })
+		local size = s * rng:NextNumber(0.08, 0.2)
+		task.delay(rng:NextNumber(0, 1.5), function()
+			local t = TweenService:Create(b, TweenInfo.new(0.8, Enum.EasingStyle.Back), { Size = Vector3.one * size, CFrame = CFrame.new(base + normal * size) })
+			t:Play()
+			t.Completed:Connect(function()
+				expandAndFade(b, Vector3.one * size * 1.8, 0.2)
+			end)
+		end)
+	end
+end
+
+function ELEMENT.crystal(point, normal, s)
+	for _ = 1, 18 do
+		local shard = basePart({
+			ClassName = "WedgePart",
+			Material = Enum.Material.Glass,
+			Color = Color3.fromRGB(255, rng:NextInteger(120, 200), 255),
+			Transparency = 0.1,
+			Reflectance = 0.3,
+			Size = Vector3.new(s * 0.04, s * rng:NextNumber(0.15, 0.3), s * 0.1),
+			CFrame = CFrame.new(point) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), 0),
+		})
+		local dir = (normal + tangent(normal) * rng:NextNumber(0.3, 1.2)).Unit
+		local t = TweenService:Create(shard, TweenInfo.new(rng:NextNumber(1.5, 2.5), Enum.EasingStyle.Quint), {
+			CFrame = CFrame.new(point + dir * s * rng:NextNumber(1, 2.2)) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), 0),
+		})
+		t:Play()
+		fadeAndDestroy(shard, 1.6, 0.8)
+	end
+	ELEMENT.frost(point, normal, s * 0.7)
+end
+
+function ELEMENT.aurora(point, normal, s)
+	local colors = { Color3.fromRGB(100, 255, 190), Color3.fromRGB(140, 90, 255), Color3.fromRGB(80, 200, 255) }
+	for i = 1, 6 do
+		local a0 = basePart({ Transparency = 1, Size = Vector3.one, CFrame = CFrame.new(point) })
+		local top = point + normal * s * rng:NextNumber(2, 3.5) + tangent(normal) * s * rng:NextNumber(0.5, 1.5)
+		local a1 = basePart({ Transparency = 1, Size = Vector3.one, CFrame = CFrame.new(top) })
+		local at0, at1 = Instance.new("Attachment"), Instance.new("Attachment")
+		at0.Parent, at1.Parent = a0, a1
+		local beam = Instance.new("Beam")
+		beam.Attachment0, beam.Attachment1 = at0, at1
+		beam.Color = ColorSequence.new(colors[i % 3 + 1], colors[(i + 1) % 3 + 1])
+		beam.LightEmission = 1
+		beam.Width0, beam.Width1 = s * 0.3, s * 0.05
+		beam.CurveSize0, beam.CurveSize1 = s * rng:NextNumber(-1, 1), s * rng:NextNumber(-1, 1)
+		beam.FaceCamera = true
+		beam.Transparency = NumberSequence.new(0.2, 1)
+		beam.Parent = a0
+		task.delay(2.5, function()
+			a0:Destroy()
+			a1:Destroy()
+		end)
+	end
+end
+
+function ELEMENT.solar(point, normal, s)
+	expandAndFade(neonBall(point, s, Color3.fromRGB(255, 250, 220), 0), Vector3.one * s * 5, 0.8)
+	for _ = 1, 12 do
+		local dir = (normal * rng:NextNumber(0, 0.5) + tangent(normal)).Unit
+		local ray = basePart({
+			Material = Enum.Material.Neon,
+			Color = Color3.fromRGB(255, 220, 90),
+			Size = Vector3.new(s * 0.05, s * 0.05, s * 0.2),
+			CFrame = CFrame.lookAt(point, point + dir),
+		})
+		TweenService:Create(ray, TweenInfo.new(0.7, Enum.EasingStyle.Quart), {
+			Size = Vector3.new(s * 0.03, s * 0.03, s * 4),
+			CFrame = CFrame.lookAt(point + dir * s * 2, point + dir * s * 4),
+			Transparency = 1,
+		}):Play()
+		task.delay(0.8, function()
+			ray:Destroy()
+		end)
+	end
+	FX.ScreenFlash(Color3.fromRGB(255, 240, 180), 0.35)
+end
+
+function ELEMENT.void(point, normal, s)
+	local hole = basePart({ Shape = Enum.PartType.Ball, Material = Enum.Material.SmoothPlastic, Color = Color3.new(0, 0, 0), Size = Vector3.one, CFrame = CFrame.new(point + normal * s * 0.5) })
+	local grow = TweenService:Create(hole, TweenInfo.new(0.5, Enum.EasingStyle.Back), { Size = Vector3.one * s * 1.6 })
+	grow:Play()
+	grow.Completed:Connect(function()
+		local shrink = TweenService:Create(hole, TweenInfo.new(0.7, Enum.EasingStyle.Quart, Enum.EasingDirection.In), { Size = Vector3.one * 0.1 })
+		shrink:Play()
+		shrink.Completed:Connect(function()
+			hole:Destroy()
+			expandAndFade(neonBall(point, s * 0.3, Color3.fromRGB(190, 90, 255), 0), Vector3.one * s * 4, 0.8)
+		end)
+	end)
+	-- Rings collapsing inwards.
+	for k = 0, 2 do
+		task.delay(k * 0.2, function()
+			local p = basePart({ Shape = Enum.PartType.Cylinder, Material = Enum.Material.Neon, Color = Color3.fromRGB(170, 70, 255), Transparency = 0.2, Size = Vector3.new(0.8, s * 5, s * 5), CFrame = CFrame.lookAt(point, point + normal) * CFrame.Angles(0, math.rad(90), 0) })
+			local t = TweenService:Create(p, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Size = Vector3.new(0.8, 1, 1), Transparency = 0.8 })
+			t:Play()
+			t.Completed:Connect(function()
+				p:Destroy()
+			end)
+		end)
+	end
+end
+
+function ELEMENT.nova(point, normal, s)
+	local colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(120, 220, 255), Color3.fromRGB(255, 230, 120) }
+	for k = 1, 3 do
+		task.delay((k - 1) * 0.18, function()
+			ring(point + normal * 3, normal, s * 0.5, s * (5 + k * 2), colors[k], 1.2, 0.1)
+		end)
+	end
+	ELEMENT.solar(point, normal, s * 0.8)
+end
+
+-- Meteor impact on a planet: flash, shockwave, debris of the planet's crust, dust, then the
+-- element effect of the meteor. `p.crater` is the radius of the crater carved by the server.
 function FX.Impact(p)
 	local point, normal, color = p.point, p.normal, p.color or Color3.fromRGB(255, 150, 60)
-	local s = math.clamp(18 + math.log10(math.max(p.damage, 10)) * 16, 30, 160)
+	local s = p.crater or 40
 	if p.crit then
-		s *= 1.35
+		s *= 1.2
 	end
-	local center = workspace:GetAttribute("PlanetCenter") or point - normal * 400
+	local crust = p.crustColor or Color3.fromRGB(110, 90, 80)
 
 	-- 1) blinding flash
-	expandAndFade(neonBall(point, s * 0.3, Color3.new(1, 1, 1), 0), Vector3.one * s * 2.2, 0.35)
-	expandAndFade(neonBall(point, s * 0.5, color, 0.1), Vector3.one * s * 3, 0.7)
-	light(point + normal * 20, color, 60, 1)
+	expandAndFade(neonBall(point, s * 0.4, Color3.new(1, 1, 1), 0), Vector3.one * s * 2.6, 0.4)
+	expandAndFade(neonBall(point, s * 0.6, color, 0.1), Vector3.one * s * 3.2, 0.9)
+	light(point + normal * 20, color, 60, 1.2)
 	-- 2) shockwaves along the surface
-	ring(point + normal * 2, normal, s * 0.2, s * 5, Color3.fromRGB(255, 245, 220), 0.6, 0.1)
-	ring(point + normal * 2, normal, s * 0.4, s * 8, color, 1.2, 0.35)
-	-- 3) fire, smoke, sparks
-	burst(point + normal * 6, {
+	ring(point + normal * 2, normal, s * 0.3, s * 4.5, Color3.fromRGB(255, 245, 220), 0.6, 0.1)
+	ring(point + normal * 2, normal, s * 0.5, s * 7, color, 1.3, 0.4)
+	-- 3) fire and a big dust cloud in the crust's color
+	burst(point + normal * s * 0.2, {
 		Texture = tex("Fire"),
 		Color = ColorSequence.new(Color3.fromRGB(255, 240, 200), color),
 		LightEmission = 1,
-		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 0.35), NumberSequenceKeypoint.new(1, s * 0.05) }),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 0.45), NumberSequenceKeypoint.new(1, s * 0.05) }),
 		Transparency = NumberSequence.new(0, 1),
 		Lifetime = NumberRange.new(0.6, 1.3),
 		Speed = NumberRange.new(s * 0.8, s * 2.2),
-		SpreadAngle = Vector2.new(70, 70),
-		EmissionDirection = Enum.NormalId.Top,
+		SpreadAngle = Vector2.new(60, 60),
 		Rotation = NumberRange.new(0, 360),
 		RotSpeed = NumberRange.new(-90, 90),
 		Drag = 3,
-	}, 45, 2)
-	burst(point + normal * 10, {
+	}, 40, 2)
+	burst(point + normal * s * 0.3, {
 		Texture = tex("Smoke"),
-		Color = ColorSequence.new(Color3.fromRGB(90, 80, 80), Color3.fromRGB(40, 35, 40)),
-		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 0.3), NumberSequenceKeypoint.new(1, s * 0.8) }),
-		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) }),
-		Lifetime = NumberRange.new(2, 3.5),
-		Speed = NumberRange.new(s * 0.3, s * 0.9),
-		SpreadAngle = Vector2.new(80, 80),
+		Color = ColorSequence.new(crust:Lerp(Color3.new(1, 1, 1), 0.2), crust:Lerp(Color3.new(0, 0, 0), 0.4)),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 0.5), NumberSequenceKeypoint.new(1, s * 1.4) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.15), NumberSequenceKeypoint.new(1, 1) }),
+		Lifetime = NumberRange.new(2.5, 4),
+		Speed = NumberRange.new(s * 0.4, s * 1.1),
+		SpreadAngle = Vector2.new(70, 70),
 		Rotation = NumberRange.new(0, 360),
 		RotSpeed = NumberRange.new(-30, 30),
-		Drag = 1.5,
-	}, 25, 4)
-	burst(point + normal * 4, {
-		Texture = tex("Spark"),
-		Color = ColorSequence.new(Color3.fromRGB(255, 255, 220), color),
-		LightEmission = 1,
-		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 5), NumberSequenceKeypoint.new(1, 0) }),
-		Lifetime = NumberRange.new(0.8, 1.8),
-		Speed = NumberRange.new(s * 2, s * 4),
-		SpreadAngle = Vector2.new(85, 85),
-		Drag = 2,
-	}, 70, 2.5)
-	-- 4) the crust plates of the new crater + rocks
-	flingPlates(p.tiles, center, 520)
-	rocks(point, normal, p.crit and 22 or 14, s * 0.12, Color3.fromRGB(60, 50, 50), s * 3)
-	damageNumber(point + normal * s * 0.6, p.damage, p.crit, color)
+		Drag = 1.2,
+	}, 30, 5)
+	-- 4) chunks of the planet flying out of the crater
+	rocks(point, normal, p.crit and 30 or 20, s * 0.16, crust, s * 3.5, Enum.Material.Rock)
+	rocks(point, normal, 8, s * 0.1, Color3.fromRGB(255, 120, 40), s * 2.5, Enum.Material.Neon)
+	-- 5) the meteor's element
+	local element = ELEMENT[p.impact]
+	if element then
+		element(point, normal, s)
+	end
+	damageNumber(point + normal * s * 1.2, p.damage, p.crit, color)
 
 	local isMine = p.thrower == player.UserId
 	FX.Shake(isMine and (p.crit and 6 or 3.5) or 0.6, isMine and 0.9 or 0.3)
@@ -311,43 +539,109 @@ function FX.Impact(p)
 	Sfx.Play(p.crit and "Crit" or "Impact", isMine and 0.9 or 0.35)
 end
 
-function FX.Mantle(p)
+-- A layer of the planet broke (mantle or core exposed).
+function FX.Layer(p)
 	local r = p.radius
-	expandAndFade(neonBall(p.center, r * 2, p.color, 0.1), Vector3.one * r * 3.2, 1.6)
-	ring(p.center, Vector3.new(0, 1, 0), r, r * 6, p.color, 2)
-	ring(p.center, Vector3.new(1, 0.3, 0).Unit, r, r * 5, Color3.new(1, 1, 1), 1.6, 0.4)
-	local shards = {}
-	for _ = 1, 40 do
-		local dir = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1)).Unit
-		table.insert(shards, {
-			cf = CFrame.new(p.center + dir * r * 0.9) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), 0),
-			size = Vector3.new(r * 0.3, r * 0.08, r * 0.25),
-			color = p.color,
-			mat = Enum.Material.Neon,
-			wedge = true,
-		})
-	end
-	flingPlates(shards, p.center, 700)
-	FX.Shake(2, 0.8)
-	FX.ScreenFlash(p.color, 0.25)
+	local color = p.layer == 2 and Color3.fromRGB(255, 120, 30) or p.color
+	ring(p.center, Vector3.new(0, 1, 0), r, r * 3.5, color, 1.6, 0.3)
+	ring(p.center, Vector3.new(1, 0.3, 0).Unit, r, r * 3, Color3.new(1, 1, 1), 1.4, 0.5)
+	FX.Shake(1.5, 0.6)
 end
 
 function FX.Supernova(p)
 	local r = p.radius
-	expandAndFade(neonBall(p.center, r * 0.6, Color3.new(1, 1, 1), 0), Vector3.one * r * 7, 2.5, Enum.EasingStyle.Quint)
-	expandAndFade(neonBall(p.center, r * 0.8, p.color, 0.2), Vector3.one * r * 5, 3.5, Enum.EasingStyle.Quint)
-	ring(p.center, Vector3.new(0, 1, 0), r, r * 12, p.color, 3)
-	ring(p.center, Vector3.new(1, 0.2, 0.3).Unit, r, r * 10, Color3.new(1, 1, 1), 2.5, 0.3)
-	ring(p.center, Vector3.new(-0.4, 0.3, 1).Unit, r, r * 9, p.mantleColor or p.color, 3, 0.4)
-	flingPlates(p.tiles, p.center, 1400)
+	expandAndFade(neonBall(p.center, r * 0.6, Color3.new(1, 1, 1), 0), Vector3.one * r * 4, 2.2, Enum.EasingStyle.Quint)
+	expandAndFade(neonBall(p.center, r * 1.4, p.color, 0.2), Vector3.one * r * 3.4, 3.2, Enum.EasingStyle.Quint)
+	ring(p.center, Vector3.new(0, 1, 0), r, r * 7, p.color, 3)
+	ring(p.center, Vector3.new(1, 0.2, 0.3).Unit, r, r * 6, Color3.new(1, 1, 1), 2.5, 0.3)
+	ring(p.center, Vector3.new(-0.4, 0.3, 1).Unit, r, r * 5.5, Color3.fromRGB(255, 120, 40), 3, 0.4)
+	-- The planet shatters into chunks of crust and lava.
+	for _ = 1, 90 do
+		local dir = rng:NextUnitVector()
+		local lava = rng:NextNumber() < 0.3
+		rocks(p.center + dir * r * rng:NextNumber(0.6, 1), dir, 1, r * rng:NextNumber(0.06, 0.16),
+			lava and Color3.fromRGB(255, 120, 40) or p.crustColor or Color3.fromRGB(110, 90, 80), r * rng:NextNumber(1.5, 3),
+			lava and Enum.Material.Neon or Enum.Material.Rock)
+	end
 	FX.Shake(5, 1.6)
 	FX.ScreenFlash(Color3.new(1, 1, 1), 0.85)
 	Sfx.Play("PlanetExplode", 1)
 end
 
-function FX.Arrival(p)
-	ring(p.center, Vector3.new(0, 1, 0), p.radius * 0.2, p.radius * 4, p.color, 1.5, 0.2)
-	expandAndFade(neonBall(p.center, p.radius * 0.3, Color3.new(1, 1, 1), 0), Vector3.one * p.radius * 2.4, 1.2)
+-- Space-time rift: a jagged tear opens in space, a void disc spins behind it, the planet bursts
+-- out of it in a flash of light, then the rift closes.
+function FX.Rift(p)
+	local center, r = p.center, p.radius
+	local toMap = Vector3.new(-center.X, 0, -center.Z).Unit
+	local frame = CFrame.lookAt(center + toMap * r * 1.1, center + toMap * r * 3)
+	local color = p.color or Color3.fromRGB(200, 120, 255)
+	local parts = {}
+
+	local void = basePart({ Shape = Enum.PartType.Cylinder, Material = Enum.Material.SmoothPlastic, Color = Color3.new(0, 0, 0), Size = Vector3.new(2, 1, 1), CFrame = frame * CFrame.Angles(0, math.rad(90), 0) })
+	local rim = basePart({ Shape = Enum.PartType.Cylinder, Material = Enum.Material.Neon, Color = color, Transparency = 0.2, Size = Vector3.new(1, 1, 1), CFrame = frame * CFrame.new(0, 0, 1.5) * CFrame.Angles(0, math.rad(90), 0) })
+	table.insert(parts, void)
+	table.insert(parts, rim)
+	-- The tear: a vertical zigzag of glowing cracks.
+	local tear = {}
+	local h = r * 2.6
+	local x = 0
+	for i = 1, 14 do
+		local y0 = -h / 2 + (i - 1) * h / 14
+		local nx = (i % 2 == 0 and 1 or -1) * rng:NextNumber(r * 0.05, r * 0.16)
+		local a = Vector3.new(x, y0, -3)
+		local b = Vector3.new(nx, y0 + h / 14, -3)
+		x = nx
+		local seg = basePart({
+			Material = Enum.Material.Neon,
+			Color = Color3.new(1, 1, 1):Lerp(color, 0.3),
+			Size = Vector3.new(r * 0.035, r * 0.035, 0.1),
+			CFrame = frame * CFrame.lookAt((a + b) / 2, b),
+		})
+		table.insert(tear, { part = seg, length = (b - a).Magnitude })
+		table.insert(parts, seg)
+	end
+	for i, t in ipairs(tear) do
+		task.delay(i * 0.04, function()
+			TweenService:Create(t.part, TweenInfo.new(0.25), { Size = Vector3.new(r * 0.035, r * 0.035, t.length) }):Play()
+		end)
+	end
+	TweenService:Create(void, TweenInfo.new(p.open, Enum.EasingStyle.Quart), { Size = Vector3.new(2, r * 1.6, r * 1.6) }):Play()
+	TweenService:Create(rim, TweenInfo.new(p.open, Enum.EasingStyle.Quart), { Size = Vector3.new(1, r * 1.75, r * 1.75) }):Play()
+	local spark = basePart({ Transparency = 1, Size = Vector3.new(r * 1.2, r * 2.4, 1), CFrame = frame })
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = tex("Spark")
+	e.Color = ColorSequence.new(Color3.new(1, 1, 1), color)
+	e.LightEmission = 1
+	e.Size = NumberSequence.new(r * 0.03, 0)
+	e.Lifetime = NumberRange.new(1, 2)
+	e.Speed = NumberRange.new(r * 0.1, r * 0.3)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Rate = 80
+	e.Parent = spark
+	table.insert(parts, spark)
+	FX.Shake(1, 0.8)
+
+	-- The planet bursts out.
+	task.delay(p.open, function()
+		expandAndFade(neonBall(center, r * 0.4, Color3.new(1, 1, 1), 0), Vector3.one * r * 2.4, 1.2)
+		expandAndFade(neonBall(center, r * 2, color, 0.3), Vector3.one * r * 2.8, 1.6)
+		ring(center, toMap, r, r * 4, color, 1.5, 0.2)
+		FX.Shake(2, 0.8)
+		Sfx.Play("PlanetExplode", 0.4)
+	end)
+	-- The rift closes.
+	task.delay(p.close, function()
+		e.Enabled = false
+		for _, part in ipairs(parts) do
+			if part.Parent then
+				local t = TweenService:Create(part, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), { Size = Vector3.new(part.Size.X, 0.1, 0.1), Transparency = 1 })
+				t:Play()
+				t.Completed:Connect(function()
+					part:Destroy()
+				end)
+			end
+		end
+	end)
 end
 
 --[[
@@ -473,12 +767,12 @@ function FX:Start()
 	Remotes.Get("PlanetFX").OnClientEvent:Connect(function(p)
 		if p.kind == "impact" then
 			FX.Impact(p)
-		elseif p.kind == "mantle" then
-			FX.Mantle(p)
+		elseif p.kind == "layer" then
+			FX.Layer(p)
 		elseif p.kind == "supernova" then
 			FX.Supernova(p)
-		elseif p.kind == "arrival" then
-			FX.Arrival(p)
+		elseif p.kind == "rift" then
+			FX.Rift(p)
 		end
 	end)
 	Remotes.Get("LaunchFX").OnClientEvent:Connect(function(p)

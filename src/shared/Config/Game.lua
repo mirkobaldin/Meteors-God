@@ -66,10 +66,13 @@ Game.World = {
 Game.Launch = {
 	HoverHeight = 18,
 	RiseTime = 0.3, -- seconds to lift off the pad (instant feel)
-	MinChargeTime = 0.2,
-	MaxHoldTime = 10,
-	ChargePeriod = 1.0, -- seconds for the ring to go 0 -> 1
-	CritThreshold = 0.88,
+	MinChargeTime = 0.35,
+	MaxHoldTime = 8,
+	ChargePeriod = 0.75, -- seconds for the ring to go 0 -> 1 (then back)
+	-- Critical: a narrow golden zone placed at random between CritZoneMin and CritZoneMax each throw.
+	CritWindow = 0.07,
+	CritZoneMin = 0.5,
+	CritZoneMax = 0.98,
 	CritMultiplier = 2,
 	MeteorSpeed = 1500, -- studs per second
 	FlightMin = 0.9,
