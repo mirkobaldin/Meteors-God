@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Assets = require(Shared.Config.Assets)
 local Evolutions = require(Shared.Config.Evolutions)
+local Game = require(Shared.Config.Game)
 local Monetization = require(Shared.Config.Monetization)
 local Format = require(Shared.Util.Format)
 local PlanetInfo = require(Shared.Util.PlanetInfo)
@@ -488,7 +489,8 @@ local function update()
 		refs.phase.TextColor3 = Color3.fromRGB(150, 210, 255)
 		refs.phaseStroke.Color = Color3.fromRGB(110, 180, 255)
 	else
-		refs.phase.Text = "METEOR SHOWER  " .. Format.Time(left)
+		local event = Game.EventByID[workspace:GetAttribute("CosmicEvent") or ""]
+		refs.phase.Text = (event and (event.name .. "  ") or "METEOR SHOWER  ") .. Format.Time(left)
 		refs.phase.TextColor3 = Color3.fromRGB(255, 200, 120)
 		refs.phaseStroke.Color = UI.Colors.Gold
 	end

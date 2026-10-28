@@ -16,6 +16,8 @@ CycleService.PhaseChanged = phaseEvent.Event
 
 CycleService.Phase = "Shower"
 
+local rng = Random.new()
+
 local function setPhase(phase, duration)
 	CycleService.Phase = phase
 	workspace:SetAttribute("CyclePhase", phase)
@@ -31,16 +33,24 @@ function CycleService:Init()
 	workspace:SetAttribute("CyclePhase", "Shower")
 	workspace:SetAttribute("PhaseEndsAt", 0)
 	workspace:SetAttribute("WrathUntil", 0)
+	workspace:SetAttribute("CosmicEvent", "")
 end
 
 function CycleService:Start()
 	task.spawn(function()
 		task.wait(3) -- let the world settle on server start
 		while true do
+			local event = rng:NextNumber() < Game.Events.Chance and Game.Events.List[rng:NextInteger(1, #Game.Events.List)] or nil
+			workspace:SetAttribute("CosmicEvent", event and event.id or "")
 			setPhase("Shower", Game.Cycle.ShowerDuration)
-			Notify.Announce("☄️ METEOR SHOWER! Collect them!", Color3.fromRGB(255, 170, 80))
+			if event then
+				Notify.Announce("🌌 COSMIC EVENT: " .. event.name .. " — " .. event.desc, event.color)
+			else
+				Notify.Announce("☄️ METEOR SHOWER! Collect them!", Color3.fromRGB(255, 170, 80))
+			end
 			task.wait(Game.Cycle.ShowerDuration)
 
+			workspace:SetAttribute("CosmicEvent", "")
 			setPhase("Bombard", Game.Cycle.BombardDuration)
 			Notify.Announce("🪐 BOMBARDMENT! Run across the Bifrost and throw!", Color3.fromRGB(150, 200, 255))
 			task.wait(Game.Cycle.BombardDuration)

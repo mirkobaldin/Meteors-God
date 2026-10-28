@@ -801,6 +801,17 @@ function FX:Start()
 			task.wait(0.07)
 		end
 	end)
+	-- Cosmic events tint the world a little (local ColorCorrection).
+	local tint = Instance.new("ColorCorrectionEffect")
+	tint.Name = "MG_EventTint"
+	tint.Parent = game:GetService("Lighting")
+	local function applyTint()
+		local Game = require(Shared.Config.Game)
+		local event = Game.EventByID[workspace:GetAttribute("CosmicEvent") or ""]
+		TweenService:Create(tint, TweenInfo.new(2), { TintColor = event and event.tint or Color3.new(1, 1, 1) }):Play()
+	end
+	workspace:GetAttributeChangedSignal("CosmicEvent"):Connect(applyTint)
+	applyTint()
 	-- Ambient shake for everyone (the Launch controller applies its own during cinematics).
 	RunService:BindToRenderStep("MeteorGodsShake", Enum.RenderPriority.Camera.Value + 1, function()
 		if camera.CameraType ~= Enum.CameraType.Scriptable and os.clock() < shakeUntil then

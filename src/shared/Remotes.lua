@@ -13,7 +13,7 @@ local EVENTS = {
 	"PlanetDestroyed", -- ({name, shards, share})
 	"TradeIncoming", -- (fromUserId, fromName)
 	"TradeState", -- (state | nil)
-	"PlanetFX", -- (payload) impacts, mantle shatter, supernova, arrival
+	"PlanetFX", -- (payload) impacts, layer breaks, supernova, rift
 	"LaunchFX", -- (payload) another player's meteor flight
 	-- client -> server
 	"FireLaunch", -- (charge)
@@ -21,6 +21,7 @@ local EVENTS = {
 	"PlaceOnAltar", -- (uid)
 	"RemoveFromAltar", -- (uid)
 	"SellMeteor", -- (uid)
+	"FuseMeteors", -- (uid) fuses it with 2 more of the same type from storage
 	"Evolve", -- ()
 	"Ascend", -- ()
 	"BuyUpgrade", -- (upgradeId, count 1..100)

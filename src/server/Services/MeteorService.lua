@@ -18,6 +18,7 @@ local RateLimit = require(Server.RateLimit)
 local MeteorService = {}
 
 local services
+local rng = Random.new()
 local cooldowns = {} -- [player] = {[uid] = os.clock() when ready}
 local displays = {} -- [player] = {[uid] = model}
 local displayFolder
@@ -180,6 +181,54 @@ function MeteorService:Sell(player, uid)
 	return true
 end
 
+-- Fusion: the meteor + 2 more of the same type from storage -> 1 meteor of the next rarity.
+-- The mutation is kept only if all three share it.
+function MeteorService:Fuse(player, uid)
+	local data = services.DataService:Get(player)
+	local m = data and data.meteors[uid]
+	if not m or m.altar or m.paid then
+		Notify.Toast(player, "Fuse meteors from your storage (not the altar)", "bad")
+		return false
+	end
+	local def = Meteors.ByID[m.t]
+	local nextRarity = def and Meteors.NextRarity(def.rarity)
+	if not nextRarity then
+		Notify.Toast(player, "This meteor is already at the top rarity", "bad")
+		return false
+	end
+	local picked = { uid }
+	local sameMutation = true
+	for otherUid, other in pairs(data.meteors) do
+		if #picked >= 3 then
+			break
+		end
+		if otherUid ~= uid and other.t == m.t and not other.altar and not other.paid and not MeteorService:IsLaunching(player, otherUid) then
+			table.insert(picked, otherUid)
+			if other.m ~= m.m then
+				sameMutation = false
+			end
+		end
+	end
+	if #picked < 3 then
+		Notify.Toast(player, "You need 3 " .. m.t .. " in storage to fuse", "bad")
+		return false
+	end
+	for _, u in ipairs(picked) do
+		MeteorService:TakeMeteor(player, u)
+	end
+	local typeId = Meteors.RandomTypeOfRarity(rng, nextRarity)
+	local mutation = sameMutation and m.m or nil
+	MeteorService:AddMeteor(player, typeId, mutation, { silent = true })
+	MeteorService:PushSnapshot(player)
+	local name = (mutation and (mutation .. " ") or "") .. typeId
+	Notify.Toast(player, "✨ FUSION! 3 " .. m.t .. " became a " .. name .. " (" .. nextRarity .. ")", "good")
+	local rarity = Meteors.RarityByID[nextRarity]
+	if rarity.order >= 5 then
+		Notify.Announce(player.DisplayName .. " fused a " .. name .. " (" .. nextRarity .. ")!", rarity.color)
+	end
+	return true
+end
+
 -- Cooldowns ---------------------------------------------------------------
 
 function MeteorService:IsReady(player, uid)
@@ -260,6 +309,7 @@ function MeteorService:PushSnapshot(player)
 	local snap = MeteorService:Snapshot(player)
 	if snap then
 		inventoryRemote:FireClient(player, snap)
+		services.PlayerService:Sync(player) -- the pet follows the best meteor
 	end
 end
 
@@ -426,6 +476,15 @@ function MeteorService:Start()
 				return
 			end
 			MeteorService:Sell(player, uid)
+		end
+	end)
+	Remotes.Get("FuseMeteors").OnServerEvent:Connect(function(player, uid)
+		if typeof(uid) == "string" and RateLimit.Allow(player, "FuseMeteors", 0.5) then
+			if services.TradeService:IsTrading(player) then
+				Notify.Toast(player, "You can't fuse during a trade", "bad")
+				return
+			end
+			MeteorService:Fuse(player, uid)
 		end
 	end)
 	Remotes.Get("RequestSnapshot").OnServerInvoke = function(player)

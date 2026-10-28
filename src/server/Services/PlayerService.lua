@@ -16,6 +16,7 @@ local Server = script.Parent.Parent
 local Notify = require(Server.Notify)
 local RateLimit = require(Server.RateLimit)
 local EvolutionVisuals = require(Server.EvolutionVisuals)
+local Meteors = require(Shared.Config.Meteors)
 
 local PlayerService = {}
 
@@ -93,6 +94,71 @@ function PlayerService:AddBoost(player, seconds)
 	end
 end
 
+-- The pet: the player's best meteor (rarity first, then damage) floats next to them.
+-- Clients render it locally from these attributes (Controllers/Pets).
+local function bestMeteor(data)
+	local best, bestKey
+	for _, m in pairs(data.meteors) do
+		local def = Meteors.ByID[m.t]
+		if def then
+			local key = Meteors.RarityByID[def.rarity].order * 1e6 + def.baseDamage * Meteors.GetMutationMult(m.m)
+			if not bestKey or key > bestKey then
+				best, bestKey = m, key
+			end
+		end
+	end
+	return best
+end
+
+local function upgradeStars(data)
+	local stars = 0
+	for _, level in pairs(data.upgrades) do
+		stars += math.floor(level / Game.UpgradeStarEvery)
+	end
+	return stars
+end
+
+-- Title, ascensions and upgrade stars over the player's head.
+local function updateOverhead(player, data)
+	local head = player.Character and player.Character:FindFirstChild("Head")
+	if not head then
+		return
+	end
+	local gui = head:FindFirstChild("Overhead")
+	if not gui then
+		gui = Instance.new("BillboardGui")
+		gui.Name = "Overhead"
+		gui.Size = UDim2.fromOffset(240, 46)
+		gui.StudsOffset = Vector3.new(0, 3.4, 0)
+		gui.LightInfluence = 0
+		gui.MaxDistance = 120
+		gui.Parent = head
+		local text = Instance.new("TextLabel")
+		text.Name = "Title"
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.fromScale(1, 1)
+		text.Font = Enum.Font.FredokaOne
+		text.TextScaled = true
+		text.TextStrokeTransparency = 0.2
+		text.Parent = gui
+	end
+	local title = Game.TitleFor(data.planetsDestroyed)
+	local stars = upgradeStars(data)
+	local parts = {}
+	if data.ascensions > 0 then
+		table.insert(parts, string.rep("✦", math.min(data.ascensions, 5)) .. (data.ascensions > 5 and data.ascensions or ""))
+	end
+	if title then
+		table.insert(parts, title.name)
+	end
+	if stars > 0 then
+		table.insert(parts, "★" .. stars)
+	end
+	gui.Title.Text = table.concat(parts, "  ")
+	gui.Title.TextColor3 = title and title.color or Color3.new(1, 1, 1)
+	gui.Enabled = #parts > 0
+end
+
 function PlayerService:Sync(player)
 	local data = services.DataService:Get(player)
 	if not data then
@@ -110,6 +176,10 @@ function PlayerService:Sync(player)
 	for _, u in ipairs(Game.Upgrades) do
 		player:SetAttribute("Upgrade_" .. u.id, data.upgrades[u.id] or 0)
 	end
+	local pet = bestMeteor(data)
+	player:SetAttribute("PetType", pet and pet.t or nil)
+	player:SetAttribute("PetMutation", pet and pet.m or nil)
+	updateOverhead(player, data)
 	local ls = player:FindFirstChild("leaderstats")
 	if ls then
 		ls.Power.Value = Format.Number(data.power)
@@ -128,6 +198,7 @@ function PlayerService:RefreshCharacter(player)
 		humanoid.WalkSpeed = 16 + Game.UpgradeEffect(data, "speed")
 	end
 	EvolutionVisuals.Apply(character, data.evolution, PlayerService:HasPass(player, "VIP"))
+	updateOverhead(player, data)
 	-- The player's house grows with their evolution (only if house models exist).
 	if services.WorldService:UpdateHouse(player, data.evolution) then
 		services.MeteorService:ResetAltarDisplay(player)

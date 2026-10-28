@@ -180,6 +180,41 @@ Game.Leaderboard = {
 	LookAt = Vector3.new(0, 0, 0),
 }
 
+-- Cosmic events: rolled at the start of a Meteor Shower, they last for that shower.
+Game.Events = {
+	Chance = 0.35,
+	List = {
+		{ id = "Eclipse", name = "ECLIPSE", desc = "Mutations x5!", mutationMult = 5, color = Color3.fromRGB(170, 80, 255), tint = Color3.fromRGB(200, 170, 255) },
+		{ id = "GoldenRain", name = "GOLDEN RAIN", desc = "Golden meteors everywhere!", forceMutation = "Golden", forceChance = 0.4, color = Color3.fromRGB(255, 205, 60), tint = Color3.fromRGB(255, 235, 190) },
+		{ id = "Frenzy", name = "METEOR FRENZY", desc = "Twice as many meteors!", spawnRateMult = 2, color = Color3.fromRGB(255, 130, 50), tint = Color3.fromRGB(255, 215, 200) },
+		{ id = "LuckyStars", name = "LUCKY STARS", desc = "Rare meteors x3!", luckMult = 3, color = Color3.fromRGB(90, 220, 255), tint = Color3.fromRGB(200, 240, 255) },
+	},
+}
+Game.EventByID = {}
+for _, e in ipairs(Game.Events.List) do
+	Game.EventByID[e.id] = e
+end
+
+-- Titles over the head, by planets destroyed. Stars: one per 25 levels of any upgrade.
+Game.Titles = {
+	{ planets = 1, name = "Planet Cracker", color = Color3.fromRGB(200, 200, 215) },
+	{ planets = 10, name = "Planet Breaker", color = Color3.fromRGB(110, 220, 130) },
+	{ planets = 50, name = "Star Breaker", color = Color3.fromRGB(90, 170, 255) },
+	{ planets = 200, name = "Planet Eater", color = Color3.fromRGB(190, 100, 255) },
+	{ planets = 1000, name = "World Ender", color = Color3.fromRGB(255, 190, 50) },
+}
+Game.UpgradeStarEvery = 25
+
+function Game.TitleFor(planets)
+	local best
+	for _, t in ipairs(Game.Titles) do
+		if planets >= t.planets then
+			best = t
+		end
+	end
+	return best
+end
+
 Game.Trade = {
 	MinEvolution = 2,
 	MaxItemsPerSide = 8,

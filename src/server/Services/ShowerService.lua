@@ -103,9 +103,14 @@ function ShowerService:SpawnOne(luck)
 	end
 	onGround += 1
 
-	local rarityId = Meteors.RollRarity(rng, luck or 1)
+	local event = Game.EventByID[workspace:GetAttribute("CosmicEvent") or ""]
+	luck = (luck or 1) * (event and event.luckMult or 1)
+	local rarityId = Meteors.RollRarity(rng, luck)
 	local typeId = Meteors.RandomTypeOfRarity(rng, rarityId)
-	local mutation = Meteors.RollMutation(rng, luck or 1)
+	local mutation = Meteors.RollMutation(rng, luck * (event and event.mutationMult or 1))
+	if not mutation and event and event.forceMutation and rng:NextNumber() < event.forceChance then
+		mutation = event.forceMutation
+	end
 	local def = Meteors.ByID[typeId]
 	local rarity = Meteors.RarityByID[rarityId]
 
@@ -225,7 +230,8 @@ function ShowerService:Start()
 			local endsAt = os.clock() + duration
 			while os.clock() < endsAt and services.CycleService.Phase == "Shower" do
 				ShowerService:SpawnOne(1)
-				task.wait(Game.Cycle.ShowerSpawnInterval)
+				local event = Game.EventByID[workspace:GetAttribute("CosmicEvent") or ""]
+				task.wait(Game.Cycle.ShowerSpawnInterval / (event and event.spawnRateMult or 1))
 			end
 		end)
 	end)
