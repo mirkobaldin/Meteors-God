@@ -941,16 +941,47 @@ function WorldService:UpdateHouse(player, tier)
 		if current > 0.01 then
 			house:ScaleTo(house:GetScale() * width / current)
 		end
-		-- Pivot on the Blender origin (center of the floor): imported meshes lose it.
-		local box = house:GetBoundingBox()
-		local c = (info.min + info.max) / 2
-		house.WorldPivot = box * CFrame.new(Vector3.new(c.X, -c.Z, -c.Y) * S)
 		radius = info.radius * S
 	else
-		local box, size = house:GetBoundingBox()
-		house.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
+		local _, size = house:GetBoundingBox()
 		radius = math.max(size.X, size.Z) / 2
 	end
+	-- Where the model really is after the import (world-aligned bounds of all its parts).
+	local minV, maxV
+	for _, d in ipairs(house:GetDescendants()) do
+		if d:IsA("BasePart") then
+			local h = d.Size / 2
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sy in ipairs({ -1, 1 }) do
+					for _, sz in ipairs({ -1, 1 }) do
+						local p = d.CFrame * Vector3.new(h.X * sx, h.Y * sy, h.Z * sz)
+						minV = minV and minV:Min(p) or p
+						maxV = maxV and maxV:Max(p) or p
+					end
+				end
+			end
+		end
+	end
+	if not minV then
+		house:Destroy()
+		return false
+	end
+	local center = (minV + maxV) / 2
+	local floorY = minV.Y + (info and math.max(0, -info.min.Z) * S or 0) -- Blender floor (z = 0)
+	-- Facade: the name plate (Sign) stands next to the entrance, so the facade is on its side of the
+	-- model (snapped to the nearest axis). This works whatever rotation the importer applied.
+	local front = Vector3.new(0, 0, -1)
+	local sign = house:FindFirstChild("Sign", true)
+	if sign and sign:IsA("BasePart") then
+		local d = sign.Position - center
+		if math.abs(d.X) > math.abs(d.Z) then
+			front = Vector3.new(math.sign(d.X), 0, 0)
+		elseif math.abs(d.Z) > 0.5 then
+			front = Vector3.new(0, 0, math.sign(d.Z))
+		end
+	end
+	local floor = Vector3.new(center.X, floorY, center.Z)
+	house.WorldPivot = CFrame.lookAt(floor, floor + front)
 	house:PivotTo(altar.center * CFrame.Angles(0, math.rad(Game.House.Yaw or 0), 0))
 	-- Bigger house, bigger island (it never shrinks).
 	local needed = radius + Game.House.IslandMargin

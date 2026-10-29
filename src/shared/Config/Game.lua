@@ -106,7 +106,7 @@ Game.House = {
 	-- the code resizes each model to its Blender size x Scale (bounds from art/export/houses/*_manifest.json,
 	-- Blender axes: x right, y back, z up; floor at z = 0, front towards -y).
 	Scale = 2,
-	Yaw = 180, -- degrees: turns the imported models so the facade faces the central island
+	Yaw = 0, -- extra turn in degrees if a facade still looks the wrong way (the code finds it from the Sign)
 	Models = {
 		{ min = Vector3.new(-14.5, -14.045, -1.0), max = Vector3.new(14.5, 13.0, 10.5), radius = 19.47 }, -- House1
 		{ min = Vector3.new(-20.5, -18.045, -1.0), max = Vector3.new(20.5, 18.0, 20.8), radius = 27.28 }, -- House2
