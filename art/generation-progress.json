@@ -1,0 +1,38 @@
+﻿[
+    {
+        "i":  0,
+        "path":  "art/concepts/map/01_overview.png",
+        "source":  "C:\\Users\\mirko\\.codex\\generated_images\\01a182ad-10ce-7831-8d07-6a257bb73411\\exec-e43c36ed-7b41-4840-b3b2-2fdc1fbd2266.png",
+        "saved":  false
+    },
+    {
+        "i":  1,
+        "path":  "art/concepts/map/02_top_down.png",
+        "source":  "C:\\Users\\mirko\\.codex\\generated_images\\01a182ad-10ce-7831-8d07-6a257bb73411\\exec-1228ebb8-9867-4d2c-8ef5-2899b36fcd30.png",
+        "saved":  false
+    },
+    {
+        "i":  2,
+        "path":  "art/concepts/map/03_city.png",
+        "source":  "C:\\Users\\mirko\\.codex\\generated_images\\01a182ad-10ce-7831-8d07-6a257bb73411\\exec-77cf0beb-8ac2-4248-a5f9-2a9ebba5e7a1.png",
+        "saved":  false
+    },
+    {
+        "i":  3,
+        "path":  "art/concepts/map/04_impact_field.png",
+        "source":  "C:\\Users\\mirko\\.codex\\generated_images\\01a182ad-10ce-7831-8d07-6a257bb73411\\exec-78c03692-c1ec-45e1-a509-3b35213cef87.png",
+        "saved":  false
+    },
+    {
+        "i":  4,
+        "path":  "art/concepts/map/05_bifrost.png",
+        "source":  "C:\\Users\\mirko\\.codex\\generated_images\\01a182ad-10ce-7831-8d07-6a257bb73411\\exec-e1e4014f-c135-48c1-82ee-7c5d1d99d72d.png",
+        "saved":  false
+    },
+    {
+        "i":  5,
+        "path":  "art/concepts/map/06_modular_kit.png",
+        "source":  "C:\\Users\\mirko\\.codex\\generated_images\\01a182ad-10ce-7831-8d07-6a257bb73411\\exec-1ead91f0-9d6f-44d8-ade7-319da4ace595.png",
+        "saved":  false
+    }
+]

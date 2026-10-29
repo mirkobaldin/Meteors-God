@@ -1,0 +1,22 @@
+[
+  {
+    "name": "star_lamp",
+    "path": "art/concepts/props/star_lamp.png",
+    "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a18435-f8db-7e62-9c6f-889071022971\\exec-5f0b1a88-d70c-4521-b6f7-cfda12940fc7.png"
+  },
+  {
+    "name": "meteor_sculpture",
+    "path": "art/concepts/props/meteor_sculpture.png",
+    "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a18435-f8db-7e62-9c6f-889071022971\\exec-b68aa2ce-81e8-43b5-a87b-07288ba23570.png"
+  },
+  {
+    "name": "glass_gazebo",
+    "path": "art/concepts/props/glass_gazebo.png",
+    "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a18435-f8db-7e62-9c6f-889071022971\\exec-fb33dcf0-d091-4488-82ab-e61de2abc859.png"
+  },
+  {
+    "name": "reflecting_pool",
+    "path": "art/concepts/props/reflecting_pool.png",
+    "source": "C:\\Users\\mirko\\.codex\\generated_images\\01a18435-f8db-7e62-9c6f-889071022971\\exec-059b0180-97b5-4bc8-9675-301b1d0c25b2.png"
+  }
+]

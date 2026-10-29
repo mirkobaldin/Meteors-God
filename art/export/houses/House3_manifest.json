@@ -1,0 +1,131 @@
+{
+  "tier": 3,
+  "name": "Demigod",
+  "blend": "art\\blender\\houses\\House3.blend",
+  "concept": "art/concepts/houses/house3.png",
+  "render": "art/renders/houses/House3.png",
+  "sheet": "art/renders/houses/House3_sheet.png",
+  "bounds_min": [
+    -28.0,
+    -21.545000076293945,
+    -1.0
+  ],
+  "bounds_max": [
+    28.0,
+    21.5,
+    23.79400062561035
+  ],
+  "footprint_radius": 35.302266216207705,
+  "editable_objects": 537,
+  "fbx": "art\\export\\houses\\House3.fbx",
+  "glb": "art\\export\\houses\\House3.glb",
+  "export_meshes": 21,
+  "triangles": 48020,
+  "meshes": [
+    {
+      "name": "Base",
+      "triangles": 108,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House3_Lawn_01",
+      "triangles": 216,
+      "material": "Lawn"
+    },
+    {
+      "name": "House3_White_Travertine_01",
+      "triangles": 1820,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House3_Pale_Marble_01",
+      "triangles": 844,
+      "material": "Pale_Marble"
+    },
+    {
+      "name": "House3_White_Roof_01",
+      "triangles": 324,
+      "material": "White_Roof"
+    },
+    {
+      "name": "House3_Warm_Light_01",
+      "triangles": 6528,
+      "material": "Warm_Light"
+    },
+    {
+      "name": "House3_Clear_Glass_01",
+      "triangles": 300,
+      "material": "Clear_Glass"
+    },
+    {
+      "name": "House3_Brushed_Gold_01",
+      "triangles": 11984,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House3_Brushed_Gold_02",
+      "triangles": 3888,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House3_Warm_Oak_01",
+      "triangles": 11988,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House3_Warm_Oak_02",
+      "triangles": 2376,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House3_Rug_Sand_01",
+      "triangles": 48,
+      "material": "Rug_Sand"
+    },
+    {
+      "name": "House3_Linen_Ivory_01",
+      "triangles": 4284,
+      "material": "Linen_Ivory"
+    },
+    {
+      "name": "House3_Cushion_Blue_01",
+      "triangles": 1836,
+      "material": "Cushion_Blue"
+    },
+    {
+      "name": "House3_Violet_Starlight_01",
+      "triangles": 312,
+      "material": "Violet_Starlight"
+    },
+    {
+      "name": "House3_Meteor_Stone_01",
+      "triangles": 80,
+      "material": "Meteor_Stone"
+    },
+    {
+      "name": "House3_Leaves_01",
+      "triangles": 80,
+      "material": "Leaves"
+    },
+    {
+      "name": "House3_Cyan_Starlight_01",
+      "triangles": 468,
+      "material": "Cyan_Starlight"
+    },
+    {
+      "name": "House3_Pool_Water_01",
+      "triangles": 108,
+      "material": "Pool_Water"
+    },
+    {
+      "name": "House3_Waterfall_01",
+      "triangles": 320,
+      "material": "Waterfall"
+    },
+    {
+      "name": "Sign",
+      "triangles": 108,
+      "material": "Brushed_Gold"
+    }
+  ]
+}

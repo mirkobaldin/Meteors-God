@@ -1,0 +1,141 @@
+{
+  "tier": 5,
+  "name": "Cosmic God",
+  "blend": "art\\blender\\houses\\House5.blend",
+  "concept": "art/concepts/houses/house5.png",
+  "render": "art/renders/houses/House5.png",
+  "sheet": "art/renders/houses/House5_sheet.png",
+  "bounds_min": [
+    -40.14924240112305,
+    -37.23580551147461,
+    -1.0
+  ],
+  "bounds_max": [
+    40.15443420410156,
+    43.24040603637695,
+    40.0616455078125
+  ],
+  "footprint_radius": 59.00941704882591,
+  "editable_objects": 695,
+  "fbx": "art\\export\\houses\\House5.fbx",
+  "glb": "art\\export\\houses\\House5.glb",
+  "export_meshes": 23,
+  "triangles": 65008,
+  "meshes": [
+    {
+      "name": "Base",
+      "triangles": 108,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House5_Lawn_01",
+      "triangles": 324,
+      "material": "Lawn"
+    },
+    {
+      "name": "House5_White_Travertine_01",
+      "triangles": 1604,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House5_Pale_Marble_01",
+      "triangles": 516,
+      "material": "Pale_Marble"
+    },
+    {
+      "name": "House5_White_Roof_01",
+      "triangles": 216,
+      "material": "White_Roof"
+    },
+    {
+      "name": "House5_Warm_Light_01",
+      "triangles": 3236,
+      "material": "Warm_Light"
+    },
+    {
+      "name": "House5_Clear_Glass_01",
+      "triangles": 4716,
+      "material": "Clear_Glass"
+    },
+    {
+      "name": "House5_Brushed_Gold_01",
+      "triangles": 11904,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House5_Brushed_Gold_02",
+      "triangles": 9452,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House5_Warm_Oak_01",
+      "triangles": 11988,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House5_Warm_Oak_02",
+      "triangles": 9720,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House5_Rug_Sand_01",
+      "triangles": 24,
+      "material": "Rug_Sand"
+    },
+    {
+      "name": "House5_Linen_Ivory_01",
+      "triangles": 2880,
+      "material": "Linen_Ivory"
+    },
+    {
+      "name": "House5_Cushion_Blue_01",
+      "triangles": 972,
+      "material": "Cushion_Blue"
+    },
+    {
+      "name": "House5_Violet_Starlight_01",
+      "triangles": 360,
+      "material": "Violet_Starlight"
+    },
+    {
+      "name": "House5_Meteor_Stone_01",
+      "triangles": 80,
+      "material": "Meteor_Stone"
+    },
+    {
+      "name": "House5_Leaves_01",
+      "triangles": 120,
+      "material": "Leaves"
+    },
+    {
+      "name": "House5_Trunk_01",
+      "triangles": 1176,
+      "material": "Trunk"
+    },
+    {
+      "name": "House5_Leaf_Violet_01",
+      "triangles": 360,
+      "material": "Leaf_Violet"
+    },
+    {
+      "name": "House5_Leaf_Light_01",
+      "triangles": 360,
+      "material": "Leaf_Light"
+    },
+    {
+      "name": "House5_Light_Beam_01",
+      "triangles": 176,
+      "material": "Light_Beam"
+    },
+    {
+      "name": "House5_Cyan_Starlight_01",
+      "triangles": 4608,
+      "material": "Cyan_Starlight"
+    },
+    {
+      "name": "Sign",
+      "triangles": 108,
+      "material": "Brushed_Gold"
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "tier": 2,
+  "name": "Minor Deity",
+  "blend": "art\\blender\\houses\\House2.blend",
+  "concept": "art/concepts/houses/house2.png",
+  "render": "art/renders/houses/House2.png",
+  "sheet": "art/renders/houses/House2_sheet.png",
+  "bounds_min": [
+    -20.5,
+    -18.045000076293945,
+    -1.0
+  ],
+  "bounds_max": [
+    20.5,
+    18.0,
+    20.80000114440918
+  ],
+  "footprint_radius": 27.28094573140748,
+  "editable_objects": 429,
+  "fbx": "art\\export\\houses\\House2.fbx",
+  "glb": "art\\export\\houses\\House2.glb",
+  "export_meshes": 20,
+  "triangles": 39336,
+  "meshes": [
+    {
+      "name": "Base",
+      "triangles": 108,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House2_Lawn_01",
+      "triangles": 216,
+      "material": "Lawn"
+    },
+    {
+      "name": "House2_White_Travertine_01",
+      "triangles": 1188,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House2_Warm_Oak_01",
+      "triangles": 11988,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House2_Warm_Oak_02",
+      "triangles": 6912,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House2_Pale_Marble_01",
+      "triangles": 516,
+      "material": "Pale_Marble"
+    },
+    {
+      "name": "House2_Clear_Glass_01",
+      "triangles": 228,
+      "material": "Clear_Glass"
+    },
+    {
+      "name": "House2_Brushed_Gold_01",
+      "triangles": 10288,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House2_Rug_Sand_01",
+      "triangles": 24,
+      "material": "Rug_Sand"
+    },
+    {
+      "name": "House2_Linen_Ivory_01",
+      "triangles": 2340,
+      "material": "Linen_Ivory"
+    },
+    {
+      "name": "House2_Cushion_Blue_01",
+      "triangles": 864,
+      "material": "Cushion_Blue"
+    },
+    {
+      "name": "House2_Warm_Light_01",
+      "triangles": 2988,
+      "material": "Warm_Light"
+    },
+    {
+      "name": "House2_Violet_Starlight_01",
+      "triangles": 312,
+      "material": "Violet_Starlight"
+    },
+    {
+      "name": "House2_Meteor_Stone_01",
+      "triangles": 80,
+      "material": "Meteor_Stone"
+    },
+    {
+      "name": "House2_White_Roof_01",
+      "triangles": 216,
+      "material": "White_Roof"
+    },
+    {
+      "name": "House2_Cyan_Starlight_01",
+      "triangles": 180,
+      "material": "Cyan_Starlight"
+    },
+    {
+      "name": "House2_Pool_Water_01",
+      "triangles": 108,
+      "material": "Pool_Water"
+    },
+    {
+      "name": "Sign",
+      "triangles": 108,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House2_Leaves_01",
+      "triangles": 280,
+      "material": "Leaves"
+    },
+    {
+      "name": "House2_Trunk_01",
+      "triangles": 392,
+      "material": "Trunk"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "tier": 1,
+  "name": "Star Spirit",
+  "blend": "art\\blender\\houses\\House1.blend",
+  "concept": "art/concepts/houses/house1.png",
+  "render": "art/renders/houses/House1.png",
+  "sheet": "art/renders/houses/House1_sheet.png",
+  "bounds_min": [
+    -14.5,
+    -14.045000076293945,
+    -1.0
+  ],
+  "bounds_max": [
+    14.5,
+    13.0,
+    10.5
+  ],
+  "footprint_radius": 19.474342094150447,
+  "editable_objects": 176,
+  "fbx": "art\\export\\houses\\House1.fbx",
+  "glb": "art\\export\\houses\\House1.glb",
+  "export_meshes": 16,
+  "triangles": 17648,
+  "meshes": [
+    {
+      "name": "Base",
+      "triangles": 108,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House1_Lawn_01",
+      "triangles": 216,
+      "material": "Lawn"
+    },
+    {
+      "name": "House1_White_Travertine_01",
+      "triangles": 756,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House1_Warm_Oak_01",
+      "triangles": 7668,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House1_Pale_Marble_01",
+      "triangles": 196,
+      "material": "Pale_Marble"
+    },
+    {
+      "name": "House1_White_Roof_01",
+      "triangles": 108,
+      "material": "White_Roof"
+    },
+    {
+      "name": "House1_Warm_Light_01",
+      "triangles": 1656,
+      "material": "Warm_Light"
+    },
+    {
+      "name": "House1_Clear_Glass_01",
+      "triangles": 72,
+      "material": "Clear_Glass"
+    },
+    {
+      "name": "House1_Brushed_Gold_01",
+      "triangles": 5020,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House1_Rug_Sand_01",
+      "triangles": 12,
+      "material": "Rug_Sand"
+    },
+    {
+      "name": "House1_Linen_Ivory_01",
+      "triangles": 864,
+      "material": "Linen_Ivory"
+    },
+    {
+      "name": "House1_Cushion_Blue_01",
+      "triangles": 432,
+      "material": "Cushion_Blue"
+    },
+    {
+      "name": "House1_Violet_Starlight_01",
+      "triangles": 312,
+      "material": "Violet_Starlight"
+    },
+    {
+      "name": "House1_Meteor_Stone_01",
+      "triangles": 80,
+      "material": "Meteor_Stone"
+    },
+    {
+      "name": "Sign",
+      "triangles": 108,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House1_Leaves_01",
+      "triangles": 40,
+      "material": "Leaves"
+    }
+  ]
+}

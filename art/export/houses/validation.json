@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "houses": [
+    {
+      "tier": 1,
+      "triangles": 17648,
+      "mesh_parts": 16,
+      "max_mesh_triangles": 7668,
+      "radius_studs": 19.474,
+      "round_trip_extents": [
+        29.0,
+        27.045,
+        11.5
+      ],
+      "passed": true
+    },
+    {
+      "tier": 2,
+      "triangles": 39336,
+      "mesh_parts": 20,
+      "max_mesh_triangles": 11988,
+      "radius_studs": 27.281,
+      "round_trip_extents": [
+        41.0,
+        36.045,
+        21.8
+      ],
+      "passed": true
+    },
+    {
+      "tier": 3,
+      "triangles": 48020,
+      "mesh_parts": 21,
+      "max_mesh_triangles": 11988,
+      "radius_studs": 35.302,
+      "round_trip_extents": [
+        56.0,
+        43.045,
+        24.794
+      ],
+      "passed": true
+    },
+    {
+      "tier": 4,
+      "triangles": 78916,
+      "mesh_parts": 25,
+      "max_mesh_triangles": 11988,
+      "radius_studs": 40.7,
+      "round_trip_extents": [
+        65.0,
+        49.0,
+        51.672
+      ],
+      "passed": true
+    },
+    {
+      "tier": 5,
+      "triangles": 65008,
+      "mesh_parts": 23,
+      "max_mesh_triangles": 11988,
+      "radius_studs": 59.009,
+      "round_trip_extents": [
+        80.304,
+        80.476,
+        41.062
+      ],
+      "passed": true
+    },
+    {
+      "tier": 6,
+      "triangles": 89872,
+      "mesh_parts": 25,
+      "max_mesh_triangles": 11988,
+      "radius_studs": 65.104,
+      "round_trip_extents": [
+        105.0,
+        77.0,
+        54.761
+      ],
+      "passed": true
+    }
+  ]
+}

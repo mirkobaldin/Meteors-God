@@ -1,0 +1,151 @@
+{
+  "tier": 6,
+  "name": "Supreme Deity",
+  "blend": "art\\blender\\houses\\House6.blend",
+  "concept": "art/concepts/houses/house6.png",
+  "render": "art/renders/houses/House6.png",
+  "sheet": "art/renders/houses/House6_sheet.png",
+  "bounds_min": [
+    -52.5,
+    -38.5,
+    -4.6666669845581055
+  ],
+  "bounds_max": [
+    52.5,
+    38.5,
+    50.09391784667969
+  ],
+  "footprint_radius": 65.10376333208396,
+  "editable_objects": 1038,
+  "fbx": "art\\export\\houses\\House6.fbx",
+  "glb": "art\\export\\houses\\House6.glb",
+  "export_meshes": 25,
+  "triangles": 89872,
+  "meshes": [
+    {
+      "name": "Base",
+      "triangles": 108,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House6_Lawn_01",
+      "triangles": 216,
+      "material": "Lawn"
+    },
+    {
+      "name": "House6_Pale_Cliff_01",
+      "triangles": 400,
+      "material": "Pale_Cliff"
+    },
+    {
+      "name": "House6_White_Travertine_01",
+      "triangles": 2052,
+      "material": "White_Travertine"
+    },
+    {
+      "name": "House6_Pale_Marble_01",
+      "triangles": 828,
+      "material": "Pale_Marble"
+    },
+    {
+      "name": "House6_Clear_Glass_01",
+      "triangles": 6660,
+      "material": "Clear_Glass"
+    },
+    {
+      "name": "House6_Brushed_Gold_01",
+      "triangles": 11936,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House6_Brushed_Gold_02",
+      "triangles": 11936,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House6_Brushed_Gold_03",
+      "triangles": 11168,
+      "material": "Brushed_Gold"
+    },
+    {
+      "name": "House6_Warm_Oak_01",
+      "triangles": 11988,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House6_Warm_Oak_02",
+      "triangles": 11988,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House6_Warm_Oak_03",
+      "triangles": 2052,
+      "material": "Warm_Oak"
+    },
+    {
+      "name": "House6_Rug_Sand_01",
+      "triangles": 48,
+      "material": "Rug_Sand"
+    },
+    {
+      "name": "House6_Linen_Ivory_01",
+      "triangles": 4284,
+      "material": "Linen_Ivory"
+    },
+    {
+      "name": "House6_Cushion_Blue_01",
+      "triangles": 1836,
+      "material": "Cushion_Blue"
+    },
+    {
+      "name": "House6_Warm_Light_01",
+      "triangles": 6516,
+      "material": "Warm_Light"
+    },
+    {
+      "name": "House6_Violet_Starlight_01",
+      "triangles": 624,
+      "material": "Violet_Starlight"
+    },
+    {
+      "name": "House6_Meteor_Stone_01",
+      "triangles": 160,
+      "material": "Meteor_Stone"
+    },
+    {
+      "name": "House6_White_Roof_01",
+      "triangles": 756,
+      "material": "White_Roof"
+    },
+    {
+      "name": "House6_Leaves_01",
+      "triangles": 920,
+      "material": "Leaves"
+    },
+    {
+      "name": "House6_Trunk_01",
+      "triangles": 1176,
+      "material": "Trunk"
+    },
+    {
+      "name": "House6_Waterfall_01",
+      "triangles": 640,
+      "material": "Waterfall"
+    },
+    {
+      "name": "House6_Cyan_Starlight_01",
+      "triangles": 1256,
+      "material": "Cyan_Starlight"
+    },
+    {
+      "name": "House6_Pool_Water_01",
+      "triangles": 216,
+      "material": "Pool_Water"
+    },
+    {
+      "name": "Sign",
+      "triangles": 108,
+      "material": "Brushed_Gold"
+    }
+  ]
+}
