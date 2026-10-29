@@ -29,3 +29,20 @@ Obiettivo: i modelli 3D delle 25 comete di art/concepts/comets/comets.json, gene
 
 Dopo il push la sessione cloud prende i `.glb`, li normalizza (diametro 1, faccia verso −Z), aggiunge il nucleo
 luminoso, separa la mascella, posiziona le pupille, esporta per Roblox e collega le 25 comete al gioco.
+
+## Mappa (negozio, strutture, props)
+
+Dopo le comete, stesso script con la lista della mappa. Incolla al Claude locale:
+
+```
+Riusa art/meshy/meshy_comets.py rendendolo generico: aggiungi le opzioni --list (file JSON) e --images
+(cartella delle immagini) e --out (cartella di uscita). Poi lancialo con
+  --list art/concepts/map/map_assets.json --images art/concepts/map --out art/meshy/map
+(nel JSON la chiave è "items" invece di "comets"; per ogni elemento usa <id>_front.png e <id>_34.png).
+Per gli elementi di tipo "structure" usa target_polycount 40000, per "piece" e "prop" 15000.
+Prima prova solo "shop" e mostrami un render, aspetta il mio ok, poi fai gli altri.
+Render frontale di ognuno in art/meshy/map/renders/<id>.png. Commit di art/meshy/map (NON la chiave), pull --rebase, push.
+```
+
+La sessione cloud poi li scala a `size_studs`, li mette al posto delle strutture fatte a mano nel codice (negozio,
+classifica, reattore, portale, pedane, porte dei ponti, piedistalli, leggio) e sparge i props sulle isole.

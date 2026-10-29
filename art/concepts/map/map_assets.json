@@ -1,0 +1,165 @@
+{
+  "items": [
+    {
+      "id": "shop",
+      "type": "structure",
+      "name": "Divine Shop",
+      "size_studs": 60,
+      "look": "a luxury glass boutique pavilion with a sweeping curved white roof on slim gold columns; inside, lit display shelves with glowing comets in glass domes and potion bottles; a marble counter with a gold cash register shaped like a planet; a big empty gold-framed sign panel above the entrance (no text); warm interior light"
+    },
+    {
+      "id": "leaderboard",
+      "type": "structure",
+      "name": "Leaderboard Monument",
+      "size_studs": 50,
+      "look": "a tall white marble monolith holding a huge dark glass screen panel framed in brushed gold (blank screen, no text), three podium steps in front (gold, silver, bronze inlays), small stone planets orbiting the top on thin gold rings"
+    },
+    {
+      "id": "fusion_reactor",
+      "type": "structure",
+      "name": "Fusion Reactor",
+      "size_studs": 55,
+      "look": "a circular white marble platform with three glass capsules each holding a comet, curved gold arms meeting above a central glass sphere full of swirling cyan-violet energy, glowing conduits running across the floor, control lectern in front"
+    },
+    {
+      "id": "hunt_portal",
+      "type": "structure",
+      "name": "Cosmic Hunt Portal",
+      "size_studs": 60,
+      "look": "a tall elegant ring of white stone and gold standing on a stepped marble base, inside a swirling blue-violet vortex of light, broken ring segments floating around it, steps leading up to it"
+    },
+    {
+      "id": "weapon_forge",
+      "type": "structure",
+      "name": "Family Forge",
+      "size_studs": 45,
+      "look": "an open celestial forge where the family weapons are displayed: a white stone anvil with a glowing comet on it, five weapon racks in a half circle (hammer, lance, mace, maul, scythe shapes, each topped with a stone comet head), a brazier with violet cosmic fire"
+    },
+    {
+      "id": "trade_plaza",
+      "type": "structure",
+      "name": "Trade Plaza",
+      "size_studs": 40,
+      "look": "a round marble plaza with a central gold-framed glass table, two facing stone benches, a tall slim gold obelisk with a floating star on top, soft light strips in the floor"
+    },
+    {
+      "id": "daily_chest",
+      "type": "structure",
+      "name": "Daily Star Chest",
+      "size_studs": 12,
+      "look": "a big celestial treasure chest of white marble and gold with star patterns, the lid slightly open with warm light and small floating stars coming out, on a small round pedestal"
+    },
+    {
+      "id": "spawn_monument",
+      "type": "structure",
+      "name": "God Statue (spawn)",
+      "size_studs": 70,
+      "look": "the centerpiece of the central island: a giant heroic white marble statue of a young god holding a stone comet above his head, on a round tiered gold and marble base with a fountain of glowing cyan water around it"
+    },
+    {
+      "id": "launch_pad",
+      "type": "piece",
+      "name": "Launch Pad",
+      "size_studs": 24,
+      "look": "a round floating platform of white stone with a glowing cyan ring inlaid in the floor and gold trims, a thin gold railing on the back half, soft energy glow rising from the ring, rough rock underneath like a floating islet"
+    },
+    {
+      "id": "bridge_gate",
+      "type": "piece",
+      "name": "Bifrost Gate",
+      "size_studs": 50,
+      "look": "the gate at the start of a glowing cosmic glass bridge: two slender white pylons with gold inlays joined by a floating glass arch with a glowing constellation pattern, light strips leading forward"
+    },
+    {
+      "id": "comet_pedestal",
+      "type": "piece",
+      "name": "Comet Pedestal",
+      "size_studs": 8,
+      "look": "an elegant pedestal where a comet floats: a short white marble column with a gold bowl on top and a ring of soft cyan light hovering above it (empty, no comet)"
+    },
+    {
+      "id": "house_lectern",
+      "type": "piece",
+      "name": "House Upgrade Lectern",
+      "size_studs": 7,
+      "look": "a marble lectern with a tilted gold top plate engraved with a small house-and-star symbol (no text), soft glow under the plate"
+    },
+    {
+      "id": "bridge_lamp",
+      "type": "piece",
+      "name": "Bridge Lamp",
+      "size_studs": 14,
+      "look": "a tall slim light pylon of glass and gold for the cosmic bridges, a glowing star orb on top"
+    },
+    {
+      "id": "star_lamp",
+      "type": "prop",
+      "name": "Star Lamp",
+      "size_studs": 10,
+      "look": "a slim garden lamp post in brushed gold with a frosted glass orb holding a tiny star"
+    },
+    {
+      "id": "meteor_sculpture",
+      "type": "prop",
+      "name": "Meteor Sculpture",
+      "size_studs": 9,
+      "look": "a rough glowing meteor fragment on a white marble plinth with a gold ring around it"
+    },
+    {
+      "id": "armillary_sphere",
+      "type": "prop",
+      "name": "Armillary Sphere",
+      "size_studs": 12,
+      "look": "a large gold armillary sphere on a marble base with a small glowing planet in the middle"
+    },
+    {
+      "id": "crystal_planter",
+      "type": "prop",
+      "name": "Crystal Planter",
+      "size_studs": 6,
+      "look": "a white stone planter with luminous cosmic plants and small cyan crystals"
+    },
+    {
+      "id": "cosmic_tree",
+      "type": "prop",
+      "name": "Cosmic Tree",
+      "size_studs": 20,
+      "look": "a sculptural tree with a pale trunk and a canopy of soft glowing violet leaves, in a round stone bed"
+    },
+    {
+      "id": "floating_stones",
+      "type": "prop",
+      "name": "Floating Stepping Stones",
+      "size_studs": 16,
+      "look": "a path of five flat white stepping stones floating at different heights with a soft glow under them"
+    },
+    {
+      "id": "telescope",
+      "type": "prop",
+      "name": "Star Telescope",
+      "size_studs": 8,
+      "look": "a big elegant brass and white telescope on a tripod pointing at the sky"
+    },
+    {
+      "id": "bench",
+      "type": "prop",
+      "name": "Celestial Bench",
+      "size_studs": 8,
+      "look": "a curved white marble bench with gold armrests and a constellation pattern on the seat back"
+    },
+    {
+      "id": "fountain",
+      "type": "prop",
+      "name": "Star Fountain",
+      "size_studs": 12,
+      "look": "a minimalist fountain: a stack of three offset marble slabs with glowing water falling between them"
+    },
+    {
+      "id": "rock_cluster",
+      "type": "prop",
+      "name": "Floating Rock Cluster",
+      "size_studs": 15,
+      "look": "a cluster of three chiselled grey space rocks with thin glowing violet cracks, floating, for the edges of the islands"
+    }
+  ]
+}
