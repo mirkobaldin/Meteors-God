@@ -128,7 +128,11 @@ function House:Start()
 		if prompt.Name ~= "OpenHouse" then
 			return
 		end
+		-- The lectern is a model inside the plot model, which carries OwnerUserId.
 		local plot = prompt:FindFirstAncestorWhichIsA("Model")
+		while plot and plot:GetAttribute("OwnerUserId") == nil do
+			plot = plot:FindFirstAncestorWhichIsA("Model")
+		end
 		if not plot or plot:GetAttribute("OwnerUserId") ~= player.UserId then
 			controllers.Notifications.Toast("This is not your house", "bad")
 			return

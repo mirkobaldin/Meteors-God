@@ -105,7 +105,7 @@ end
 -- Fills (or empties, with Air) a sphere as a stack of thin discs spread over several frames.
 -- One giant FillBall freezes the server and every client for a moment; slices don't.
 local SLICE = 4
-local SLICES_PER_FRAME = 14
+local SLICES_PER_FRAME = 8 -- spread over more frames: smaller spikes
 local function sphereSlices(center, radius, material)
 	local count = 0
 	local y = -radius
@@ -310,7 +310,7 @@ end
 
 local function clearPlanet(s)
 	s.folder:ClearAllChildren()
-	sphereSlices(s.center, s.R * 1.55, Enum.Material.Air)
+	sphereSlices(s.center, s.R * 1.35, Enum.Material.Air) -- surface features reach ~1.3R
 end
 
 -- State --------------------------------------------------------------------------------------
@@ -391,6 +391,8 @@ function spawnPlanet(tier, def)
 		center = s.center,
 		radius = s.R,
 		color = def.atmosphere,
+		crust = crustColor(def),
+		material = def.crust.material.Name,
 		open = RIFT_OPEN,
 		close = RIFT_OPEN + RIFT_CLOSE,
 	})

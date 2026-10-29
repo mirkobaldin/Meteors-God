@@ -934,8 +934,10 @@ function WorldService:UpdateHouse(player, tier)
 	local radius = 40
 	if info then
 		-- Resize to the Blender size x Scale, whatever scale the importer used.
-		local width = (info.max.X - info.min.X) * S
-		local current = house:GetExtentsSize().X
+		-- Compare the biggest horizontal size (robust if the importer swapped X and Z).
+		local width = math.max(info.max.X - info.min.X, info.max.Y - info.min.Y) * S
+		local ext = house:GetExtentsSize()
+		local current = math.max(ext.X, ext.Z)
 		if current > 0.01 then
 			house:ScaleTo(house:GetScale() * width / current)
 		end
@@ -949,7 +951,7 @@ function WorldService:UpdateHouse(player, tier)
 		house.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
 		radius = math.max(size.X, size.Z) / 2
 	end
-	house:PivotTo(altar.center)
+	house:PivotTo(altar.center * CFrame.Angles(0, math.rad(Game.House.Yaw or 0), 0))
 	-- Bigger house, bigger island (it never shrinks).
 	local needed = radius + Game.House.IslandMargin
 	if needed > altar.islandRadius then

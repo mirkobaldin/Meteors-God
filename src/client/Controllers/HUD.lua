@@ -485,8 +485,13 @@ local function update()
 
 	local phase = workspace:GetAttribute("CyclePhase")
 	local left = math.max(0, (workspace:GetAttribute("PhaseEndsAt") or 0) - now)
-	if phase == "Bombard" then
-		refs.phase.Text = "BOMBARDMENT  " .. Format.Time(left)
+	local goAt = workspace:GetAttribute("ShowerGoAt") or 0
+	if goAt > now then
+		refs.phase.Text = "SHOWER IN  " .. math.ceil(goAt - now)
+		refs.phase.TextColor3 = Color3.fromRGB(255, 200, 120)
+		refs.phaseStroke.Color = UI.Colors.Gold
+	elseif phase ~= "Shower" then
+		refs.phase.Text = "NEXT SHOWER  " .. Format.Time(left)
 		refs.phase.TextColor3 = Color3.fromRGB(150, 210, 255)
 		refs.phaseStroke.Color = Color3.fromRGB(110, 180, 255)
 	else

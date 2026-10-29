@@ -133,8 +133,8 @@ function FX.Shake(strength, duration)
 	if require(script.Parent.Menu).Get("CameraShake") == false then
 		return
 	end
-	shakeStrength = math.max(shakeStrength, strength)
-	shakeUntil = math.max(shakeUntil, os.clock() + duration)
+	shakeStrength = math.max(shakeStrength, math.min(strength, 2.5) * 0.45) -- gentle: big shakes made people sick
+	shakeUntil = math.max(shakeUntil, os.clock() + math.min(duration, 1))
 end
 
 -- Camera offset to apply this frame (used by the Launch controller and by FX itself).
@@ -143,8 +143,10 @@ function FX.ShakeOffset()
 		shakeStrength = 0
 		return CFrame.identity
 	end
+	-- Smooth (noise, not random jumps every frame) and fading out.
 	local s = shakeStrength * math.clamp((shakeUntil - os.clock()) / 0.6, 0, 1)
-	return CFrame.Angles(rng:NextNumber(-s, s) * 0.02, rng:NextNumber(-s, s) * 0.02, 0)
+	local t = os.clock() * 9
+	return CFrame.Angles(math.noise(t, 0.3) * s * 0.012, math.noise(0.7, t) * s * 0.012, 0)
 end
 
 function FX.ScreenFlash(color, strength)
@@ -662,236 +664,185 @@ function FX.Materialize(p)
 	ring(center, Vector3.new(0, 1, 0), r * 0.5, r * 4, Color3.fromRGB(200, 240, 255), 1, 0.3)
 end
 
--- Space-time rift, like a quake shattering the air: a thin crack draws itself in space, cracks
--- branch out like broken glass with a shockwave, then the crack tears open on a blue
--- "quantum leap" tunnel, the glass flies off and the planet bursts out. Then the tear seals.
-local CRACK = Color3.fromRGB(235, 250, 255)
-local QUANTUM = Color3.fromRGB(60, 150, 255)
-local QUANTUM_DEEP = Color3.fromRGB(20, 60, 200)
+-- Space-time rift (vortex): a swirling vortex of clouds opens where the planet will be, with
+-- spinning rings of violet light; rays and shards burst from its eye and the planet pushes out of
+-- it, growing (a stand-in ball while the server builds the terrain), then the vortex fades.
+local VORTEX = Color3.fromRGB(190, 120, 255)
+local VORTEX_LIGHT = Color3.fromRGB(240, 220, 255)
 
--- Neon segment between two points of the tear plane (local coordinates of `frame`).
-local function crackSegment(frame, a, b, width, delay, parts)
-	local seg = basePart({
-		Material = Enum.Material.Neon,
-		Color = CRACK,
-		Size = Vector3.new(width, width, 0.1),
-		CFrame = frame * CFrame.lookAt(a, b),
-	})
-	table.insert(parts, seg)
-	local length = (b - a).Magnitude
-	task.delay(delay, function()
-		if seg.Parent then
-			-- grows from `a` towards `b`
-			TweenService:Create(seg, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
-				Size = Vector3.new(width, width, length),
-				CFrame = frame * CFrame.lookAt((a + b) / 2, b),
-			}):Play()
+local function vortexRing(holder, radius, color, width, count)
+	local atts = {}
+	for i = 1, count do
+		local a = i / count * math.pi * 2
+		local att = Instance.new("Attachment")
+		att.Position = Vector3.new(math.cos(a) * radius, 0, math.sin(a) * radius)
+		att.Parent = holder
+		table.insert(atts, att)
+	end
+	local beams = {}
+	for i = 1, count do
+		local beam = Instance.new("Beam")
+		beam.Attachment0 = atts[i]
+		beam.Attachment1 = atts[i % count + 1]
+		beam.Color = ColorSequence.new(color)
+		beam.LightEmission = 1
+		beam.LightInfluence = 0
+		beam.Width0 = width
+		beam.Width1 = width
+		beam.Transparency = NumberSequence.new(1)
+		beam.FaceCamera = true
+		beam.Segments = 1
+		beam.Parent = holder
+		table.insert(beams, beam)
+	end
+	return beams
+end
+
+local function fadeBeams(beams, to, time)
+	local start = os.clock()
+	task.spawn(function()
+		local from = beams[1] and beams[1].Transparency.Keypoints[1].Value or 1
+		while os.clock() - start < time do
+			local k = (os.clock() - start) / time
+			local v = from + (to - from) * k
+			for _, b in ipairs(beams) do
+				if b.Parent then
+					b.Transparency = NumberSequence.new(v)
+				end
+			end
+			task.wait()
 		end
-	end)
-	return seg
-end
-
--- Ellipse-shaped neon layer (a stretched sphere mesh) in the tear plane.
-local function lens(frame, z, color, transparency, parts)
-	local part = basePart({
-		Material = Enum.Material.Neon,
-		Color = color,
-		Transparency = transparency,
-		Size = Vector3.one,
-		CFrame = frame * CFrame.new(0, 0, z),
-	})
-	local mesh = Instance.new("SpecialMesh")
-	mesh.MeshType = Enum.MeshType.Sphere
-	mesh.Scale = Vector3.new(0.01, 0.01, 0.3)
-	mesh.Parent = part
-	table.insert(parts, part)
-	return part, mesh
-end
-
-local function quantumTint()
-	local cc = Instance.new("ColorCorrectionEffect")
-	cc.TintColor = Color3.fromRGB(170, 210, 255)
-	cc.Brightness = 0.12
-	cc.Contrast = 0.1
-	cc.Parent = game:GetService("Lighting")
-	local t = TweenService:Create(cc, TweenInfo.new(1.8, Enum.EasingStyle.Quad), { TintColor = Color3.new(1, 1, 1), Brightness = 0, Contrast = 0 })
-	t:Play()
-	t.Completed:Connect(function()
-		cc:Destroy()
+		for _, b in ipairs(beams) do
+			if b.Parent then
+				b.Transparency = NumberSequence.new(to)
+			end
+		end
 	end)
 end
 
 function FX.Rift(p)
 	local center, r = p.center, p.radius
 	local toMap = Vector3.new(-center.X, 0, -center.Z).Unit
-	-- Local frame of the tear: X/Y = its plane, -Z towards the map, +Z into the planet.
-	local frame = CFrame.lookAt(center + toMap * r * 1.15, center + toMap * r * 3)
 	local open = p.open or 2.4
-	local h = r * 2.4
-	local parts = {}
-	local crackParts = {}
-
-	-- 1) The crack: one thin jagged line drawing itself up and down from the middle.
-	local crackT = open * 0.22
-	local spine = { Vector3.zero }
-	local up, down = {}, {}
-	local steps = 9
-	for i = 1, steps do
-		local y = (h / 2) * i / steps
-		table.insert(up, Vector3.new(rng:NextNumber(-1, 1) * r * 0.07, y, 0))
-		table.insert(down, Vector3.new(rng:NextNumber(-1, 1) * r * 0.07, -y, 0))
-	end
-	local width = r * 0.018
-	for _, side in ipairs({ up, down }) do
-		local prev = Vector3.zero
-		for i, pt in ipairs(side) do
-			table.insert(crackParts, crackSegment(frame, prev, pt, width * (1 - i / (steps + 2)), crackT * (i - 1) / steps, parts))
-			table.insert(spine, pt)
-			prev = pt
-		end
-	end
-	expandAndFade(neonBall(frame.Position, r * 0.08, CRACK, 0), Vector3.one * r * 0.4, 0.4)
-	FX.Shake(1.2, 0.5)
-	Sfx.Play("Impact", 0.5)
-
-	-- 2) The quake: cracks branch out like broken glass, with a shockwave in the air.
-	local branchT = open * 0.25
-	task.delay(branchT, function()
-		for _ = 1, 12 do
-			local from = spine[rng:NextInteger(2, #spine)]
-			local sideSign = rng:NextNumber() < 0.5 and -1 or 1
-			local angle = math.rad(rng:NextNumber(20, 75))
-			local dir = Vector3.new(math.sin(angle) * sideSign, math.cos(angle) * (from.Y >= 0 and 1 or -1), 0)
-			local prev = from
-			local length = r * rng:NextNumber(0.2, 0.55)
-			local n = rng:NextInteger(2, 4)
-			for k = 1, n do
-				local nextPt = prev + (dir * length / n) + Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), 0) * r * 0.04
-				table.insert(crackParts, crackSegment(frame, prev, nextPt, width * 0.55, k * 0.05, parts))
-				prev = nextPt
-			end
-		end
-		-- Spider-web rings around the middle of the tear.
-		for _, ringR in ipairs({ r * 0.35, r * 0.7 }) do
-			local sides = 9
-			for k = 0, sides - 1 do
-				if rng:NextNumber() < 0.7 then
-					local a0, a1 = k / sides * math.pi * 2, (k + 1) / sides * math.pi * 2
-					local j0, j1 = ringR * rng:NextNumber(0.9, 1.1), ringR * rng:NextNumber(0.9, 1.1)
-					local pa = Vector3.new(math.cos(a0) * j0 * 0.6, math.sin(a0) * j0 * 1.3, 0)
-					local pb = Vector3.new(math.cos(a1) * j1 * 0.6, math.sin(a1) * j1 * 1.3, 0)
-					table.insert(crackParts, crackSegment(frame, pa, pb, width * 0.45, rng:NextNumber(0, 0.2), parts))
-				end
-			end
-		end
-		ring(frame.Position, toMap, r * 0.3, r * 5, Color3.new(1, 1, 1), 1.1, 0.55)
-		ring(frame.Position, toMap, r * 0.2, r * 3.2, CRACK, 0.8, 0.3)
-		FX.Shake(2.5, 0.8)
-		Sfx.Play("Crit", 0.5)
-	end)
-
-	-- 3) It tears open: a blue tunnel behind the glass, light streaming out.
-	local openT = open * 0.55
-	local layers = {}
-	task.delay(openT, function()
-		local rim, rimMesh = lens(frame, 0.5, CRACK, 0, parts)
-		local glow, glowMesh = lens(frame, 1, QUANTUM, 0.15, parts)
-		table.insert(layers, { mesh = rimMesh, w = r * 0.95, h = h * 0.92 })
-		table.insert(layers, { mesh = glowMesh, w = r * 0.85, h = h * 0.86 })
-		-- The tunnel: ellipses further back, smaller and brighter towards the vanishing point.
-		for k = 1, 5 do
-			local f = k / 5
-			local part, mesh = lens(frame, 2 + k * r * 0.12, QUANTUM_DEEP:Lerp(Color3.new(1, 1, 1), f), 0.45 - f * 0.3, parts)
-			table.insert(layers, { mesh = mesh, w = r * 0.85 * (1 - f * 0.7), h = h * 0.86 * (1 - f * 0.7), part = part })
-		end
-		local duration = open - openT
-		for _, layer in ipairs(layers) do
-			TweenService:Create(layer.mesh, TweenInfo.new(duration, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-				Scale = Vector3.new(layer.w, layer.h, 0.3),
-			}):Play()
-		end
-		-- Tunnel pulse.
-		task.spawn(function()
-			while rim.Parent do
-				for _, layer in ipairs(layers) do
-					if layer.part and layer.part.Parent then
-						layer.part.Transparency = math.clamp(layer.part.Transparency + rng:NextNumber(-0.08, 0.08), 0.05, 0.6)
-					end
-				end
-				task.wait(0.08)
-			end
+	local close = p.close or open + 2.6
+	-- The vortex lies in the plane facing the map; its local Y axis points at the players.
+	local frame = CFrame.lookAt(center, center + toMap) * CFrame.Angles(math.rad(-90), 0, 0)
+	local holder = basePart({ Transparency = 1, Size = Vector3.new(1, 1, 1), CFrame = frame })
+	local clouds = basePart({ Transparency = 1, Size = Vector3.new(r * 3.2, 1, r * 3.2), CFrame = frame })
+	-- Swirling clouds (locked to the part, which spins).
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Texture = tex("Smoke")
+	smoke.Shape = Enum.ParticleEmitterShape.Disc
+	smoke.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	smoke.LockedToPart = true
+	smoke.Color = ColorSequence.new(VORTEX_LIGHT, VORTEX)
+	smoke.LightEmission = 0.4
+	smoke.LightInfluence = 0
+	smoke.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 30), NumberSequenceKeypoint.new(1, math.min(r * 0.35, 100)) })
+	smoke.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.45), NumberSequenceKeypoint.new(1, 1) })
+	smoke.Lifetime = NumberRange.new(2, 3)
+	smoke.Speed = NumberRange.new(0)
+	smoke.Rotation = NumberRange.new(0, 360)
+	smoke.RotSpeed = NumberRange.new(-40, 40)
+	smoke.Rate = 40
+	smoke.Parent = clouds
+	-- Rings of light at three sizes, spinning at different speeds.
+	local rings = {
+		vortexRing(holder, r * 0.55, VORTEX_LIGHT, r * 0.03, 20),
+		vortexRing(holder, r * 1.0, VORTEX, r * 0.045, 28),
+		vortexRing(holder, r * 1.45, VORTEX, r * 0.03, 36),
+	}
+	for i, beams in ipairs(rings) do
+		task.delay((i - 1) * 0.25, function()
+			fadeBeams(beams, 0.15, 0.6)
 		end)
-		-- Light streaming out of the tunnel.
-		local streamer = basePart({ Transparency = 1, Size = Vector3.new(r * 0.5, h * 0.6, 1), CFrame = frame })
-		local e = Instance.new("ParticleEmitter")
-		e.Texture = tex("Spark")
-		e.Color = ColorSequence.new(Color3.new(1, 1, 1), QUANTUM)
-		e.LightEmission = 1
-		e.LightInfluence = 0
-		e.Size = NumberSequence.new(r * 0.04, 0)
-		e.Lifetime = NumberRange.new(0.8, 1.6)
-		e.Speed = NumberRange.new(r * 0.4, r * 0.9)
-		e.SpreadAngle = Vector2.new(25, 25)
-		e.EmissionDirection = Enum.NormalId.Front
-		e.Rate = 120
-		e.Parent = streamer
-		table.insert(parts, streamer)
-		-- The glass of space shatters and flies off.
-		for _ = 1, 30 do
-			local at = spine[rng:NextInteger(1, #spine)] + Vector3.new(rng:NextNumber(-1, 1) * r * 0.2, 0, 0)
-			local size = r * rng:NextNumber(0.03, 0.11)
-			local shard = basePart({
-				ClassName = "WedgePart",
-				Material = Enum.Material.Glass,
-				Color = Color3.fromRGB(200, 235, 255),
-				Transparency = 0.3,
-				Reflectance = 0.3,
-				Size = Vector3.new(size * 0.15, size, size * rng:NextNumber(0.5, 1.2)),
-				CFrame = frame * CFrame.new(at) * CFrame.Angles(rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28)),
+	end
+	-- The eye of the vortex.
+	local eye = neonBall(center, r * 0.1, VORTEX_LIGHT, 0.2)
+	TweenService:Create(eye, TweenInfo.new(open, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Size = Vector3.one * r * 0.5, Transparency = 0.5 }):Play()
+	local start = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - start
+		holder.CFrame = frame * CFrame.Angles(0, t * 0.9, 0)
+		clouds.CFrame = frame * CFrame.Angles(0, t * 0.5, 0)
+	end)
+	FX.Shake(0.6, 0.6)
+
+	-- Rays and shards burst out of the eye, the planet pushes out of the vortex.
+	task.delay(open * 0.55, function()
+		for i = 1, 16 do
+			local a = i / 16 * math.pi * 2 + rng:NextNumber(-0.1, 0.1)
+			local dir = frame:VectorToWorldSpace(Vector3.new(math.cos(a), 0, math.sin(a)))
+			local ray = basePart({
+				Material = Enum.Material.Neon,
+				Color = i % 2 == 0 and VORTEX_LIGHT or VORTEX,
+				Transparency = 0.2,
+				Size = Vector3.new(r * 0.025, r * 0.025, 1),
+				CFrame = CFrame.lookAt(center, center + dir),
 			})
-			local out = Vector3.new(at.X >= 0 and 1 or -1, rng:NextNumber(-0.5, 0.5), -rng:NextNumber(0.3, 1)).Unit * r * rng:NextNumber(0.4, 1.2)
-			local t = TweenService:Create(shard, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				CFrame = shard.CFrame * CFrame.Angles(rng:NextNumber(-4, 4), rng:NextNumber(-4, 4), 0) + frame:VectorToWorldSpace(out),
+			local length = r * rng:NextNumber(1.6, 2.6)
+			local tw = TweenService:Create(ray, TweenInfo.new(0.7, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+				Size = Vector3.new(r * 0.012, r * 0.012, length),
+				CFrame = CFrame.lookAt(center + dir * length / 2, center + dir * length),
 				Transparency = 1,
 			})
-			t:Play()
-			t.Completed:Connect(function()
+			tw:Play()
+			tw.Completed:Connect(function()
+				ray:Destroy()
+			end)
+		end
+		for _ = 1, 22 do
+			local dir = (frame:VectorToWorldSpace(Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(0, 0.8), rng:NextNumber(-1, 1)))).Unit
+			local shard = basePart({
+				Material = Enum.Material.Neon,
+				Color = rng:NextNumber() < 0.5 and VORTEX or Color3.fromRGB(120, 200, 255),
+				Size = Vector3.one * r * rng:NextNumber(0.03, 0.06),
+				CFrame = CFrame.new(center) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), 0),
+			})
+			local tw = TweenService:Create(shard, TweenInfo.new(rng:NextNumber(1, 1.8), Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				CFrame = CFrame.new(center + dir * r * rng:NextNumber(1.2, 2.2)) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), 0),
+				Transparency = 1,
+			})
+			tw:Play()
+			tw.Completed:Connect(function()
 				shard:Destroy()
 			end)
 		end
-		-- The crack lines break away with the glass.
-		for _, seg in ipairs(crackParts) do
-			fadeAndDestroy(seg, 0.2, 0.6)
-		end
-		FX.Shake(2, 1)
+		ring(center, toMap, r * 0.4, r * 2.6, VORTEX, 1.2, 0.5)
+		-- Stand-in planet growing out of the eye (the terrain appears behind it).
+		local ok, material = pcall(function()
+			return Enum.Material[p.material]
+		end)
+		local proxy = basePart({
+			Shape = Enum.PartType.Ball,
+			Material = ok and material or Enum.Material.Rock,
+			Color = p.crust or Color3.fromRGB(120, 110, 100),
+			Size = Vector3.one * r * 0.2,
+			CFrame = CFrame.new(center - toMap * r * 0.6),
+		})
+		TweenService:Create(proxy, TweenInfo.new(open * 0.45 + 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = clampSize(Vector3.one * r * 2.02),
+			CFrame = CFrame.new(center),
+		}):Play()
+		task.delay(close - open * 0.55, function()
+			fadeAndDestroy(proxy, 0, 1.2)
+		end)
+		FX.Shake(1, 0.5)
+		Sfx.Play("PlanetExplode", 0.35)
 	end)
 
-	-- 4) The planet bursts out of the tunnel.
-	task.delay(open, function()
-		expandAndFade(neonBall(center, r * 0.5, Color3.new(1, 1, 1), 0), Vector3.one * r * 2.3, 1.1)
-		expandAndFade(neonBall(center, r * 2, QUANTUM, 0.35), Vector3.one * r * 2.6, 1.8)
-		ring(center, toMap, r, r * 4.5, CRACK, 1.5, 0.3)
-		ring(center, Vector3.new(0, 1, 0), r * 1.2, r * 4, QUANTUM, 1.8, 0.4)
-		quantumTint()
-		FX.Shake(3, 1)
-		Sfx.Play("PlanetExplode", 0.5)
-	end)
-
-	-- 5) The tear seals back into a line, then nothing.
-	task.delay(p.close or open + 2.6, function()
-		for _, layer in ipairs(layers) do
-			if layer.mesh.Parent then
-				TweenService:Create(layer.mesh, TweenInfo.new(0.7, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-					Scale = Vector3.new(0.01, layer.h, 0.3),
-				}):Play()
-			end
+	-- The vortex fades away.
+	task.delay(close, function()
+		smoke.Enabled = false
+		for _, beams in ipairs(rings) do
+			fadeBeams(beams, 1, 1)
 		end
-		task.delay(0.75, function()
-			for _, part in ipairs(parts) do
-				if part.Parent then
-					part:Destroy()
-				end
-			end
+		fadeAndDestroy(eye, 0, 0.8)
+		task.delay(3, function()
+			conn:Disconnect()
+			holder:Destroy()
+			clouds:Destroy()
 		end)
 	end)
 end

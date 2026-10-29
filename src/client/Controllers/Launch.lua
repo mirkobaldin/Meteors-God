@@ -768,9 +768,6 @@ function Launch:Start()
 				)
 				return
 			end
-			if workspace:GetAttribute("CyclePhase") ~= "Bombard" then
-				return
-			end
 			local info = PlanetInfo.Get(padTier)
 			if not info or not info.ready then
 				return

@@ -12,7 +12,8 @@ Game.Version = "0.9.0"
 Game.Cycle = {
 	-- Shortened in Studio so the whole loop can be tested quickly.
 	ShowerDuration = IS_STUDIO and 20 or 60,
-	BombardDuration = IS_STUDIO and 60 or 240,
+	CalmDuration = IS_STUDIO and 60 or 240, -- between showers (planets can be hit at any time)
+	ShowerCountdown = 4, -- players wait on their Comet Islet, then everybody runs
 	ShowerSpawnInterval = 0.8, -- seconds between meteors during a shower
 	MaxMeteorsOnGround = 50,
 	GroundMeteorLifetime = 90,
@@ -104,7 +105,8 @@ Game.House = {
 	-- scaled up by Scale (gods' houses, and the map is big). The importer may change the scale, so
 	-- the code resizes each model to its Blender size x Scale (bounds from art/export/houses/*_manifest.json,
 	-- Blender axes: x right, y back, z up; floor at z = 0, front towards -y).
-	Scale = 1.5,
+	Scale = 2,
+	Yaw = 180, -- degrees: turns the imported models so the facade faces the central island
 	Models = {
 		{ min = Vector3.new(-14.5, -14.045, -1.0), max = Vector3.new(14.5, 13.0, 10.5), radius = 19.47 }, -- House1
 		{ min = Vector3.new(-20.5, -18.045, -1.0), max = Vector3.new(20.5, 18.0, 20.8), radius = 27.28 }, -- House2

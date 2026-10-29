@@ -40,8 +40,11 @@ I colori dei materiali sono in `Config/Terrain.lua`.
 
 | Fase | Durata | Cosa succede |
 |---|---|---|
+| ⏳ Via! | 4 s | Tutti vengono teletrasportati sulla **propria Isoletta delle Comete** e restano fermi: partono tutti dalla stessa distanza. |
 | ☄️ Pioggia | 60 s | Meteoriti neonati cadono sulla cittadella. Chi li raccoglie per primo li tiene. |
-| 🌈 Bombardamento | 240 s | Il pianeta è in tiro. I giocatori corrono sui ponti e lanciano i meteoriti dei propri altari. |
+| 🌙 Calma | 240 s | Fino alla prossima pioggia. |
+
+- **Non c'è più un bombardamento a tempo**: i pianeti si colpiscono in qualsiasi momento dai ponti.
 
 - Il pianeta **conserva la vita** tra un ciclo e l'altro finché non viene distrutto.
 - Quando esplode: pioggia bonus di meteoriti con fortuna aumentata, Frammenti per tutti i contributori, arriva il pianeta successivo.

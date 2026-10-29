@@ -105,9 +105,6 @@ local function beginLaunch(player, padName)
 	if not data then
 		return { ok = false, reason = "Loading data..." }
 	end
-	if not services.CycleService:IsBombard() then
-		return { ok = false, reason = "Wait for the Bombardment to throw!" }
-	end
 	if services.TradeService:IsTrading(player) then
 		return { ok = false, reason = "Close the trade before throwing" }
 	end

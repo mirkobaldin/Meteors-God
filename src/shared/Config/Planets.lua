@@ -111,14 +111,17 @@ Planets.Defs = {
 	},
 }
 
+-- Planets are half as big and twice as close as before (same size on screen from the pads):
+-- a terrain planet costs radius^3 voxels to build, clear and send to every player, so this is
+-- about 8 times less work (the lag when a planet exploded or arrived).
 Planets.Tiers = {
 	{
 		name = "Tier I",
 		color = Color3.fromRGB(120, 220, 255),
 		requiredEvolution = 1,
 		laneAngle = -50, -- degrees from +Z of this tier's bridge
-		position = Vector3.new(-2451, 450, 2057),
-		radius = 520,
+		position = Vector3.new(-1785, 300, 1498),
+		radius = 260,
 		sequence = { "Rocky Planet", "Ice Planet", "Candy Planet" },
 	},
 	{
@@ -126,8 +129,8 @@ Planets.Tiers = {
 		color = Color3.fromRGB(255, 150, 60),
 		requiredEvolution = 3, -- Demigod
 		laneAngle = 0,
-		position = Vector3.new(0, 500, 3200),
-		radius = 600,
+		position = Vector3.new(0, 330, 2330),
+		radius = 300,
 		sequence = { "Lava Planet", "Crystal Planet" },
 	},
 	{
@@ -135,8 +138,8 @@ Planets.Tiers = {
 		color = Color3.fromRGB(200, 110, 255),
 		requiredEvolution = 5, -- Cosmic God
 		laneAngle = 50,
-		position = Vector3.new(2451, 450, 2057),
-		radius = 680,
+		position = Vector3.new(1785, 300, 1498),
+		radius = 340,
 		sequence = { "Shadow Planet" },
 	},
 }
@@ -165,7 +168,7 @@ Planets.CraterMax = 0.16
 
 -- Planets grow with their HP: radius = tier radius * clamp((hp / first planet hp)^GrowthExponent, 1, MaxGrowth).
 Planets.GrowthExponent = 0.12
-Planets.MaxGrowth = 1.45
+Planets.MaxGrowth = 1.3
 
 function Planets.RadiusFor(tierIndex, hp)
 	local tier = Planets.Tiers[tierIndex]
