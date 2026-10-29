@@ -32,8 +32,14 @@ isola centrale in 0,0,0 raggio 480; lotti dietro; Shop a −720,0,420; Classific
 Il gameplay (lotti, piedistalli, pad, campo) è sempre generato dal codice, quindi non servono marker.
 
 ### `Assets/Houses/House1` … `House6` — le case divine dei giocatori (Model)
-Una casa per ogni Evoluzione (1 = Star Spirit … 6 = Supreme Deity): la casa cresce con il giocatore e sostituisce
-il tempio segnaposto sull'Isola della Casa. Se ne manca una si usa la più vicina disponibile.
+Una casa per ogni **livello casa** (1 = Star Pavilion … 6 = Supreme Palace, si comprano al leggio davanti alla casa,
+vedi GDD): sostituisce il tempio segnaposto sull'Isola della Casa. Se ne manca una si usa la più vicina disponibile.
+
+**Import delle case di Codex** (`art/export/houses/HouseN.fbx`): File → Import 3D → Model chiamato `House1` … `House6`
+in `ReplicatedStorage/Assets/Houses/`. Il codice (`WorldService.prepareHouse`) fa da solo: ancora tutto, appoggia la
+casa sull'isola (pivot = centro in basso del modello, perché l'import non conserva il pivot di Blender), mette in
+Glass trasparente le mesh che hanno "glass"/"window" nel nome, in vetro l'acqua ("water"/"pool"), in Neon quelle con
+"emiss"/"glow"/"neon", e toglie le collisioni ai pezzi piccoli e ai vetri (si può entrare). `Sign` porta il nome.
 
 | Elemento | Cosa indica |
 |---|---|

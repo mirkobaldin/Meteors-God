@@ -88,6 +88,29 @@ Game.Launch = {
 	WrathMultiplier = 3,
 }
 
+-- Player house: 6 levels (the 6 house models, Assets/Houses/House1..6), bought with Shards at the
+-- lectern in front of the house. Each level needs an Evolution and gives a bonus to the Shards
+-- earned and to Power per second.
+Game.House = {
+	Levels = {
+		{ name = "Star Pavilion", cost = 0, evolution = 1, bonus = 0 },
+		{ name = "Celestial Villa", cost = 2500, evolution = 2, bonus = 0.1 },
+		{ name = "Demigod Residence", cost = 15000, evolution = 3, bonus = 0.2 },
+		{ name = "Titan Cliff Villa", cost = 90000, evolution = 4, bonus = 0.35 },
+		{ name = "Cosmic Sky Mansion", cost = 500000, evolution = 5, bonus = 0.5 },
+		{ name = "Supreme Palace", cost = 3000000, evolution = 6, bonus = 0.75 },
+	},
+	LecternOffset = Vector3.new(26, 0, -100), -- from the house center (its front is -Z)
+}
+
+function Game.HouseLevel(data)
+	return math.clamp(data.houseLevel or 1, 1, #Game.House.Levels)
+end
+
+function Game.HouseBonus(data)
+	return Game.House.Levels[Game.HouseLevel(data)].bonus
+end
+
 Game.Economy = {
 	BasePowerPerSecond = 1,
 	AscensionPowerBonus = 0.5,

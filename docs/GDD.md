@@ -254,7 +254,17 @@ Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Il Legendary Pl
 ## 12. Lotti dei giocatori
 
 Ogni giocatore ha un lotto: Isoletta delle Comete (i meteoriti dell'altare fluttuano sui piedistalli) + Isola della
-Casa. Con i modelli in `Assets/Houses/House1..6` la casa **cresce con l'Evoluzione** al posto del tempio segnaposto.
+Casa. La casa si **migliora al leggio** davanti a lei (finestra "Your House"): 6 livelli, ognuno è un modello
+(`Assets/Houses/House1..6`, le ville di Codex) e dà un bonus a Shard e Potere al secondo:
+
+| Livello | Nome | Costo (Shard) | Evoluzione richiesta | Bonus |
+|---|---|---|---|---|
+| 1 | Star Pavilion | — | Star Spirit | — |
+| 2 | Celestial Villa | 2.500 | Minor Deity | +10% |
+| 3 | Demigod Residence | 15.000 | Demigod | +20% |
+| 4 | Titan Cliff Villa | 90.000 | Titan | +35% |
+| 5 | Cosmic Sky Mansion | 500.000 | Cosmic God | +50% |
+| 6 | Supreme Palace | 3.000.000 | Supreme Deity | +75% |
 
 ## 12a. Meteoriti: equipaggiamento, nutrimento, abilità
 

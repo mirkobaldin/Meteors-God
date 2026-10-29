@@ -475,7 +475,7 @@ function MeteorService:Start()
 		if not altar then
 			Notify.Toast(player, "No free plot on this server", "bad")
 		else
-			services.WorldService:UpdateHouse(player, data.evolution)
+			services.WorldService:UpdateHouse(player, Game.HouseLevel(data))
 		end
 		-- Every new god starts with one meteor so the first launch happens in minute one.
 		if next(data.meteors) == nil then

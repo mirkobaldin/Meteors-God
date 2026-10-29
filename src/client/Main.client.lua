@@ -14,6 +14,7 @@ local ORDER = {
 	"Upgrades",
 	"Shop",
 	"Fusion",
+	"House",
 	"Daily",
 	"Menu",
 	"Index",

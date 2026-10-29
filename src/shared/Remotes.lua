@@ -32,6 +32,7 @@ local EVENTS = {
 	"Evolve", -- ()
 	"Ascend", -- ()
 	"BuyUpgrade", -- (upgradeId, count 1..100)
+	"UpgradeHouse", -- () buy the next house level
 	"TradeRequest", -- (targetUserId)
 	"TradeRespond", -- (fromUserId, accepted)
 	"TradeSetOffer", -- ({uid})

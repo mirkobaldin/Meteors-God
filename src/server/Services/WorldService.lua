@@ -49,6 +49,9 @@ local GLITCH_COLORS = {
 
 -- Parts -------------------------------------------------------------------------------
 
+local buildHouseLectern -- defined with the plots
+local prepareHouse -- defined with the houses
+
 local function part(props)
 	local p = Instance.new("Part")
 	p.Anchored = true
@@ -405,6 +408,30 @@ local function plotDirection(i)
 	return Vector3.new(math.sin(a), 0, -math.cos(a))
 end
 
+-- Lectern in front of each house: the owner upgrades the house here (Controllers/House).
+buildHouseLectern = function(center, parent)
+	local base = center * CFrame.new(Game.House.LecternOffset)
+	part({ Name = "LecternBase", Size = Vector3.new(7, 1, 7), CFrame = base * CFrame.new(0, 0.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = parent })
+	part({ Name = "LecternPillar", Size = Vector3.new(2.6, 5, 2.6), CFrame = base * CFrame.new(0, 3.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = parent })
+	local top = part({
+		Name = "LecternTop",
+		Size = Vector3.new(5, 0.6, 3.6),
+		CFrame = base * CFrame.new(0, 6.3, 0) * CFrame.Angles(math.rad(-20), 0, 0),
+		Material = Enum.Material.Foil,
+		Color = GOLD,
+		Parent = parent,
+	})
+	local _, bb = label(top, "🏠 UPGRADE HOUSE", UDim2.new(16, 0, 3, 0), Vector3.new(0, 4, 0), GOLD_LIGHT)
+	bb.MaxDistance = 220
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "OpenHouse"
+	prompt.ActionText = "Upgrade House"
+	prompt.ObjectText = "Your House"
+	prompt.MaxActivationDistance = 14
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = top
+end
+
 -- Placeholder temple shown until a house model (Assets/Houses) exists.
 local function placeholderHouse(cf, parent)
 	local s = 2.2
@@ -505,6 +532,7 @@ local function buildPlots()
 		-- House facing the central island.
 		local center = CFrame.lookAt(housePos, Vector3.new(0, housePos.Y, 0))
 		local placeholder = placeholderHouse(center, model)
+		buildHouseLectern(center, model)
 		local signPost = part({
 			Name = "Sign",
 			Size = Vector3.new(1, 1, 1),
@@ -827,6 +855,39 @@ end
 
 -- Houses ------------------------------------------------------------------------------------
 
+-- Imported house models (Codex/Blender FBX, meshes grouped by material): glass you can see
+-- through, glowing details, no collisions on small decorations. Names come from the materials.
+prepareHouse = function(house)
+	if not house.PrimaryPart then
+		local base = house:FindFirstChild("Base", true)
+		if base and base:IsA("BasePart") then
+			house.PrimaryPart = base
+		end
+	end
+	for _, d in ipairs(house:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			local n = string.lower(d.Name)
+			if d.Material == Enum.Material.Glass or n:find("glass") or n:find("window") then
+				d.Material = Enum.Material.Glass
+				d.Transparency = math.max(d.Transparency, 0.45)
+				d.CanCollide = false
+			elseif n:find("water") or n:find("pool") or n:find("waterfall") then
+				d.Material = Enum.Material.Glass
+				d.Transparency = math.max(d.Transparency, 0.3)
+				d.CanCollide = false
+			elseif n:find("emiss") or n:find("glow") or n:find("neon") then
+				d.Material = Enum.Material.Neon
+				d.CanCollide = false
+			end
+			local s = d.Size
+			if math.max(s.X, s.Y, s.Z) < 4 then
+				d.CanCollide = false -- small furniture and decorations
+			end
+		end
+	end
+end
+
 -- Places the custom house model for this evolution tier on the player's house island.
 -- Returns true when the house changed. No-op when there are no house assets.
 function WorldService:UpdateHouse(player, tier)
@@ -841,18 +902,18 @@ function WorldService:UpdateHouse(player, tier)
 	if altar.house then
 		altar.house:Destroy()
 	end
-	for _, d in ipairs(house:GetDescendants()) do
-		if d:IsA("BasePart") then
-			d.Anchored = true
-		end
-	end
+	prepareHouse(house)
+	-- Sit the model on the island: its pivot becomes the bottom-center of its bounding box
+	-- (imported meshes don't keep the Blender pivot), front (-Z) towards the central island.
+	local box, size = house:GetBoundingBox()
+	house.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
 	house:PivotTo(altar.center)
 	house.Name = "House_" .. player.Name
 	house.Parent = altar.model
 	altar.house = house
 	altar.houseTier = tier
 	altar.placeholder.Parent = nil
-	local sign = house:FindFirstChild("Sign")
+	local sign = house:FindFirstChild("Sign", true)
 	if sign and sign:IsA("BasePart") then
 		altar.signGui.Parent = sign
 	end

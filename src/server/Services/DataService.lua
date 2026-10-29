@@ -31,6 +31,7 @@ local function defaultData()
 		equipped = "", -- uid of the meteor that follows you and is thrown first
 		bestHunt = 0,
 		evolution = 1,
+		houseLevel = 1, -- Game.House.Levels
 		ascensions = 0,
 		planetsDestroyed = 0,
 		totalDamage = 0,

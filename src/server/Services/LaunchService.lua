@@ -266,7 +266,7 @@ local function fireLaunch(player, charge, aim)
 		local d = services.DataService:Get(player)
 		if d and dealt > 0 then
 			d.totalDamage += dealt
-			local mult = (1 + Game.UpgradeEffect(d, "greed")) * (1 + abilityValue("shards"))
+			local mult = (1 + Game.UpgradeEffect(d, "greed")) * (1 + abilityValue("shards")) * (1 + Game.HouseBonus(d))
 			services.PlayerService:AddShards(player, dealt * Game.Economy.ShardsPerDamage * mult, true)
 		end
 	end

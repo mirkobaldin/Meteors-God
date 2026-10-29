@@ -51,6 +51,7 @@ function PlayerService:PowerRate(player)
 	rate *= 1 + Game.Economy.AscensionPowerBonus * data.ascensions
 	rate *= 1 + MeteorMath.AltarPowerBonus(data.meteors, os.time())
 	rate *= 1 + Game.UpgradeEffect(data, "altar")
+	rate *= 1 + Game.HouseBonus(data)
 	if PlayerService:HasPass(player, "Power2x") then
 		rate *= 2
 	end
@@ -183,6 +184,7 @@ function PlayerService:Sync(player)
 	player:SetAttribute("Shards", data.shards)
 	player:SetAttribute("Stardust", data.stardust)
 	player:SetAttribute("Evolution", data.evolution)
+	player:SetAttribute("HouseLevel", Game.HouseLevel(data))
 	player:SetAttribute("Ascensions", data.ascensions)
 	player:SetAttribute("Planets", data.planetsDestroyed)
 	player:SetAttribute("TotalDamage", data.totalDamage)
@@ -217,10 +219,44 @@ function PlayerService:RefreshCharacter(player)
 	end
 	EvolutionVisuals.Apply(character, data.evolution, PlayerService:HasPass(player, "VIP"))
 	updateOverhead(player, data)
-	-- The player's house grows with their evolution (only if house models exist).
-	if services.WorldService:UpdateHouse(player, data.evolution) then
+	-- The player's house (bought at the lectern; only if house models exist).
+	if services.WorldService:UpdateHouse(player, Game.HouseLevel(data)) then
 		services.MeteorService:ResetAltarDisplay(player)
 	end
+end
+
+-- Buys the next house level (Shards, needs the level's Evolution, near your own house).
+function PlayerService:UpgradeHouse(player)
+	local data = services.DataService:Get(player)
+	if not data then
+		return false
+	end
+	local level = Game.HouseLevel(data)
+	local nextLevel = Game.House.Levels[level + 1]
+	if not nextLevel then
+		Notify.Toast(player, "Your house is already a Supreme Palace!", "info")
+		return false
+	end
+	local altar = services.WorldService:GetAltar(player)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not altar or not root or (root.Position - altar.center.Position).Magnitude > 200 then
+		return false
+	end
+	if data.evolution < nextLevel.evolution then
+		Notify.Toast(player, "Requires " .. Evolutions.Get(nextLevel.evolution).name, "bad")
+		return false
+	end
+	if data.shards < nextLevel.cost then
+		Notify.Toast(player, "Not enough Shards", "bad")
+		return false
+	end
+	data.shards -= nextLevel.cost
+	data.houseLevel = level + 1
+	PlayerService:Sync(player)
+	PlayerService:RefreshCharacter(player)
+	Notify.Toast(player, "🏠 Your house is now a " .. nextLevel.name .. "!", "good")
+	Notify.Chat(player.DisplayName .. " upgraded their house to a " .. nextLevel.name .. "!", Color3.fromRGB(255, 210, 120))
+	return true
 end
 
 function PlayerService:Evolve(player, force)
@@ -379,6 +415,11 @@ function PlayerService:Start()
 	Remotes.Get("Ascend").OnServerEvent:Connect(function(player)
 		if RateLimit.Allow(player, "Ascend", 2) then
 			PlayerService:Ascend(player)
+		end
+	end)
+	Remotes.Get("UpgradeHouse").OnServerEvent:Connect(function(player)
+		if RateLimit.Allow(player, "UpgradeHouse", 1) then
+			PlayerService:UpgradeHouse(player)
 		end
 	end)
 	Remotes.Get("BuyUpgrade").OnServerEvent:Connect(function(player, upgradeId, count)
