@@ -100,7 +100,45 @@ Game.House = {
 		{ name = "Cosmic Sky Mansion", cost = 500000, evolution = 5, bonus = 0.5 },
 		{ name = "Supreme Palace", cost = 3000000, evolution = 6, bonus = 0.75 },
 	},
-	LecternOffset = Vector3.new(26, 0, -100), -- from the house center (its front is -Z)
+	-- The house models are built at human scale in Blender (1 unit = 1 stud); in game they are
+	-- scaled up by Scale (gods' houses, and the map is big). The importer may change the scale, so
+	-- the code resizes each model to its Blender size x Scale (bounds from art/export/houses/*_manifest.json,
+	-- Blender axes: x right, y back, z up; floor at z = 0, front towards -y).
+	Scale = 1.5,
+	Models = {
+		{ min = Vector3.new(-14.5, -14.045, -1.0), max = Vector3.new(14.5, 13.0, 10.5), radius = 19.47 }, -- House1
+		{ min = Vector3.new(-20.5, -18.045, -1.0), max = Vector3.new(20.5, 18.0, 20.8), radius = 27.28 }, -- House2
+		{ min = Vector3.new(-28.0, -21.545, -1.0), max = Vector3.new(28.0, 21.5, 23.794), radius = 35.3 }, -- House3
+		{ min = Vector3.new(-32.5, -24.5, -12.833), max = Vector3.new(32.5, 24.5, 38.839), radius = 40.7 }, -- House4
+		{ min = Vector3.new(-40.149, -37.236, -1.0), max = Vector3.new(40.154, 43.24, 40.062), radius = 59.01 }, -- House5
+		{ min = Vector3.new(-52.5, -38.5, -4.667), max = Vector3.new(52.5, 38.5, 50.094), radius = 65.1 }, -- House6
+	},
+	IslandMargin = 24, -- free ground around the house (the island grows for the big houses)
+	-- Roblox look of the Blender materials (the FBX meshes are named after them, e.g. House3_Warm_Oak_01).
+	Materials = {
+		Brushed_Gold = { Enum.Material.Foil, Color3.fromRGB(214, 168, 96) },
+		Clear_Glass = { Enum.Material.Glass, Color3.fromRGB(205, 232, 255), 0.6, true },
+		Cushion_Blue = { Enum.Material.Fabric, Color3.fromRGB(86, 116, 176) },
+		Cyan_Starlight = { Enum.Material.Neon, Color3.fromRGB(90, 230, 255), 0, true },
+		Lawn = { Enum.Material.Grass, Color3.fromRGB(96, 168, 84) },
+		Leaf_Light = { Enum.Material.Grass, Color3.fromRGB(130, 196, 104) },
+		Leaf_Violet = { Enum.Material.SmoothPlastic, Color3.fromRGB(176, 120, 236) },
+		Leaves = { Enum.Material.Grass, Color3.fromRGB(70, 140, 72) },
+		Light_Beam = { Enum.Material.Neon, Color3.fromRGB(255, 240, 205), 0.55, true },
+		Linen_Ivory = { Enum.Material.Fabric, Color3.fromRGB(242, 234, 216) },
+		Meteor_Stone = { Enum.Material.Basalt, Color3.fromRGB(64, 52, 76) },
+		Pale_Cliff = { Enum.Material.Limestone, Color3.fromRGB(216, 206, 190) },
+		Pale_Marble = { Enum.Material.Marble, Color3.fromRGB(236, 233, 228) },
+		Pool_Water = { Enum.Material.Glass, Color3.fromRGB(70, 172, 232), 0.35, true },
+		Rug_Sand = { Enum.Material.Fabric, Color3.fromRGB(212, 192, 152) },
+		Trunk = { Enum.Material.Wood, Color3.fromRGB(122, 92, 70) },
+		Violet_Starlight = { Enum.Material.Neon, Color3.fromRGB(182, 122, 255), 0, true },
+		Warm_Light = { Enum.Material.Neon, Color3.fromRGB(255, 212, 142), 0, true },
+		Warm_Oak = { Enum.Material.WoodPlanks, Color3.fromRGB(192, 142, 92) },
+		Waterfall = { Enum.Material.Glass, Color3.fromRGB(150, 212, 255), 0.3, true },
+		White_Roof = { Enum.Material.SmoothPlastic, Color3.fromRGB(246, 246, 246) },
+		White_Travertine = { Enum.Material.Limestone, Color3.fromRGB(236, 229, 216) },
+	}, -- { material, color, transparency?, noCollide? }
 }
 
 function Game.HouseLevel(data)

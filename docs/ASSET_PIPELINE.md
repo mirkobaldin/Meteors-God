@@ -36,10 +36,15 @@ Una casa per ogni **livello casa** (1 = Star Pavilion … 6 = Supreme Palace, si
 vedi GDD): sostituisce il tempio segnaposto sull'Isola della Casa. Se ne manca una si usa la più vicina disponibile.
 
 **Import delle case di Codex** (`art/export/houses/HouseN.fbx`): File → Import 3D → Model chiamato `House1` … `House6`
-in `ReplicatedStorage/Assets/Houses/`. Il codice (`WorldService.prepareHouse`) fa da solo: ancora tutto, appoggia la
-casa sull'isola (pivot = centro in basso del modello, perché l'import non conserva il pivot di Blender), mette in
-Glass trasparente le mesh che hanno "glass"/"window" nel nome, in vetro l'acqua ("water"/"pool"), in Neon quelle con
-"emiss"/"glow"/"neon", e toglie le collisioni ai pezzi piccoli e ai vetri (si può entrare). `Sign` porta il nome.
+in `ReplicatedStorage/Assets/Houses/`. Il codice fa il resto da solo:
+- **scala**: ridimensiona ogni casa alla sua misura di Blender (dai `HouseN_manifest.json`, copiati in
+  `Game.House.Models`) × `Game.House.Scale` (1,5), qualunque scala abbia usato l'importatore;
+- **posizione**: pivot sul centro del pavimento (origine di Blender), facciata verso l'isola centrale;
+- **isola**: se la casa è più grande, l'isola della casa si allarga (raggio casa + `IslandMargin`); il leggio si
+  sposta davanti alla facciata;
+- **materiali**: ogni mesh si chiama come il suo materiale (es. `House3_Warm_Oak_01`); `Game.House.Materials` dà a
+  ognuno materiale Roblox, colore, trasparenza e collisioni (vetro, acqua e luci senza collisione, si può entrare);
+  le 3 texture di Codex (rovere, marmo, travertino) restano dove ci sono. `Sign` porta il nome del proprietario.
 
 | Elemento | Cosa indica |
 |---|---|

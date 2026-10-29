@@ -410,16 +410,18 @@ end
 
 -- Lectern in front of each house: the owner upgrades the house here (Controllers/House).
 buildHouseLectern = function(center, parent)
-	local base = center * CFrame.new(Game.House.LecternOffset)
-	part({ Name = "LecternBase", Size = Vector3.new(7, 1, 7), CFrame = base * CFrame.new(0, 0.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = parent })
-	part({ Name = "LecternPillar", Size = Vector3.new(2.6, 5, 2.6), CFrame = base * CFrame.new(0, 3.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = parent })
+	local model = Instance.new("Model")
+	model.Name = "HouseLectern"
+	local base = center * CFrame.new(26, 0, -100)
+	local root = part({ Name = "LecternBase", Size = Vector3.new(7, 1, 7), CFrame = base * CFrame.new(0, 0.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	part({ Name = "LecternPillar", Size = Vector3.new(2.6, 5, 2.6), CFrame = base * CFrame.new(0, 3.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
 	local top = part({
 		Name = "LecternTop",
 		Size = Vector3.new(5, 0.6, 3.6),
 		CFrame = base * CFrame.new(0, 6.3, 0) * CFrame.Angles(math.rad(-20), 0, 0),
 		Material = Enum.Material.Foil,
 		Color = GOLD,
-		Parent = parent,
+		Parent = model,
 	})
 	local _, bb = label(top, "🏠 UPGRADE HOUSE", UDim2.new(16, 0, 3, 0), Vector3.new(0, 4, 0), GOLD_LIGHT)
 	bb.MaxDistance = 220
@@ -430,6 +432,10 @@ buildHouseLectern = function(center, parent)
 	prompt.MaxActivationDistance = 14
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = top
+	model.PrimaryPart = root
+	model.WorldPivot = base
+	model.Parent = parent
+	return model
 end
 
 -- Placeholder temple shown until a house model (Assets/Houses) exists.
@@ -532,7 +538,7 @@ local function buildPlots()
 		-- House facing the central island.
 		local center = CFrame.lookAt(housePos, Vector3.new(0, housePos.Y, 0))
 		local placeholder = placeholderHouse(center, model)
-		buildHouseLectern(center, model)
+		local lectern = buildHouseLectern(center, model)
 		local signPost = part({
 			Name = "Sign",
 			Size = Vector3.new(1, 1, 1),
@@ -559,6 +565,8 @@ local function buildPlots()
 			placeholder = placeholder,
 			house = nil,
 			houseTier = nil,
+			lectern = lectern,
+			islandRadius = W.HouseIslandRadius,
 			slots = nil,
 		})
 	end
@@ -864,32 +872,49 @@ prepareHouse = function(house)
 			house.PrimaryPart = base
 		end
 	end
+	local looks = Game.House.Materials
 	for _, d in ipairs(house:GetDescendants()) do
 		if d:IsA("BasePart") then
 			d.Anchored = true
 			local n = string.lower(d.Name)
-			if d.Material == Enum.Material.Glass or n:find("glass") or n:find("window") then
+			local look
+			for key, l in pairs(looks) do
+				if n:find(string.lower(key), 1, true) then
+					look = l
+					break
+				end
+			end
+			if not look and n == "base" then
+				look = looks.White_Travertine -- the floor slab
+			end
+			if look then
+				d.Material = look[1]
+				d.Color = look[2]
+				if look[3] then
+					d.Transparency = look[3]
+				end
+				if look[4] then
+					d.CanCollide = false
+				end
+			elseif d.Material == Enum.Material.Glass or n:find("glass") then
 				d.Material = Enum.Material.Glass
-				d.Transparency = math.max(d.Transparency, 0.45)
-				d.CanCollide = false
-			elseif n:find("water") or n:find("pool") or n:find("waterfall") then
-				d.Material = Enum.Material.Glass
-				d.Transparency = math.max(d.Transparency, 0.3)
-				d.CanCollide = false
-			elseif n:find("emiss") or n:find("glow") or n:find("neon") then
-				d.Material = Enum.Material.Neon
+				d.Transparency = math.max(d.Transparency, 0.5)
 				d.CanCollide = false
 			end
-			local s = d.Size
-			if math.max(s.X, s.Y, s.Z) < 4 then
+			if d.Material == Enum.Material.Neon then
+				d.CastShadow = false
+			end
+			local size = d.Size
+			if math.max(size.X, size.Y, size.Z) < 4 then
 				d.CanCollide = false -- small furniture and decorations
 			end
 		end
 	end
 end
 
--- Places the custom house model for this evolution tier on the player's house island.
--- Returns true when the house changed. No-op when there are no house assets.
+-- Places the house model on the player's house island: resized to its Blender size x Game.House.Scale,
+-- floor on the ground, front towards the central island. The island grows if the house needs it,
+-- and the upgrade lectern moves in front of the house.
 function WorldService:UpdateHouse(player, tier)
 	local altar = WorldService:GetAltar(player)
 	if not altar or altar.houseTier == tier then
@@ -903,11 +928,39 @@ function WorldService:UpdateHouse(player, tier)
 		altar.house:Destroy()
 	end
 	prepareHouse(house)
-	-- Sit the model on the island: its pivot becomes the bottom-center of its bounding box
-	-- (imported meshes don't keep the Blender pivot), front (-Z) towards the central island.
-	local box, size = house:GetBoundingBox()
-	house.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
+	local modelTier = tonumber(string.match(house.Name, "%d+")) or tier
+	local info = Game.House.Models[modelTier]
+	local S = Game.House.Scale
+	local radius = 40
+	if info then
+		-- Resize to the Blender size x Scale, whatever scale the importer used.
+		local width = (info.max.X - info.min.X) * S
+		local current = house:GetExtentsSize().X
+		if current > 0.01 then
+			house:ScaleTo(house:GetScale() * width / current)
+		end
+		-- Pivot on the Blender origin (center of the floor): imported meshes lose it.
+		local box = house:GetBoundingBox()
+		local c = (info.min + info.max) / 2
+		house.WorldPivot = box * CFrame.new(Vector3.new(c.X, -c.Z, -c.Y) * S)
+		radius = info.radius * S
+	else
+		local box, size = house:GetBoundingBox()
+		house.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
+		radius = math.max(size.X, size.Z) / 2
+	end
 	house:PivotTo(altar.center)
+	-- Bigger house, bigger island (it never shrinks).
+	local needed = radius + Game.House.IslandMargin
+	if needed > altar.islandRadius then
+		altar.islandRadius = needed
+		island(altar.center.Position, needed, needed * 1.3)
+	end
+	if altar.lectern then
+		local front = info and -info.min.Y * S or radius
+		local z = -math.min(front + 14, altar.islandRadius - 8)
+		altar.lectern:PivotTo(altar.center * CFrame.new(math.min(26, radius * 0.6), 0, z))
+	end
 	house.Name = "House_" .. player.Name
 	house.Parent = altar.model
 	altar.house = house
