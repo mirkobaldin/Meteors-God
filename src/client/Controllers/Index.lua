@@ -15,6 +15,7 @@ local Index = {}
 local window
 local grid
 local header
+local familiesText
 
 function Index:Refresh()
 	if not window.Visible then
@@ -75,6 +76,19 @@ function Index:Refresh()
 		end
 	end
 	header.Text = "Discovered " .. count .. " / " .. total
+	-- Families: complete one to get its weapon.
+	local parts = {}
+	for _, family in ipairs(Meteors.Families) do
+		local n = 0
+		for _, id in ipairs(family.members) do
+			if found[id] then
+				n += 1
+			end
+		end
+		local done = n == #family.members
+		table.insert(parts, (done and "⚔ " or "") .. family.name .. " " .. n .. "/" .. #family.members .. (done and (" " .. family.weapon.name) or ""))
+	end
+	familiesText.Text = "Families (complete one = weapon): " .. table.concat(parts, "  ·  ")
 end
 
 function Index:Init()
@@ -94,9 +108,17 @@ function Index:Init()
 		MaxTextSize = 24,
 		Parent = content,
 	})
+	familiesText = UI.Text({
+		Position = UDim2.fromOffset(0, 30),
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		MaxTextSize = 18,
+		Parent = content,
+	})
 	grid = UI.New("ScrollingFrame", {
-		Position = UDim2.fromOffset(0, 34),
-		Size = UDim2.new(1, 0, 1, -34),
+		Position = UDim2.fromOffset(0, 60),
+		Size = UDim2.new(1, 0, 1, -60),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,

@@ -63,7 +63,11 @@ function MeteorService:AddMeteor(player, typeId, mutation, opts)
 		paid = opts.paid or nil,
 		found = os.time(),
 	}
+	local isNew = not data.index[typeId]
 	data.index[typeId] = true
+	if isNew and services.WeaponService then
+		task.defer(services.WeaponService.Refresh, services.WeaponService, player, true)
+	end
 
 	-- Auto-place on a free altar slot so new players see their meteor right away.
 	MeteorService:PlaceOnAltar(player, uid, true)

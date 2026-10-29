@@ -151,6 +151,13 @@ function Game.HouseBonus(data)
 	return Game.House.Levels[Game.HouseLevel(data)].bonus
 end
 
+Game.Weapons = {
+	Cooldown = 1.1, -- seconds between swings
+	Range = 11, -- studs in front of you
+	Knockback = 70,
+	Immunity = 2.5, -- a player can't be hit again for this long
+}
+
 Game.Economy = {
 	BasePowerPerSecond = 1,
 	AscensionPowerBonus = 0.5,

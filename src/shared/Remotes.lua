@@ -17,6 +17,7 @@ local EVENTS = {
 	"LaunchFX", -- (payload) another player's meteor flight
 	"HuntState", -- (state) Cosmic Hunt: start / planets / score / end
 	"HuntFX", -- (payload) hunt shots and planet explosions
+	"WeaponHit", -- ({attacker, victim, position, direction, dropped}) a family weapon hit
 	-- client -> server
 	"FireLaunch", -- (charge)
 	"CancelLaunch", -- ()

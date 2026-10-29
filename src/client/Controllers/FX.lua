@@ -1082,6 +1082,31 @@ function FX:Start()
 			FX.Rift(p)
 		end
 	end)
+	-- Family weapon hit: burst on the victim; the victim's own client applies the knockback.
+	Remotes.Get("WeaponHit").OnClientEvent:Connect(function(p)
+		local Meteors_ = Meteors
+		local color = Color3.fromRGB(255, 200, 120)
+		for _, f in ipairs(Meteors_.Families) do
+			if f.id == p.family then
+				color = f.color
+			end
+		end
+		expandAndFade(neonBall(p.position, 2, Color3.new(1, 1, 1), 0), Vector3.one * 12, 0.35)
+		ring(p.position, Vector3.new(0, 1, 0), 2, 22, color, 0.5, 0.2)
+		rocks(p.position, p.direction + Vector3.new(0, 0.6, 0), 8, 1.2, color, 18, Enum.Material.Neon)
+		Sfx.Play("Impact", 0.6)
+		if p.victim == player.UserId then
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if root then
+				local Game_ = require(Shared.Config.Game)
+				root.AssemblyLinearVelocity = p.direction * Game_.Weapons.Knockback + Vector3.new(0, 35, 0)
+			end
+			FX.Shake(2, 0.4)
+			FX.ScreenFlash(Color3.fromRGB(255, 60, 60), 0.35)
+		elseif p.attacker == player.UserId then
+			FX.Shake(1, 0.25)
+		end
+	end)
 	Remotes.Get("LaunchFX").OnClientEvent:Connect(function(p)
 		FX.Flight(p)
 	end)

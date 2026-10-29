@@ -346,6 +346,7 @@ local function enterAim(pad)
 	if not root or not humanoid then
 		return
 	end
+	humanoid:UnequipTools() -- no weapon swings on the pad
 	tier = pad:GetAttribute("Tier") or 1
 	player:SetAttribute("FocusTier", tier)
 	state = "aiming"

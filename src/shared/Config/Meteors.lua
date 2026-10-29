@@ -283,6 +283,42 @@ function Meteors.RollMutation(rng, mult)
 	return nil
 end
 
+-- Families: find every meteor of a family (the index remembers what you ever owned) and its
+-- rarest meteor becomes your WEAPON (Tool): the meteor itself is the head. Hitting another player
+-- knocks them back and knocks one meteor they picked up in the current shower out of them.
+Meteors.Families = {
+	{ id = "Inferno", name = "Inferno", color = Color3.fromRGB(255, 120, 40),
+		members = { "Ember", "Magma", "Solar" }, weapon = { name = "Solar Hammer", kind = "hammer" } },
+	{ id = "Glacier", name = "Glacier", color = Color3.fromRGB(150, 220, 255),
+		members = { "Frost", "Blue Comet", "Royal Comet" }, weapon = { name = "Royal Ice Lance", kind = "lance" } },
+	{ id = "Storm", name = "Storm", color = Color3.fromRGB(255, 230, 90),
+		members = { "Spark", "Aurora", "Supernova" }, weapon = { name = "Nova Mace", kind = "hammer" } },
+	{ id = "Abyss", name = "Abyss", color = Color3.fromRGB(170, 80, 255),
+		members = { "Pebble", "Venom", "Crystal", "Void" }, weapon = { name = "Void Scythe", kind = "scythe" } },
+}
+
+-- The rarest member of a family (the weapon's head).
+function Meteors.FamilyHead(family)
+	local best, bestOrder
+	for _, id in ipairs(family.members) do
+		local def = Meteors.ByID[id]
+		local order = def and Meteors.RarityByID[def.rarity].order or 0
+		if not bestOrder or order > bestOrder then
+			best, bestOrder = id, order
+		end
+	end
+	return best
+end
+
+function Meteors.FamilyComplete(family, index)
+	for _, id in ipairs(family.members) do
+		if not index[id] then
+			return false
+		end
+	end
+	return true
+end
+
 -- Number of non-exclusive meteor types (for the collection index).
 function Meteors.IndexSize()
 	local n = 0

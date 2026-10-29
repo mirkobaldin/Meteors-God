@@ -315,6 +315,22 @@ Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lan
 5. **Museo personale**: la casa mostra le comete più rare in vetrine; gli altri possono visitarla e "mettere
    una stella". Classifica delle case più stellate.
 
+### Famiglie e armi (fatto)
+Le comete sono divise in 4 **famiglie**. Quando hai trovato tutte le comete di una famiglia (l'Index se lo ricorda),
+la più rara diventa la tua **arma** (Tool nello zaino, la testa è la cometa stessa):
+
+| Famiglia | Comete | Arma |
+|---|---|---|
+| Inferno | Ember, Magma, Solar | Solar Hammer |
+| Glacier | Frost, Blue Comet, Royal Comet | Royal Ice Lance |
+| Storm | Spark, Aurora, Supernova | Nova Mace |
+| Abyss | Pebble, Venom, Crystal, Void | Void Scythe |
+
+Stile Steal an Egg: le comete raccolte **durante una pioggia** restano "portate addosso" finché la pioggia finisce.
+Se un altro giocatore ti colpisce con un'arma vieni sbalzato via e **ti cade una di quelle comete** (non quelle
+sull'altare né quella equipaggiata), che chiunque può raccogliere. Ricarica 1,1 s, portata 11 stud, 2,5 s di
+immunità dopo un colpo; niente colpi su chi sta lanciando o è nella Cosmic Hunt. L'Index mostra l'avanzamento.
+
 ### Idee del proprietario (da fare più avanti)
 - **Cavalcare la propria cometa** (tipo nuvola Speedy di Goku): si sblocca a una certa Evoluzione (es. Titan).
   La cometa equipaggiata si allarga sotto i piedi e diventa una cavalcatura volante per muoversi per la mappa

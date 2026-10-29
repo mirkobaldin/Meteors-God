@@ -20,6 +20,7 @@ local phaseEvent = Instance.new("BindableEvent")
 CycleService.PhaseChanged = phaseEvent.Event
 
 CycleService.Phase = "Shower"
+CycleService.ShowerId = 0 -- meteors picked up in the current shower carry it (see WeaponService)
 
 local rng = Random.new()
 
@@ -71,6 +72,7 @@ function CycleService:Start()
 		while true do
 			local event = rng:NextNumber() < Game.Events.Chance and Game.Events.List[rng:NextInteger(1, #Game.Events.List)] or nil
 			workspace:SetAttribute("CosmicEvent", event and event.id or "")
+			CycleService.ShowerId += 1
 			gatherPlayers()
 			workspace:SetAttribute("ShowerGoAt", workspace:GetServerTimeNow() + Game.Cycle.ShowerCountdown)
 			if event then

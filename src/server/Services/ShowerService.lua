@@ -86,6 +86,10 @@ local function grab(player, model)
 	if not uid then
 		return
 	end
+	-- Picked up during a shower: "carried" until the shower ends, a weapon hit can knock it out.
+	if services.CycleService.Phase == "Shower" and data.meteors[uid] then
+		data.meteors[uid].fresh = services.CycleService.ShowerId
+	end
 	pickedRemote:FireClient(player, { type = typeId, mutation = mutation, upgraded = upgraded })
 
 	local def = Meteors.ByID[typeId]
@@ -96,29 +100,15 @@ local function grab(player, model)
 	end
 end
 
--- Spawns one falling meteor. luck >= 1 shifts the odds towards rarer meteors.
-function ShowerService:SpawnOne(luck)
-	if onGround >= Game.Cycle.MaxMeteorsOnGround then
-		return
-	end
-	onGround += 1
-
-	local event = Game.EventByID[workspace:GetAttribute("CosmicEvent") or ""]
-	luck = (luck or 1) * (event and event.luckMult or 1)
-	local rarityId = Meteors.RollRarity(rng, luck)
-	local typeId = Meteors.RandomTypeOfRarity(rng, rarityId)
-	local mutation = Meteors.RollMutation(rng, luck * (event and event.mutationMult or 1))
-	if not mutation and event and event.forceMutation and rng:NextNumber() < event.forceChance then
-		mutation = event.forceMutation
-	end
+-- Makes a meteor fall onto `ground` (from `height` above, in `fallTime`) and become collectable.
+local function dropMeteor(typeId, mutation, ground, height, fallTime, spread)
 	local def = Meteors.ByID[typeId]
-	local rarity = Meteors.RarityByID[rarityId]
-
-	local ground = randomGroundPoint()
+	local rarity = Meteors.RarityByID[def.rarity]
+	spread = spread or 40
 	local model = MeteorVisual.Build(typeId, { size = 3, expression = "sleepy", mutation = mutation })
 	model:SetAttribute("Mutation", mutation)
 	local core = model.PrimaryPart
-	core.CFrame = CFrame.new(ground + Vector3.new(rng:NextNumber(-40, 40), FALL_HEIGHT, rng:NextNumber(-40, 40)))
+	core.CFrame = CFrame.new(ground + Vector3.new(rng:NextNumber(-spread, spread), height, rng:NextNumber(-spread, spread)))
 
 	local trail = Instance.new("Trail")
 	local a0 = Instance.new("Attachment")
@@ -141,7 +131,7 @@ function ShowerService:SpawnOne(luck)
 	local rest = ground + Vector3.new(0, 1.5, 0)
 	local out = Vector3.new(rest.X - services.WorldService.Field.center.X, 0, rest.Z - services.WorldService.Field.center.Z)
 	local landing = out.Magnitude > 1 and CFrame.lookAt(rest, rest + out) or CFrame.new(rest)
-	local fall = TweenService:Create(core, TweenInfo.new(FALL_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+	local fall = TweenService:Create(core, TweenInfo.new(fallTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		CFrame = landing,
 	})
 	fall:Play()
@@ -202,6 +192,43 @@ function ShowerService:SpawnOne(luck)
 			end
 		end)
 	end)
+end
+
+
+-- Spawns one falling meteor. luck >= 1 shifts the odds towards rarer meteors.
+function ShowerService:SpawnOne(luck)
+	if onGround >= Game.Cycle.MaxMeteorsOnGround then
+		return
+	end
+	onGround += 1
+
+	local event = Game.EventByID[workspace:GetAttribute("CosmicEvent") or ""]
+	luck = (luck or 1) * (event and event.luckMult or 1)
+	local rarityId = Meteors.RollRarity(rng, luck)
+	local typeId = Meteors.RandomTypeOfRarity(rng, rarityId)
+	local mutation = Meteors.RollMutation(rng, luck * (event and event.mutationMult or 1))
+	if not mutation and event and event.forceMutation and rng:NextNumber() < event.forceChance then
+		mutation = event.forceMutation
+	end
+	dropMeteor(typeId, mutation, randomGroundPoint(), FALL_HEIGHT, FALL_TIME)
+end
+
+-- A meteor knocked out of a player (weapons): it pops out and lands next to them.
+function ShowerService:Drop(typeId, mutation, position)
+	if not Meteors.ByID[typeId] then
+		return
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore = { folder }
+	for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+		table.insert(ignore, plr.Character)
+	end
+	params.FilterDescendantsInstances = ignore
+	local hit = workspace:Raycast(position + Vector3.new(0, 10, 0), Vector3.new(0, -60, 0), params)
+	local ground = hit and (hit.Position + Vector3.new(0, 0.5, 0)) or position
+	onGround += 1
+	dropMeteor(typeId, mutation, ground, 12, 0.45, 3)
 end
 
 function ShowerService:SpawnBurst(count, luck)
