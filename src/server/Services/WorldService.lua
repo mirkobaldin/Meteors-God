@@ -865,6 +865,60 @@ end
 
 -- Imported house models (Codex/Blender FBX, meshes grouped by material): glass you can see
 -- through, glowing details, no collisions on small decorations. Names come from the materials.
+-- World-aligned bounds of every part of a model: min, max (Vector3) or nil.
+local function worldBounds(model)
+	local minV, maxV
+	local list = model:IsA("BasePart") and { model } or model:GetDescendants()
+	for _, d in ipairs(list) do
+		if d:IsA("BasePart") then
+			local h = d.Size / 2
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sy in ipairs({ -1, 1 }) do
+					for _, sz in ipairs({ -1, 1 }) do
+						local p = d.CFrame * Vector3.new(h.X * sx, h.Y * sy, h.Z * sz)
+						minV = minV and minV:Min(p) or p
+						maxV = maxV and maxV:Max(p) or p
+					end
+				end
+			end
+		end
+	end
+	return minV, maxV
+end
+
+local learnedTilt -- the turn on X the first house needed (props use the same one)
+
+-- FBX imports can lay a model on its side. Tries the 90 degree turns on X and keeps the one where
+-- `floor` (a flat part, e.g. the house "Base") is flat and at the bottom; without a floor, uses `forced`.
+local function uprightModel(model, floor, forced)
+	local pivot = model:GetPivot()
+	local function turn(a)
+		model:PivotTo(pivot * CFrame.Angles(math.rad(a), 0, 0))
+	end
+	if forced then
+		turn(forced)
+		return forced
+	end
+	if not floor then
+		return 0
+	end
+	local best, bestScore = 0, math.huge
+	for _, a in ipairs({ 0, 90, -90, 180 }) do
+		turn(a)
+		local minV, maxV = worldBounds(model)
+		local fmin, fmax = worldBounds(floor)
+		local fext = fmax - fmin
+		local flatness = fext.Y / math.max(fext.X, fext.Z, 0.01)
+		local lowness = ((fmin.Y + fmax.Y) / 2 - minV.Y) / math.max(maxV.Y - minV.Y, 0.01)
+		local score = flatness + lowness
+		if score < bestScore then
+			best, bestScore = a, score
+		end
+	end
+	turn(best)
+	return best
+end
+
 prepareHouse = function(house)
 	if not house.PrimaryPart then
 		local base = house:FindFirstChild("Base", true)
@@ -928,46 +982,28 @@ function WorldService:UpdateHouse(player, tier)
 		altar.house:Destroy()
 	end
 	prepareHouse(house)
-	local modelTier = tonumber(string.match(house.Name, "%d+")) or tier
-	local info = Game.House.Models[modelTier]
-	local S = Game.House.Scale
-	local radius = 40
-	if info then
-		-- Resize to the Blender size x Scale, whatever scale the importer used.
-		-- Compare the biggest horizontal size (robust if the importer swapped X and Z).
-		local width = math.max(info.max.X - info.min.X, info.max.Y - info.min.Y) * S
-		local ext = house:GetExtentsSize()
-		local current = math.max(ext.X, ext.Z)
-		if current > 0.01 then
-			house:ScaleTo(house:GetScale() * width / current)
-		end
-		radius = info.radius * S
-	else
-		local _, size = house:GetBoundingBox()
-		radius = math.max(size.X, size.Z) / 2
+	-- Upright first (the import may lay it on its side), then the width of its level.
+	local floorPart = house.PrimaryPart or house:FindFirstChild("Base", true)
+	if floorPart and not floorPart:IsA("BasePart") then
+		floorPart = nil
 	end
-	-- Where the model really is after the import (world-aligned bounds of all its parts).
-	local minV, maxV
-	for _, d in ipairs(house:GetDescendants()) do
-		if d:IsA("BasePart") then
-			local h = d.Size / 2
-			for _, sx in ipairs({ -1, 1 }) do
-				for _, sy in ipairs({ -1, 1 }) do
-					for _, sz in ipairs({ -1, 1 }) do
-						local p = d.CFrame * Vector3.new(h.X * sx, h.Y * sy, h.Z * sz)
-						minV = minV and minV:Min(p) or p
-						maxV = maxV and maxV:Max(p) or p
-					end
-				end
-			end
-		end
-	end
+	-- No floor part to check: assume the usual import turn (90 on X) unless TiltX says otherwise.
+	local tilt = uprightModel(house, floorPart, Game.House.TiltX or (not floorPart and 90 or nil))
+	learnedTilt = learnedTilt or tilt
+	local width = Game.House.Footprints[math.clamp(tier, 1, #Game.House.Footprints)]
+	local minV, maxV = worldBounds(house)
 	if not minV then
 		house:Destroy()
 		return false
 	end
+	local current = math.max(maxV.X - minV.X, maxV.Z - minV.Z)
+	if current > 0.01 then
+		house:ScaleTo(house:GetScale() * width / current)
+	end
+	local radius = width / 2
+	minV, maxV = worldBounds(house)
 	local center = (minV + maxV) / 2
-	local floorY = minV.Y + (info and math.max(0, -info.min.Z) * S or 0) -- Blender floor (z = 0)
+	local floorY = minV.Y -- the lowest point sits on the island
 	-- Facade: the name plate (Sign) stands next to the entrance, so the facade is on its side of the
 	-- model (snapped to the nearest axis). This works whatever rotation the importer applied.
 	local front = Vector3.new(0, 0, -1)
@@ -990,8 +1026,7 @@ function WorldService:UpdateHouse(player, tier)
 		island(altar.center.Position, needed, needed * 1.3)
 	end
 	if altar.lectern then
-		local front = info and -info.min.Y * S or radius
-		local z = -math.min(front + 14, altar.islandRadius - 8)
+		local z = -math.min(radius + 14, altar.islandRadius - 8)
 		altar.lectern:PivotTo(altar.center * CFrame.new(math.min(26, radius * 0.6), 0, z))
 	end
 	house.Name = "House_" .. player.Name
@@ -1111,9 +1146,100 @@ function WorldService:Init()
 	buildHuntPortal()
 end
 
+-- Props ---------------------------------------------------------------------------------------
+
+-- Scatters the props of ReplicatedStorage.Assets.Props on the islands (central island ring, shop
+-- and leaderboard islands, the back of every house island and comet islet). Only on terrain
+-- (never on bridges or buildings), upright, resized between Props.MinSize and MaxSize, random turn.
+local function scatterProps()
+	local templates = AssetLibrary.All("Props")
+	if #templates == 0 then
+		return
+	end
+	local P = Game.Props
+	local tilt = P.TiltX or learnedTilt or 90
+	local prng = Random.new(7)
+	local folder = Instance.new("Folder")
+	folder.Name = "Props"
+	folder.Parent = worldFolder
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { folder }
+	local index = 0
+
+	local function place(pos)
+		local hit = workspace:Raycast(pos + Vector3.new(0, 300, 0), Vector3.new(0, -600, 0), params)
+		if not hit or hit.Instance ~= terrain then
+			return -- not on open ground (bridge, building, void)
+		end
+		index += 1
+		local prop = templates[(index - 1) % #templates + 1]:Clone()
+		if prop:IsA("BasePart") then
+			local m = Instance.new("Model")
+			prop.Parent = m
+			m.PrimaryPart = prop
+			prop = m
+		end
+		for _, d in ipairs(prop:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.Anchored = true
+			end
+		end
+		prepareHouse(prop) -- same material rules as the houses (glass, water, lights)
+		uprightModel(prop, nil, tilt)
+		local minV, maxV = worldBounds(prop)
+		if not minV then
+			prop:Destroy()
+			return
+		end
+		local ext = maxV - minV
+		local big = math.max(ext.X, ext.Y, ext.Z)
+		local target = math.clamp(big, P.MinSize, P.MaxSize)
+		if big > 0.01 and math.abs(target - big) > 0.01 then
+			prop:ScaleTo(prop:GetScale() * target / big)
+			minV, maxV = worldBounds(prop)
+		end
+		local c = (minV + maxV) / 2
+		prop.WorldPivot = CFrame.new(c.X, minV.Y, c.Z)
+		prop:PivotTo(CFrame.new(hit.Position) * CFrame.Angles(0, prng:NextNumber(0, math.pi * 2), 0))
+		prop.Parent = folder
+	end
+
+	local function ring(center, rMin, rMax, count, skipDir, skipCos)
+		for i = 1, count do
+			local a = (i + prng:NextNumber(-0.3, 0.3)) / count * math.pi * 2
+			local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+			if not skipDir or dir:Dot(skipDir) < skipCos then
+				place(center + dir * prng:NextNumber(rMin, rMax))
+			end
+		end
+	end
+
+	local W = Game.World
+	ring(Vector3.zero, W.FieldRadius + 40, W.CenterRadius - 45, P.CentralIsland)
+	for _, cfg in ipairs({ W.ShopIsland, W.LeaderboardIsland }) do
+		ring(cfg.center, cfg.radius * 0.5, cfg.radius * 0.85, P.SideIsland)
+	end
+	for _, altar in ipairs(WorldService.Altars) do
+		-- The back half of the house island (the front has the bridge, the lectern and the facade).
+		local toCenter = altar.center.LookVector
+		ring(altar.center.Position, altar.islandRadius * 0.78, altar.islandRadius * 0.9, P.HouseIsland * 2, toCenter, -0.1)
+		local islet = altar.display.Position
+		ring(islet, W.CometIsletRadius * 0.7, W.CometIsletRadius * 0.85, P.CometIslet * 2, toCenter, -0.1)
+	end
+end
+
 function WorldService:Start()
 	Players.PlayerRemoving:Connect(function(player)
 		WorldService:ReleaseAltar(player)
+	end)
+	-- After the first house (so props get the same import turn), or after a short wait.
+	task.spawn(function()
+		local t = os.clock()
+		while not learnedTilt and os.clock() - t < 25 do
+			task.wait(1)
+		end
+		scatterProps()
 	end)
 end
 

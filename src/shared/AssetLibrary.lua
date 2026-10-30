@@ -16,6 +16,24 @@ function AssetLibrary.Get(category, name)
 	return folder and name and folder:FindFirstChild(name) or nil
 end
 
+-- Every template in a category (Models and Parts), sorted by name.
+function AssetLibrary.All(category)
+	local r = root()
+	local folder = r and r:FindFirstChild(category)
+	local list = {}
+	if folder then
+		for _, child in ipairs(folder:GetChildren()) do
+			if child:IsA("Model") or child:IsA("BasePart") then
+				table.insert(list, child)
+			end
+		end
+	end
+	table.sort(list, function(a, b)
+		return a.Name < b.Name
+	end)
+	return list
+end
+
 function AssetLibrary.Clone(category, name)
 	local template = AssetLibrary.Get(category, name)
 	return template and template:Clone() or nil

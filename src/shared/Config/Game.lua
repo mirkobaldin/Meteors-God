@@ -101,20 +101,11 @@ Game.House = {
 		{ name = "Cosmic Sky Mansion", cost = 500000, evolution = 5, bonus = 0.5 },
 		{ name = "Supreme Palace", cost = 3000000, evolution = 6, bonus = 0.75 },
 	},
-	-- The house models are built at human scale in Blender (1 unit = 1 stud); in game they are
-	-- scaled up by Scale (gods' houses, and the map is big). The importer may change the scale, so
-	-- the code resizes each model to its Blender size x Scale (bounds from art/export/houses/*_manifest.json,
-	-- Blender axes: x right, y back, z up; floor at z = 0, front towards -y).
-	Scale = 2,
-	Yaw = 0, -- extra turn in degrees if a facade still looks the wrong way (the code finds it from the Sign)
-	Models = {
-		{ min = Vector3.new(-14.5, -14.045, -1.0), max = Vector3.new(14.5, 13.0, 10.5), radius = 19.47 }, -- House1
-		{ min = Vector3.new(-20.5, -18.045, -1.0), max = Vector3.new(20.5, 18.0, 20.8), radius = 27.28 }, -- House2
-		{ min = Vector3.new(-28.0, -21.545, -1.0), max = Vector3.new(28.0, 21.5, 23.794), radius = 35.3 }, -- House3
-		{ min = Vector3.new(-32.5, -24.5, -12.833), max = Vector3.new(32.5, 24.5, 38.839), radius = 40.7 }, -- House4
-		{ min = Vector3.new(-40.149, -37.236, -1.0), max = Vector3.new(40.154, 43.24, 40.062), radius = 59.01 }, -- House5
-		{ min = Vector3.new(-52.5, -38.5, -4.667), max = Vector3.new(52.5, 38.5, 50.094), radius = 65.1 }, -- House6
-	},
+	-- The house models (Assets/Houses/House1..6, imported from Codex's FBX) are turned upright
+	-- automatically (the FBX import can lay them on their side: the code tries the 90 degree turns on X
+	-- and keeps the one where the floor "Base" is flat and at the bottom), then resized so their width
+	-- is Footprints[level] studs, floor on the ground, facade (next to the Sign) towards the central island.
+	Footprints = { 56, 76, 96, 116, 140, 170 },
 	IslandMargin = 24, -- free ground around the house (the island grows for the big houses)
 	-- Roblox look of the Blender materials (the FBX meshes are named after them, e.g. House3_Warm_Oak_01).
 	Materials = {
@@ -150,6 +141,18 @@ end
 function Game.HouseBonus(data)
 	return Game.House.Levels[Game.HouseLevel(data)].bonus
 end
+
+-- Props (any Model or Part in ReplicatedStorage.Assets.Props) scattered on the islands: turned upright
+-- like the houses (or by Props.TiltX), resized to fit between MinSize and MaxSize studs, random turn.
+Game.Props = {
+	TiltX = nil, -- nil = same turn the houses needed
+	MinSize = 5,
+	MaxSize = 34,
+	CentralIsland = 18,
+	SideIsland = 7,
+	HouseIsland = 5,
+	CometIslet = 2,
+}
 
 Game.Weapons = {
 	Cooldown = 1.1, -- seconds between swings
@@ -254,7 +257,6 @@ Game.Leaderboard = {
 	-- Beside the spawn in the Houses district, facing the players.
 	Position = Vector3.new(330, 34, 690), -- on the Leaderboard island
 	LookAt = Vector3.new(0, 0, 0),
-	Scale = 2,
 }
 
 -- Cosmic events: rolled at the start of a Meteor Shower, they last for that shower.
