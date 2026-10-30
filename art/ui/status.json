@@ -1,0 +1,18 @@
+﻿{
+    "selectedTheme":  "A",
+    "complete":  true,
+    "tool":  "built-in image_gen",
+    "trialGenerated":  74,
+    "trialExpected":  74,
+    "selectedGenerated":  51,
+    "selectedExpected":  51,
+    "remainingRequired":  0,
+    "missing":  {
+                    "A":  [
+
+                          ],
+                    "B":  [
+
+                          ]
+                }
+}
