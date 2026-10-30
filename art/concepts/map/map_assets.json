@@ -5,28 +5,28 @@
       "type": "structure",
       "name": "Divine Shop",
       "size_studs": 60,
-      "look": "a luxury glass boutique pavilion with a sweeping curved white roof on slim gold columns; inside, lit display shelves with glowing comets in glass domes and potion bottles; a marble counter with a gold cash register shaped like a planet; a big empty gold-framed sign panel above the entrance (no text); warm interior light"
+      "look": "a modern luxury boutique pavilion like a high-end watch store: a thin flat white roof slab cantilevered over floor-to-ceiling glass walls, inside: lit white shelves with glowing comets in small glass domes and potion bottles, a white stone counter, warm light; a slim gold frame around the entrance with a blank sign panel above it; three wide marble steps in front"
     },
     {
       "id": "leaderboard",
       "type": "structure",
       "name": "Leaderboard Monument",
       "size_studs": 50,
-      "look": "a tall white marble monolith holding a huge dark glass screen panel framed in brushed gold (blank screen, no text), three podium steps in front (gold, silver, bronze inlays), small stone planets orbiting the top on thin gold rings"
+      "look": "a tall slab of pale marble holding a large blank dark glass screen with a thin gold frame, three low podium blocks in front (the middle one higher), small stone planets on thin rods at the top"
     },
     {
       "id": "fusion_reactor",
       "type": "structure",
       "name": "Fusion Reactor",
       "size_studs": 55,
-      "look": "a circular white marble platform with three glass capsules each holding a comet, curved gold arms meeting above a central glass sphere full of swirling cyan-violet energy, glowing conduits running across the floor, control lectern in front"
+      "look": "a round white stone platform with three glass capsules each holding a glowing comet, three slim curved white arms meeting above a central glass sphere with swirling cyan-violet energy, thin light lines in the floor, a small control lectern in front"
     },
     {
       "id": "hunt_portal",
       "type": "structure",
       "name": "Cosmic Hunt Portal",
       "size_studs": 60,
-      "look": "a tall elegant ring of white stone and gold standing on a stepped marble base, inside a swirling blue-violet vortex of light, broken ring segments floating around it, steps leading up to it"
+      "look": "a tall clean ring of white stone with a thin gold edge on a stepped round base, inside a swirling blue-violet vortex of light, a few ring fragments floating around it"
     },
     {
       "id": "weapon_forge",
@@ -54,7 +54,7 @@
       "type": "structure",
       "name": "God Statue (spawn)",
       "size_studs": 70,
-      "look": "the centerpiece of the central island: a giant heroic white marble statue of a young god holding a stone comet above his head, on a round tiered gold and marble base with a fountain of glowing cyan water around it"
+      "look": "the centerpiece of the central island: a big heroic white marble statue of a young god lifting a comet over his head, on a wide round stepped base with a shallow pool of glowing cyan water around it"
     },
     {
       "id": "launch_pad",

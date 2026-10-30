@@ -1,38 +1,44 @@
-# Prompt per Codex: immagini delle 25 comete
+# Prompt per Codex: le comete "Comet Beasts"
 
-Incollalo in Codex nella cartella `Meteors-God` (dopo `git pull`). Genera 2 immagini per cometa (50 in tutto).
+Prima prova: lascia `FAMILY = inferno`. Se ti piacciono, rilancialo con glacier, storm, toxic, void.
 
 ```
-Read art/concepts/comets/comets.json: it lists 25 living meteors for the Roblox game "Meteor Gods"
-(5 families x 5 rarities). For EVERY comet in that file generate TWO images and save them as PNG with a fully
-transparent background, 1024x1024:
-  art/concepts/comets/<id>_front.png   front view, the face looking straight at the camera
-  art/concepts/comets/<id>_34.png      3/4 view from the left, same comet, same lighting
-(<id> is the "id" field, e.g. inferno_common). Overwrite existing files with the same name.
+FAMILY = inferno
 
-BASE SHAPE (mandatory, identical for all 25): use the reference images art/reference/meteor_base_render.png
-(front) and art/reference/meteor_base_render_34.png (3/4) as the exact base model. Keep EXACTLY:
-- the silhouette: a slightly wide ball made of big chiselled rock plates packed together, thin glowing cracks
-  between the plates where the inner core shows;
-- the face: two thick curly stone eyebrows like Luffy Gear 5 (each one ends in a spiral above the nose and rises
-  to a hooked tip on the outside), two deep carved angry eye holes glowing from inside, a wide carved mouth with
-  two fangs on the top and two square teeth on the bottom, all glowing from the core behind;
-- the camera angle and framing of the reference (the comet fills ~80% of the image, centered).
-Do NOT redesign the shape, do NOT add a different face, do NOT change the eyebrows.
+Read art/concepts/comets/comets.json. For every comet whose "family" is FAMILY, generate TWO images, PNG with a
+fully transparent background, 1024x1024:
+  art/concepts/comets/<id>_34.png     3/4 side view: the head on the left looking at the camera, the whole tail
+                                       streaming back and up to the right, nothing cut off
+  art/concepts/comets/<id>_front.png  front view, face looking straight at the camera, the tail visible behind
+Overwrite files with the same name.
 
-WHAT CHANGES per comet (from its "look" field): the rock material and color, the color of the glowing core and
-cracks, and features that GROW OUT OF THE ROCK (spikes, crystals, ice, lava, horns made of stone, crests, vines,
-orbiting rock shards). Rarity must be readable at a glance:
-Common = the base shape with the family colors only; Rare = first growths; Epic = heavy armor or big features;
-Legendary = a regal crest/crown grown from the rock, richer materials; Mythic = transformed and spectacular
-(split shell, floating fragments, intense core). For "Galaxy Singularity" follow the style of
-art/reference/meteor_supernova.png.
+GAME: "Meteor Gods" (Roblox). Young gods tame LIVING COMETS and hurl them at giant planets. The comets are the
+stars of the game and the thing players collect, so they must look like the coolest creatures in a collectible
+creature game: badass, powerful, full of personality. NOT cute, NOT a rock with a face.
 
-RULES: NO accessories of any kind (no hats, no glasses, no jewelry, no clothes); two eyes for every comet; no
-text, no letters, no logos, no watermarks; no motion blur, no flames or particles flying away from the body
-(only things attached to it or orbiting close), no background, no ground, no shadow plane. Art style: high-end
-stylized 3D game asset (like the best Roblox showcase games), clean readable shapes, rich materials, soft studio
-light, the same lighting for all 25 so they look like one collection.
+THE CONCEPT, "COMET BEASTS": every comet is a creature made of two parts.
+1) The HEAD: the comet's core, a chunky rounded head of rock/crystal/metal (see "look"), with the face CARVED
+   into it and lit from inside: two fierce glowing eyes with vertical snake-slit pupils, heavy brow ridges
+   always frowning, a wide mouth full of jagged teeth. Two eyes, always.
+2) The TAIL: the comet's tail made SOLID and sculpted, streaming backwards like a mane or a cape (see "tail"):
+   it gives the silhouette and the sense of speed even when standing still. It is attached to the head and part
+   of the same object (it is not loose VFX).
+Use the "look" field for the details of each comet and "rarity" for how evolved it is:
+Common = small head, short simple tail; Rare = brow ridges or horn nubs, longer tail; Epic = armor and horns,
+the tail splits into blades; Legendary = a regal crest or crown, the tail like a cape with precious materials;
+Mythic = it transforms into a full beast (described in "look"), the tail becomes wings or a serpent body,
+fragments orbit around it, the most spectacular of the family.
+The five comets of a family must clearly read as ONE evolution line (same colors, same tail language, growing).
 
-When done: git add art/concepts/comets ; git commit -m "comet concepts" ; git pull --rebase ; git push.
+STYLE: premium stylized 3D creature render, like the legendary creatures of the best collectible creature games
+and the best Roblox showcase games: bold readable silhouette that works even when tiny, chunky proportions
+(big head, strong shapes), hand-painted PBR materials (rough rock, glossy crystal, molten emissive cracks), strong
+rim light, soft studio lighting, saturated colors with clear contrast between the dark rock and the glowing
+parts. Same lighting and camera for all.
+
+RULES: no accessories (no hats, glasses, jewelry, clothes: horns, crests and spikes grow from the body); no text,
+no letters, no logos, no watermarks; no background, no ground, no shadow plane; one creature per image,
+centered, fully visible.
+
+When done: git add art/concepts/comets ; git commit -m "comet beasts FAMILY" ; git pull --rebase ; git push.
 ```

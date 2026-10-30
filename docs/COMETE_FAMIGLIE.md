@@ -1,27 +1,31 @@
-# Comete nuove: 5 famiglie × 5 rarità (25 comete)
+# Comete: "Comet Beasts" (5 famiglie × 5 rarità)
 
-Tutte hanno la **stessa mesh base** (`art/reference/meteor_base.glb`): palla di placche di roccia, sopracciglia di
-pietra ricce stile Gear 5, occhi e bocca scavati, nucleo luminoso che si vede dalle crepe. Cambiano roccia, colori,
-colore del nucleo e le cose che **crescono dalla roccia** (mai accessori). Più è rara, più è elaborata:
-Comune = base + colore della famiglia · Rara = prime escrescenze · Epica = corazza / elementi grossi ·
-Leggendaria = cresta regale · Mitica = trasformata, pezzi che fluttuano, nucleo spettacolare.
-La **Mitica** di ogni famiglia è la testa dell'**arma** di quella famiglia.
+## Il concept (nuovo)
+Le palle di roccia tutte uguali non funzionano: da lontano sono identiche e non sembrano comete. Una cometa si
+riconosce dalla **CODA**. Quindi ogni cometa è una **creatura-cometa**:
 
-| Famiglia | Comune | Rara | Epica | Leggendaria | Mitica (arma) |
-|---|---|---|---|---|---|
-| 🔥 **Inferno** (vulcani) | Cinderling | Magmaw | Pyroclast | Solar Tyrant | Phoenix Nova → *Phoenix Nova Hammer* |
-| ❄️ **Glacier** (ghiaccio) | Frostling | Hailbreaker | Glacierfang | Aurora Warden | Absolute Zero → *Absolute Zero Lance* |
-| ⚡ **Storm** (tempesta) | Staticle | Thunderhorn | Tempest Eye | Storm Sovereign | Ion Leviathan → *Ion Leviathan Mace* |
-| ☣️ **Toxic** (palude aliena) | Sporeling | Venomspike | Plague Bloom | Hive Queen | Blight Titan → *Blight Maul* |
-| 🌌 **Void** (cosmo oscuro) | Duskstone | Shadowfang | Nebula Maw | Eclipse Lord | Galaxy Singularity → *Singularity Scythe* |
+- una **testa** di roccia/cristallo (il nucleo) con la faccia scavata e luminosa: due occhi con pupille da serpente,
+  sopracciglia pesanti, bocca piena di denti;
+- una grossa **coda scolpita che va all'indietro come una criniera** (la coda della cometa resa solida): sembra
+  veloce anche quando è ferma, e in gioco si trasforma nella scia quando la lanci.
 
-Descrizioni complete (in inglese, usate da Codex e Meshy): `art/concepts/comets/comets.json`.
+**La coda dice la famiglia** (sagoma diversa da lontano), **la testa dice la rarità** (cresce come un'evoluzione):
 
-Idee per una 6ª famiglia, se la vuoi: **Celestial** (stelle e oro): Stardust · Comet Knight · Constellation ·
-Royal Comet · Galaxy Emperor.
+| Rarità | Testa | Coda |
+|---|---|---|
+| Comune | piccola, faccia semplice | corta, 3 ciocche |
+| Rara | sopracciglia/cornetti | più lunga, 5 ciocche |
+| Epica | corazza e corna | si divide in lame |
+| Leggendaria | cresta/corona regale | come un mantello |
+| Mitica | diventa una **bestia** (fenice, drago di ghiaccio, leviatano, titano-pianta, bestia-galassia) | diventa **ali** o un **corpo da serpente**, frammenti in orbita |
 
-## Pipeline
-1. **Codex** → immagini di ogni cometa (frontale + 3/4) partendo dalla mesh base: `docs/PROMPT_CODEX_COMETE.md`.
-2. Approvi le immagini.
-3. **Claude Code locale con la chiave API di Meshy** → modelli 3D da quelle immagini: `docs/PROMPT_MESHY.md`.
-4. La sessione cloud collega le 25 comete al gioco (config, nucleo Neon, mascella, pupille, export, famiglie e armi).
+| Famiglia | Coda | Comune | Rara | Epica | Leggendaria | Mitica (arma) |
+|---|---|---|---|---|---|---|
+| 🔥 Inferno | criniera di fiamme | Cinderling | Magmaw | Pyroclast | Solar Tyrant | **Phoenix Nova** (fenice) |
+| ❄️ Glacier | lame di ghiaccio | Frostling | Hailbreaker | Glacierfang | Aurora Warden | **Absolute Zero** (drago di ghiaccio) |
+| ⚡ Storm | fulmini solidi | Staticle | Thunderhorn | Tempest Eye | Storm Sovereign | **Ion Leviathan** (serpente elettrico) |
+| ☣️ Toxic | tentacoli di melma e rovi | Sporeling | Venomspike | Plague Bloom | Hive Queen | **Blight Titan** (titano-pianta) |
+| 🌌 Void | fumo di nebulosa con stelle | Duskstone | Shadowfang | Nebula Maw | Eclipse Lord | **Galaxy Singularity** (bestia-galassia) |
+
+Descrizioni (inglese, per Codex): `art/concepts/comets/comets.json`. Prompt: `docs/PROMPT_CODEX_COMETE.md`.
+Consiglio: fai prima **solo la famiglia Inferno** (5 comete), guardiamo se il concept funziona, poi le altre.
