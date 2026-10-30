@@ -4,10 +4,10 @@
 local Terrain = {}
 
 Terrain.Colors = {
-	Grass = Color3.fromRGB(95, 175, 110), -- map: island tops
-	Rock = Color3.fromRGB(110, 92, 128), -- map: island bodies, planets: mountains
-	Slate = Color3.fromRGB(78, 66, 100), -- map: island undersides, Shadow planet spikes
-	Basalt = Color3.fromRGB(48, 40, 52), -- map: meteor field, Lava planet crust, scorched craters
+	Grass = Color3.fromRGB(104, 158, 98), -- map: island tops (moss, Sky Ruins theme)
+	Rock = Color3.fromRGB(132, 108, 94), -- map: island bodies (weathered sandstone), planets: mountains
+	Slate = Color3.fromRGB(88, 74, 78), -- map: island undersides, Shadow planet spikes
+	Basalt = Color3.fromRGB(42, 34, 36), -- map: magma field crust, Lava planet crust, scorched craters
 	CrackedLava = Color3.fromRGB(255, 110, 30), -- every planet's mantle, lava rivers, Magma craters
 	Snow = Color3.fromRGB(240, 246, 255), -- mountain caps, Ice planet poles
 	Ground = Color3.fromRGB(150, 100, 62), -- Rocky planet crust

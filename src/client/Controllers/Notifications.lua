@@ -72,6 +72,9 @@ function Notifications.Toast(text, kind)
 		end
 		local t = TweenService:Create(item, TweenInfo.new(0.4), { BackgroundTransparency = 1 })
 		t:Play()
+		if item:IsA("ImageLabel") then
+			TweenService:Create(item, TweenInfo.new(0.4), { ImageTransparency = 1 }):Play()
+		end
 		for _, d in ipairs(item:GetDescendants()) do
 			if d:IsA("TextLabel") then
 				TweenService:Create(d, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()

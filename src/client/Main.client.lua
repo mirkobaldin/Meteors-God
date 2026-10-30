@@ -21,6 +21,8 @@ local ORDER = {
 	"Trade",
 	"Launch",
 	"Hunt",
+	"Carry",
+	"Intro",
 }
 
 local controllers = {}

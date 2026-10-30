@@ -7,19 +7,39 @@ local IS_STUDIO = RunService:IsStudio()
 local Game = {}
 
 -- Shown in the corner of the screen and printed in Output: check it to be sure Studio has the latest code.
-Game.Version = "0.9.0"
+Game.Version = "0.10.0"
 
 Game.Cycle = {
-	-- Shortened in Studio so the whole loop can be tested quickly.
-	ShowerDuration = IS_STUDIO and 20 or 60,
-	CalmDuration = IS_STUDIO and 60 or 240, -- between showers (planets can be hit at any time)
+	-- One shower every 5 minutes (Calm + countdown + Shower), also in Studio.
+	-- FastInStudio = true shortens the loop in Studio to test it quickly.
+	FastInStudio = false,
+	ShowerDuration = 40,
+	CalmDuration = 256, -- between showers (planets can be hit at any time)
 	ShowerCountdown = 4, -- players wait on their Comet Islet, then everybody runs
-	ShowerSpawnInterval = 0.8, -- seconds between meteors during a shower
-	MaxMeteorsOnGround = 50,
+	ShowerSpawnInterval = 3.2, -- seconds between meteors during a shower (about 12 per shower)
+	MaxMeteorsOnGround = 20,
 	GroundMeteorLifetime = 90,
-	PlanetDestroyedBonusMeteors = 12,
+	PlanetDestroyedBonusMeteors = 4,
 	PlanetDestroyedBonusLuck = 3,
 	NextPlanetDelay = 8,
+}
+if IS_STUDIO and Game.Cycle.FastInStudio then
+	Game.Cycle.ShowerDuration = 20
+	Game.Cycle.CalmDuration = 60
+	Game.Cycle.ShowerSpawnInterval = 1.5
+end
+
+-- Carrying: a grabbed meteor is NOT yours yet. It floats above your head and you must bring it back
+-- to your own plot (Comet Islet or House Island) to keep it. A weapon hit knocks one out, dying drops
+-- them all. Each carried meteor slows you down.
+Game.Carry = {
+	Base = 1, -- meteors you can carry at once
+	BigBagBonus = 2, -- + with the BigBag Game Pass
+	SpeedPenalty = 0.1, -- -10% walk speed per carried meteor
+	MinSpeedMult = 0.6,
+	-- Seconds to hold the Collect prompt, by rarity order (Common .. Extraterrestrial).
+	HoldTime = { 0.4, 0.8, 1.2, 1.8, 2.5, 3 },
+	BankMargin = 10, -- studs beyond the island edge that still count as "home"
 }
 
 -- Map layout (top view, the planets are towards +Z), following the owner's sketch, 3x scale:
@@ -34,7 +54,7 @@ Game.World = {
 	CenterRadius = 480,
 	FieldCenter = Vector3.new(0, 0, 0),
 	FieldRadius = 220,
-	FieldInner = 0,
+	FieldInner = 34, -- the lava pool with the meteor sculpture in the middle
 	SpawnPosition = Vector3.new(0, 0, -360),
 
 	HouseCount = 12, -- set the server's Max Players to the same number
@@ -144,14 +164,69 @@ end
 
 -- Props (any Model or Part in ReplicatedStorage.Assets.Props) scattered on the islands: turned upright
 -- like the houses (or by Props.TiltX), resized to fit between MinSize and MaxSize studs, random turn.
+-- Props (models in ReplicatedStorage.Assets/Map or Assets/Props, by name) placed by a fixed layout:
+-- every entry puts one prop at `at` in the frame of an anchor, on the ground below (only on terrain).
+-- Anchors (their -Z/LookVector is "forward"):
+--   world   the map origin, forward = towards the spawn
+--   spawn   the spawn point, forward = towards the magma field
+--   islet   every player's Comet Islet, forward = towards the map center (the bridge arrives there)
+--   house   every player's House Island, forward = towards the map center
+--   shop / leaderboard  the side islands, forward = towards the map center
+-- face: "forward" (same way as the anchor) | "back" | "center" (towards the anchor) | "out"
+-- ring = {count, radius}: `count` copies evenly around the anchor (at = height offset only).
+-- float = true: hangs in the air at `at` (no ground needed).
 Game.Props = {
 	TiltX = nil, -- nil = same turn the houses needed
-	MinSize = 5,
-	MaxSize = 34,
-	CentralIsland = 18,
-	SideIsland = 7,
-	HouseIsland = 5,
-	CometIslet = 2,
+	-- Size of each prop (its biggest side, studs).
+	Size = {
+		god_statue = 48, meteor_sculpture = 34, reflecting_pool = 30, water_fountain = 20,
+		armillary_sphere = 18, telescope_deck = 24, star_lamp = 14, bridge_lamps = 11,
+		name_pillar = 13, crystal_planter = 7, floating_stones = 18, cosmic_tree = 34,
+		glass_gazebo = 26, pergola = 22, lounge_set = 14, fire_pit = 9,
+	},
+	-- Extra turn (degrees) for a model whose front is not its -Z side.
+	Yaw = {},
+	Layout = {
+		-- Spawn plaza: the god statue behind the spawn, a fountain, lamps along the path to the field.
+		{ prop = "god_statue", anchor = "spawn", at = Vector3.new(0, 0, 70), face = "forward" },
+		{ prop = "water_fountain", anchor = "spawn", at = Vector3.new(0, 0, 36), face = "forward" },
+		{ prop = "star_lamp", anchor = "spawn", at = Vector3.new(-22, 0, -30), face = "forward" },
+		{ prop = "star_lamp", anchor = "spawn", at = Vector3.new(22, 0, -30), face = "forward" },
+		{ prop = "star_lamp", anchor = "spawn", at = Vector3.new(-22, 0, -75), face = "forward" },
+		{ prop = "star_lamp", anchor = "spawn", at = Vector3.new(22, 0, -75), face = "forward" },
+		-- Two gardens beside the spawn plaza: a pool with a gazebo, a pergola with a lounge and fire pit.
+		{ prop = "reflecting_pool", anchor = "spawn", at = Vector3.new(-120, 0, 10), face = "center" },
+		{ prop = "glass_gazebo", anchor = "spawn", at = Vector3.new(-150, 0, 45), face = "center" },
+		{ prop = "pergola", anchor = "spawn", at = Vector3.new(125, 0, 25), face = "center" },
+		{ prop = "lounge_set", anchor = "spawn", at = Vector3.new(118, 0, -5), face = "center" },
+		{ prop = "fire_pit", anchor = "spawn", at = Vector3.new(100, 0, 0), face = "center" },
+		-- The magma field: the meteor sculpture rises from the lava pool in the middle, lamps around it.
+		{ prop = "meteor_sculpture", anchor = "world", at = Vector3.new(0, 0, 0), face = "forward" },
+		{ prop = "star_lamp", anchor = "world", at = Vector3.new(0, 0, 0), ring = { 12, 244 }, face = "center" },
+		-- Front of the central island, looking at the planets.
+		{ prop = "telescope_deck", anchor = "world", at = Vector3.new(-210, 0, 390), face = "back" },
+		{ prop = "telescope_deck", anchor = "world", at = Vector3.new(210, 0, 390), face = "back" },
+		-- Next to the Fusion Reactor and the Hunt portal.
+		{ prop = "armillary_sphere", anchor = "world", at = Vector3.new(-330, 0, -80), face = "center" },
+		{ prop = "armillary_sphere", anchor = "world", at = Vector3.new(330, 0, -80), face = "center" },
+		-- Stones floating around the central island.
+		{ prop = "floating_stones", anchor = "world", at = Vector3.new(-560, 40, 120), float = true },
+		{ prop = "floating_stones", anchor = "world", at = Vector3.new(560, 55, 60), float = true },
+		{ prop = "floating_stones", anchor = "world", at = Vector3.new(0, 70, 620), float = true },
+		-- Side islands: a tree on each.
+		{ prop = "cosmic_tree", anchor = "shop", at = Vector3.new(-85, 0, -30), face = "forward" },
+		{ prop = "cosmic_tree", anchor = "leaderboard", at = Vector3.new(85, 0, -30), face = "forward" },
+		-- Every Comet Islet: lamps where the bridge arrives, the name pillar, planters beside the pedestals.
+		{ prop = "bridge_lamps", anchor = "islet", at = Vector3.new(-22, 0, -58), face = "forward" },
+		{ prop = "bridge_lamps", anchor = "islet", at = Vector3.new(22, 0, -58), face = "forward" },
+		{ prop = "name_pillar", anchor = "islet", at = Vector3.new(34, 0, -44), face = "forward" },
+		{ prop = "crystal_planter", anchor = "islet", at = Vector3.new(-31, 0, 2), face = "forward" },
+		{ prop = "crystal_planter", anchor = "islet", at = Vector3.new(31, 0, 2), face = "forward" },
+		{ prop = "floating_stones", anchor = "islet", at = Vector3.new(60, 25, 80), float = true },
+		-- Every House Island: lamps where the bridge arrives.
+		{ prop = "bridge_lamps", anchor = "house", at = Vector3.new(-22, 0, -98), face = "forward" },
+		{ prop = "bridge_lamps", anchor = "house", at = Vector3.new(22, 0, -98), face = "forward" },
+	},
 }
 
 Game.Weapons = {

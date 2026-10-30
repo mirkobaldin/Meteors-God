@@ -28,6 +28,7 @@ local PASS_ORDER = {
 	{ key = "Power2x", emoji = "⚡" },
 	{ key = "Shards2x", emoji = "💎" },
 	{ key = "ExtraAltar", emoji = "🏛️" },
+	{ key = "BigBag", emoji = "🎒" },
 }
 local PRODUCT_ORDER = {
 	{ key = "StarterPack", emoji = "🎁" },

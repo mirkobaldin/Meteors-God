@@ -1,7 +1,7 @@
 -- Rarity weapons (Config/Meteors.Weapons): find all the meteors of a rarity and pick one of them
 -- (Index window) to become a weapon (a Tool whose head is that meteor). A swing hits the players in
--- front of you: they are knocked back and drop one meteor they picked up during the current shower
--- (it falls next to them and anyone can grab it). Like stealing eggs, with meteors.
+-- front of you: they are knocked back and drop one meteor they are carrying home (CarryService;
+-- it falls next to them and anyone can grab it). Everybody also has the basic Star Slap.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,7 +23,6 @@ local hitRemote
 local lastSwing = {} -- [player] = os.clock()
 local immuneUntil = {} -- [player] = os.clock()
 local owned = {} -- [player] = { [rarityId] = true } weapons already announced this session
-local rng = Random.new()
 
 local function part(props)
 	local p = Instance.new("Part")
@@ -52,7 +51,7 @@ local function makeTool(rarityId, headType)
 	local color = Meteors.RarityByID[rarityId].color
 	local tool = Instance.new("Tool")
 	tool.Name = toolName(rarityId, headType)
-	tool.ToolTip = rarityId .. " weapon: knock meteors out of other players during a shower"
+	tool.ToolTip = rarityId .. " weapon: knock meteors out of players carrying them home"
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
 	tool:SetAttribute("Rarity", rarityId)
@@ -117,24 +116,12 @@ local function makeTool(rarityId, headType)
 	return tool
 end
 
--- One meteor picked up in the current shower (not on the altar, not equipped, not exclusive).
-local function freshMeteor(player)
-	local data = services.DataService:Get(player)
-	if not data then
-		return nil
-	end
-	local list = {}
-	for uid, m in pairs(data.meteors) do
-		if m.fresh and m.fresh == services.CycleService.ShowerId and not m.altar and not m.paid and uid ~= data.equipped then
-			table.insert(list, uid)
-		end
-	end
-	return #list > 0 and list[rng:NextInteger(1, #list)] or nil
-end
-
 local function swing(player, tool)
 	local now = os.clock()
-	if now - (lastSwing[player] or 0) < W.Cooldown then
+	-- The Star Slap (no rarity) is slower and shorter than the rarity weapons.
+	local isSlap = tool:GetAttribute("Rarity") == nil
+	local range = isSlap and W.Range * 0.7 or W.Range
+	if now - (lastSwing[player] or 0) < (isSlap and W.Cooldown * 1.6 or W.Cooldown) then
 		return
 	end
 	lastSwing[player] = now
@@ -149,21 +136,15 @@ local function swing(player, tool)
 		if oroot and humanoid and humanoid.Health > 0 then
 			local offset = oroot.Position - root.Position
 			local flat = Vector3.new(offset.X, 0, offset.Z)
-			if offset.Magnitude <= W.Range and flat.Magnitude > 0.1 and flat.Unit:Dot(look) > 0.25
+			if offset.Magnitude <= range and flat.Magnitude > 0.1 and flat.Unit:Dot(look) > 0.25
 				and (immuneUntil[other] or 0) < now
 				and not services.LaunchService:Current(other) and not services.HuntService:IsHunting(other) then
 				immuneUntil[other] = now + W.Immunity
-				local dropped
-				local uid = freshMeteor(other)
-				if uid then
-					local m = services.MeteorService:TakeMeteor(other, uid)
-					if m then
-						dropped = m.t
-						services.ShowerService:Drop(m.t, m.m, oroot.Position + flat.Unit * 6)
-						services.MeteorService:PushSnapshot(other)
-						Notify.Toast(other, player.DisplayName .. " knocked your " .. m.t .. " out!", "bad")
-						Notify.Toast(player, "You knocked a " .. m.t .. " out of " .. other.DisplayName .. "!", "good")
-					end
+				-- Knocks one meteor they are carrying home out of their hands.
+				local dropped = services.CarryService:DropOne(other, oroot.Position + flat.Unit * 6)
+				if dropped then
+					Notify.Toast(other, player.DisplayName .. " knocked your " .. dropped .. " out!", "bad")
+					Notify.Toast(player, "You knocked a " .. dropped .. " out of " .. other.DisplayName .. "!", "good")
 				end
 				hitRemote:FireAllClients({
 					attacker = player.UserId,
@@ -176,6 +157,32 @@ local function swing(player, tool)
 			end
 		end
 	end
+end
+
+-- Everybody has the Star Slap from the start, so anyone can knock a meteor out of a carrier.
+local SLAP = "Star Slap"
+local function makeSlap(player)
+	local tool = Instance.new("Tool")
+	tool.Name = SLAP
+	tool.ToolTip = "Slap players carrying meteors home to make them drop one"
+	tool.CanBeDropped = false
+	tool.RequiresHandle = true
+	local handle = part({
+		Name = "Handle",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(1.4, 1.4, 1.4),
+		Material = Enum.Material.Neon,
+		Color = Color3.fromRGB(120, 220, 255),
+	})
+	handle.Parent = tool
+	local light = Instance.new("PointLight")
+	light.Color = handle.Color
+	light.Range = 8
+	light.Parent = handle
+	tool.Activated:Connect(function()
+		swing(player, tool)
+	end)
+	return tool
 end
 
 -- The meteor chosen as the weapon of a completed rarity (default: the strongest of the set).
@@ -206,6 +213,9 @@ function WeaponService:Refresh(player, announce)
 	local backpack = player:FindFirstChildOfClass("Backpack")
 	if not backpack then
 		return
+	end
+	if not backpack:FindFirstChild(SLAP) and not (player.Character and player.Character:FindFirstChild(SLAP)) then
+		makeSlap(player).Parent = backpack
 	end
 	for _, rarity in ipairs(Meteors.Rarities) do
 		local r = rarity.id
@@ -267,30 +277,13 @@ function WeaponService:Start()
 			pickWeapon(player, rarityId, typeId)
 		end
 	end)
-	services.DataService.PlayerLoaded:Connect(function(player, data)
-		-- Meteors carried from an old session are safe.
-		for _, m in pairs(data.meteors) do
-			m.fresh = nil
-		end
+	services.DataService.PlayerLoaded:Connect(function(player)
 		owned[player] = {}
 		WeaponService:Refresh(player, false)
 		player.CharacterAdded:Connect(function()
 			task.wait(0.5)
 			WeaponService:Refresh(player, false)
 		end)
-	end)
-	-- The shower is over: what you carried is yours for good.
-	services.CycleService.PhaseChanged:Connect(function(phase)
-		if phase ~= "Shower" then
-			for _, player in ipairs(Players:GetPlayers()) do
-				local data = services.DataService:Get(player)
-				if data then
-					for _, m in pairs(data.meteors) do
-						m.fresh = nil
-					end
-				end
-			end
-		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		lastSwing[player] = nil

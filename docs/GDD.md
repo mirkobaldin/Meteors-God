@@ -16,8 +16,10 @@
 ## 2. La mappa (dallo schizzo del proprietario, scala ×3)
 
 Vista dall'alto, i pianeti sono davanti (+Z). Altezze: case 88 > isolette delle comete 40 > tutto il resto 0.
-1. **Isola Centrale** (raggio 480): in mezzo il **Campo dei Meteoriti** (raggio 220) di roccia scura con crateri e
-   bordo luminoso; sopra, il vortice da cui piovono. Spawn sul retro, rivolto verso i ponti.
+1. **Isola Centrale** (raggio 480): in mezzo il **Campo di Magma** (raggio 220): crosta di basalto con crepe di lava
+   che partono da una pozza centrale (con la scultura della cometa), anello di lava intorno. **Ogni cometa che cade
+   scava un cratere** con il fondo fuso che si raffredda in 40 s; il campo si richiude a ogni nuova pioggia.
+   Sopra, il vortice da cui piovono. Spawn sul retro, rivolto verso il campo.
 2. **Dietro — 12 lotti a ventaglio (200°)**: ponte → **Isoletta delle Comete** (raggio 75, 4 piedistalli dove fluttuano i
    meteoriti dell'altare) → ponte → **Isola della Casa** (raggio 120, tempio segnaposto finché non ci sono i modelli).
    **Imposta Max Players del server = 12** (`Game.World.HouseCount`).
@@ -35,20 +37,35 @@ I colori dei materiali sono in `Config/Terrain.lua`.
   rende attivo in Lighting. In Output scrive `using skybox: <nome>`, oppure un avviso se non lo trova.
 - **Luce**: luce diurna (ClockTime 14,5, sole nascosto) per vedere bene tutto sotto lo skybox.
 - **Classifica**: top 10 pianeti distrutti (tutti i server, OrderedDataStore, ogni 2 minuti).
+- **Tema "Sky Ruins"** (uguale alla UI): arenaria consumata, rame verde acqua, rune azzurre. Ponti di lastre di pietra
+  con cordoli di rame e lanterne a runa; piattaforme di lancio = altari di pietra con cerchio di rune del colore del
+  tier e 4 obelischi.
+- **Props** (`Assets/Map`): posizioni fisse in `Game.Props.Layout` (statua del dio dietro lo spawn, fontana e lampioni
+  sul viale, due giardini ai lati, scultura della cometa nella pozza di lava, lampioni intorno al campo, telescopi
+  verso i pianeti, lampade e pilastro del nome su ogni isoletta). Dimensione per prop in `Game.Props.Size`, rotazione
+  extra in `Game.Props.Yaw` se un modello è girato.
 
 ## 3. Ciclo di gioco (5 minuti)
 
 | Fase | Durata | Cosa succede |
 |---|---|---|
 | ⏳ Via! | 4 s | Tutti vengono teletrasportati sulla **propria Isoletta delle Comete** e restano fermi: partono tutti dalla stessa distanza. |
-| ☄️ Pioggia | 60 s | Meteoriti neonati cadono sulla cittadella. Chi li raccoglie per primo li tiene. |
-| 🌙 Calma | 240 s | Fino alla prossima pioggia. |
+| ☄️ Pioggia | 40 s | ~12 comete cadono sul Campo di Magma (una ogni 3,2 s). Chi la prende **la trasporta**: è sua solo quando la riporta sulla sua isola. |
+| 🌙 Calma | 256 s | Fino alla prossima pioggia. |
+
+### Portare a casa le comete
+- La cometa raccolta fluttua sopra la testa; **diventa tua solo quando metti piede sulla tua Isoletta delle Comete o
+  sull'Isola della Casa** (una scia azzurra indica la strada).
+- Capienza **1** (Game Pass **Big Bag**: +2). Ogni cometa trasportata rallenta del 10% (minimo 60%).
+- Raccogliere richiede di tenere premuto più a lungo per le più rare (0,4 s Comune → 3 s Extraterrestre).
+- Chi ti colpisce (**Star Slap** per tutti, armi di rarità più forti) ti fa cadere una cometa trasportata, che chiunque
+  può raccogliere. Se muori cadono tutte; se cadi nel vuoto sono perse.
 
 - **Non c'è più un bombardamento a tempo**: i pianeti si colpiscono in qualsiasi momento dai ponti.
 
 - Il pianeta **conserva la vita** tra un ciclo e l'altro finché non viene distrutto.
 - Quando esplode: pioggia bonus di meteoriti con fortuna aumentata, Frammenti per tutti i contributori, arriva il pianeta successivo.
-- In Studio i tempi sono accorciati (20 s / 60 s) per testare.
+- In Studio i tempi sono uguali al gioco vero; `Game.Cycle.FastInStudio = true` li accorcia (20 s / 60 s) per testare.
 
 ## 4. Il lancio
 
@@ -216,6 +233,7 @@ Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Il Legendary Pl
 | 2x Potere | 199 | Potere/s ×2 |
 | 2x Frammenti | 149 | Frammenti ×2 |
 | Altare Extra | 149 | +1 slot altare (3 → 4) |
+| Big Bag | 199 | Trasporti 3 comete invece di 1 |
 
 ### Developer Products
 | Prodotto | Prezzo suggerito | Effetto |
@@ -234,6 +252,11 @@ Vita = VitaBase × (0,6 + 0,4 × giocatori presenti all'arrivo). Il Legendary Pl
 - Prezzi in chiaro, una sola valuta di gioco.
 
 ## 10. Interfaccia (stile simulator di successo)
+
+- **Grafica tema A "Sky Ruins"** (`art/ui/A`, ID in `Config/Assets.UI.Images`): finestre e pannelli con cornice di
+  pietra e rame, bottoni (principale ciano, blu, rosso, grigio = non disponibile) con stati hover/premuto, pillole
+  delle valute, barre, carte per rarità nell'Indice, tasto di chiusura, schermata iniziale con logo. Senza gli ID il
+  codice torna ai riquadri colorati di prima. Applicata da `Controllers/UI.lua` (UI.Panel, UI.Button, UI.Window).
 
 - **In alto a sinistra**: contatori 🏆 Pianeti distrutti e 💎 Frammenti.
 - **Sinistra**: griglia di pulsanti grandi: Meteoriti, Evoluzione (badge "!" quando puoi evolverti), Potenzia,
@@ -318,9 +341,8 @@ Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lan
 5 rarità (Comune, Rara, Epica, Leggendaria, Mitica) con 5 comete ciascuna + 2 **Extraterrestri** (le più rare, solo
 dal cielo). Elenco in `docs/COMETE_FAMIGLIE.md`. Quando trovi **tutte le comete di una rarità** sblocchi la sua arma e
 scegli nell'Index quale di quelle comete ne è la testa (Club, Hammer, Lance, Scythe, Mace, Ray Lance).
-Stile Steal an Egg: le comete raccolte **durante una pioggia** restano "addosso" finché la pioggia finisce; se un
-altro giocatore ti colpisce con un'arma vieni sbalzato via e **ti cade una di quelle comete** (non quelle
-sull'altare né quella equipaggiata), che chiunque può raccogliere. Ricarica 1,1 s, portata 11 stud, 2,5 s di
+Chi ti colpisce mentre **trasporti** comete verso casa ti sbalza e **te ne fa cadere una** (vedi "Portare a casa le
+comete"). Armi: ricarica 1,1 s, portata 11 stud; Star Slap (tutti): ricarica 1,8 s, portata 7,7 stud. 2,5 s di
 immunità; niente colpi su chi sta lanciando o è nella Cosmic Hunt.
 
 ### Idee del proprietario (da fare più avanti)

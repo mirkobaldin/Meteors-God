@@ -9,11 +9,13 @@ local UI = {}
 
 UI.Font = Enum.Font.GothamBold
 UI.TitleFont = Enum.Font.GothamBlack
+-- Theme A "Sky Ruins" (art/ui/A): weathered sandstone, teal copper, glowing cyan runes.
 UI.Colors = {
-	Panel = Color3.fromRGB(14, 16, 38),
-	PanelLight = Color3.fromRGB(34, 38, 78),
-	Gold = Color3.fromRGB(255, 205, 110),
-	Cyan = Color3.fromRGB(90, 220, 255),
+	Panel = Color3.fromRGB(20, 26, 42),
+	PanelLight = Color3.fromRGB(34, 46, 68),
+	Gold = Color3.fromRGB(236, 200, 140), -- sandstone: titles and highlights
+	Cyan = Color3.fromRGB(111, 216, 255),
+	Copper = Color3.fromRGB(79, 163, 160),
 	Text = Color3.fromRGB(255, 255, 255),
 	Muted = Color3.fromRGB(170, 175, 215),
 	Good = Color3.fromRGB(80, 210, 140),
@@ -38,6 +40,46 @@ function UI.New(className, props, children)
 	return inst
 end
 
+-- UI art (Config/Assets.UI.Images, uploaded from art/ui/A). Without it the code falls back to the
+-- plain colored frames. 9-slice rectangles come from art/ui/validation.json.
+local IMAGES = Assets.UI and Assets.UI.Images or {}
+local SLICE = {
+	frame_window = Rect.new(64, 64, 448, 448),
+	frame_panel = Rect.new(64, 64, 448, 448),
+	frame_tooltip = Rect.new(64, 64, 192, 192),
+	frame_banner = Rect.new(64, 64, 960, 192),
+	button = Rect.new(48, 48, 464, 112),
+	button_pressed = Rect.new(48, 50, 464, 114),
+	button_tab = Rect.new(47, 47, 209, 49),
+	pill = Rect.new(128, 48, 448, 80),
+	bar_back = Rect.new(32, 24, 480, 40),
+}
+
+function UI.Art(key)
+	return Assets.Image(IMAGES[key])
+end
+
+-- Puts a 9-slice image behind the children of `gui` (which turns transparent). Returns the image.
+function UI.Skin(gui, key, sliceKey, sliceScale)
+	local img = UI.Art(key)
+	if not img then
+		return nil
+	end
+	gui.BackgroundTransparency = 1
+	local skin = UI.New("ImageLabel", {
+		Name = "Skin",
+		BackgroundTransparency = 1,
+		Image = img,
+		ScaleType = SLICE[sliceKey or key] and Enum.ScaleType.Slice or Enum.ScaleType.Stretch,
+		SliceCenter = SLICE[sliceKey or key] or Rect.new(0, 0, 0, 0),
+		SliceScale = sliceScale or 0.5,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 0,
+		Parent = gui,
+	})
+	return skin
+end
+
 function UI.Corner(radius)
 	return UI.New("UICorner", { CornerRadius = radius or UDim.new(0, 12) })
 end
@@ -56,8 +98,20 @@ function UI.Padding(px)
 	return UI.New("UIPadding", { PaddingTop = u, PaddingBottom = u, PaddingLeft = u, PaddingRight = u })
 end
 
--- Dark glass panel with a thin gold edge.
+-- Stone panel with a copper frame (frame_panel), or a dark glass panel with a thin edge.
+-- With the art the panel itself is an ImageLabel (not a Frame with an image child), so list and
+-- grid layouts inside it keep working.
 function UI.Panel(props)
+	local art = UI.Art("frame_panel")
+	if art then
+		props.BackgroundTransparency = 1
+		props.BorderSizePixel = 0
+		props.Image = art
+		props.ScaleType = Enum.ScaleType.Slice
+		props.SliceCenter = SLICE.frame_panel
+		props.SliceScale = props.SliceScale or 0.25
+		return UI.New("ImageLabel", props)
+	end
 	props.BackgroundColor3 = props.BackgroundColor3 or UI.Colors.Panel
 	props.BackgroundTransparency = props.BackgroundTransparency or 0.12
 	props.BorderSizePixel = 0
@@ -87,9 +141,101 @@ function UI.Text(props)
 	return t
 end
 
+-- Which button art fits a background color: bright warm/green/cyan = main, red = red,
+-- blue/purple = blue, dark (disabled, not affordable) = the "off" tab.
+local function buttonStyle(color)
+	local h, sat, v = color:ToHSV()
+	if v < 0.5 then
+		return "off"
+	elseif sat > 0.4 and (h < 0.04 or h > 0.92) then
+		return "red"
+	elseif h >= 0.04 and h < 0.56 then
+		return "main"
+	end
+	return "blue"
+end
+
+local function buttonImages(style)
+	if style == "off" then
+		return { normal = "button_tab_off", hover = "button_tab_off", pressed = "button_tab_off", slice = "button_tab" }
+	end
+	local p = "button_" .. style .. "_"
+	return { normal = p .. "normal", hover = p .. "hover", pressed = p .. "pressed", slice = "button" }
+end
+
+-- Skins a TextButton with the button art; follows later BackgroundColor3 changes (state colors).
+-- Children are drawn over their parent, so the button's own text would be hidden by the art: it is
+-- shown by a child label that mirrors Text / TextColor3. Returns that label (nil without art).
+local function skinButton(b, autoText)
+	if not UI.Art("button_main_normal") then
+		return nil
+	end
+	local skin = UI.Skin(b, "button_main_normal", "button", 0.3)
+	-- UI.Button adds a 4 px UIPadding: the art still covers the whole button.
+	skin.Position = UDim2.fromOffset(-4, -4)
+	skin.Size = UDim2.new(1, 8, 1, 8)
+	local label = UI.New("TextLabel", {
+		Name = "Label",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Font = b.Font,
+		Text = b.Text,
+		RichText = b.RichText,
+		TextColor3 = b.TextColor3,
+		TextStrokeTransparency = b.TextStrokeTransparency,
+		TextScaled = true,
+		ZIndex = 2,
+		Parent = b,
+	})
+	b.TextTransparency = 1
+	b:GetPropertyChangedSignal("Text"):Connect(function()
+		label.Text = b.Text
+	end)
+	if not autoText then
+		b:GetPropertyChangedSignal("TextColor3"):Connect(function()
+			label.TextColor3 = b.TextColor3
+		end)
+	end
+	local hovered, held = false, false
+	local function apply()
+		local style = buttonStyle(b.BackgroundColor3)
+		local set = buttonImages(style)
+		local key = held and set.pressed or hovered and set.hover or set.normal
+		skin.Image = UI.Art(key) or skin.Image
+		skin.SliceCenter = SLICE[(held and set.slice == "button") and "button_pressed" or set.slice]
+		label.Position = UDim2.fromOffset(0, held and 2 or 0)
+		b.BackgroundTransparency = 1
+		if autoText then
+			label.TextColor3 = style == "main" and Color3.fromRGB(16, 30, 48) or UI.Colors.Text
+			label.TextStrokeTransparency = style == "main" and 1 or 0.4
+		end
+	end
+	b.AutoButtonColor = false
+	b.MouseEnter:Connect(function()
+		hovered = true
+		apply()
+	end)
+	b.MouseLeave:Connect(function()
+		hovered, held = false, false
+		apply()
+	end)
+	b.MouseButton1Down:Connect(function()
+		held = true
+		apply()
+	end)
+	b.MouseButton1Up:Connect(function()
+		held = false
+		apply()
+	end)
+	b:GetPropertyChangedSignal("BackgroundColor3"):Connect(apply)
+	apply()
+	return label
+end
+
 function UI.Button(props, onClick)
 	local maxSize = props.MaxTextSize or 24
 	props.MaxTextSize = nil
+	local autoText = props.TextColor3 == nil
 	props.BackgroundColor3 = props.BackgroundColor3 or UI.Colors.Gold
 	props.Font = props.Font or UI.TitleFont
 	props.TextColor3 = props.TextColor3 or Color3.fromRGB(35, 22, 8)
@@ -97,12 +243,17 @@ function UI.Button(props, onClick)
 	props.AutoButtonColor = true
 	props.BorderSizePixel = 0
 	local b = UI.New("TextButton", props)
-	UI.Corner(UDim.new(0, 12)).Parent = b
-	UI.New("UIGradient", {
-		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(190, 190, 210)),
-		Rotation = 90,
-		Parent = b,
-	})
+	local label = skinButton(b, autoText)
+	if label then
+		UI.New("UITextSizeConstraint", { MaxTextSize = maxSize, Parent = label })
+	else
+		UI.Corner(UDim.new(0, 12)).Parent = b
+		UI.New("UIGradient", {
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(190, 190, 210)),
+			Rotation = 90,
+			Parent = b,
+		})
+	end
 	UI.New("UITextSizeConstraint", { MaxTextSize = maxSize, Parent = b })
 	UI.Padding(4).Parent = b
 	if onClick then
@@ -185,13 +336,15 @@ function UI.SquareButton(parent, props, onClick)
 		BorderSizePixel = 0,
 		Parent = parent,
 	})
-	UI.Corner(UDim.new(0, 14)).Parent = b
-	UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = b
-	UI.New("UIGradient", {
-		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 160, 200)),
-		Rotation = 90,
-		Parent = b,
-	})
+	if not UI.Skin(b, "frame_tooltip", nil, 0.3) then
+		UI.Corner(UDim.new(0, 14)).Parent = b
+		UI.Stroke(Color3.fromRGB(10, 5, 20), 3, 0).Parent = b
+		UI.New("UIGradient", {
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 160, 200)),
+			Rotation = 90,
+			Parent = b,
+		})
+	end
 	UI.Icon(b, props.Icon, props.Emoji, {
 		Size = UDim2.new(0.8, 0, 0.62, 0),
 		Position = UDim2.new(0.1, 0, 0.04, 0),
@@ -251,7 +404,7 @@ function UI.Orb(parent, props, onClick)
 		Parent = holder,
 	})
 	UI.Corner(UDim.new(1, 0)).Parent = b
-	UI.Stroke(props.Ring or UI.Colors.Gold, 2.5, 0.1).Parent = b
+	UI.Stroke(props.Ring or UI.Colors.Copper, 3, 0.05).Parent = b
 	UI.New("UIGradient", {
 		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 130, 190)),
 		Rotation = 120,
@@ -290,13 +443,21 @@ function UI.Window(gui, props)
 		Visible = false,
 		Parent = gui,
 	})
+	-- The window art has a thick stone frame: everything moves `pad` pixels inwards.
+	local pad = 0
+	if window:IsA("ImageLabel") and UI.Art("frame_window") then
+		window.Image = UI.Art("frame_window")
+		window.SliceScale = 0.5
+		pad = 14
+	end
 	UI.New("UISizeConstraint", {
 		MaxSize = props.MaxSize or Vector2.new(900, 620),
 		MinSize = props.MinSize or Vector2.new(420, 300),
 		Parent = window,
 	})
 	local header = UI.New("Frame", {
-		Size = UDim2.new(1, 0, 0, 62),
+		Position = UDim2.fromOffset(pad, pad),
+		Size = UDim2.new(1, -pad * 2, 0, 62),
 		BackgroundTransparency = 1,
 		Parent = window,
 	})
@@ -308,7 +469,7 @@ function UI.Window(gui, props)
 		Parent = header,
 	})
 	UI.Corner(UDim.new(1, 0)).Parent = badge
-	UI.Stroke(UI.Colors.Gold, 2, 0.1).Parent = badge
+	UI.Stroke(UI.Colors.Copper, 2.5, 0).Parent = badge
 	UI.Icon(badge, props.Icon, props.Emoji, {
 		Size = UDim2.fromScale(0.7, 0.7),
 		Position = UDim2.fromScale(0.15, 0.15),
@@ -325,10 +486,10 @@ function UI.Window(gui, props)
 		Parent = header,
 	})
 	UI.New("Frame", {
-		Position = UDim2.new(0, 16, 1, -1),
-		Size = UDim2.new(1, -32, 0, 1),
-		BackgroundColor3 = UI.Colors.Gold,
-		BackgroundTransparency = 0.5,
+		Position = UDim2.new(0, 24, 1, -1),
+		Size = UDim2.new(1, -48, 0, 2),
+		BackgroundColor3 = UI.Colors.Copper,
+		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
 		Parent = header,
 	})
@@ -345,16 +506,30 @@ function UI.Window(gui, props)
 		BorderSizePixel = 0,
 		Parent = header,
 	})
-	UI.Corner(UDim.new(1, 0)).Parent = close
-	UI.Stroke(UI.Colors.Gold, 1.5, 0.3).Parent = close
-	UI.Padding(9).Parent = close
+	local closeArt = UI.Art("button_close")
+	if closeArt then
+		close.Text = ""
+		close.BackgroundTransparency = 1
+		close.Size = UDim2.fromOffset(46, 46)
+		UI.New("ImageLabel", {
+			BackgroundTransparency = 1,
+			Image = closeArt,
+			ScaleType = Enum.ScaleType.Fit,
+			Size = UDim2.fromScale(1, 1),
+			Parent = close,
+		})
+	else
+		UI.Corner(UDim.new(1, 0)).Parent = close
+		UI.Stroke(UI.Colors.Gold, 1.5, 0.3).Parent = close
+		UI.Padding(9).Parent = close
+	end
 	close.Activated:Connect(function()
 		window.Visible = false
 	end)
 	local content = UI.New("Frame", {
 		Name = "Content",
-		Size = UDim2.new(1, -32, 1, -80),
-		Position = UDim2.fromOffset(16, 70),
+		Size = UDim2.new(1, -32 - pad * 2, 1, -80 - pad * 2),
+		Position = UDim2.fromOffset(16 + pad, 70 + pad),
 		BackgroundTransparency = 1,
 		Parent = window,
 	})

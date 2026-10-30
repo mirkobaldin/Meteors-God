@@ -35,7 +35,8 @@ local OFFERS = {
 	{ key = "LegendaryPlanet", kind = "product", title = "Legendary Planet", emoji = "⭐", icon = Icons.Planets },
 }
 
-local function pill(parent, order, iconId, emoji, color)
+-- art: pill image of the UI art (pill_shards, ...) with the icon slot on the left.
+local function pill(parent, order, iconId, emoji, color, art)
 	local f = UI.New("Frame", {
 		Size = UDim2.fromOffset(176, 42),
 		BackgroundColor3 = UI.Colors.Panel,
@@ -44,13 +45,16 @@ local function pill(parent, order, iconId, emoji, color)
 		LayoutOrder = order,
 		Parent = parent,
 	})
-	UI.Corner(UDim.new(1, 0)).Parent = f
-	UI.Stroke(color, 1.5, 0.3).Parent = f
+	local skinned = UI.Skin(f, art, "pill", 42 / 128) ~= nil
+	if not skinned then
+		UI.Corner(UDim.new(1, 0)).Parent = f
+		UI.Stroke(color, 1.5, 0.3).Parent = f
+	end
 	local bubble = UI.New("Frame", {
 		Position = UDim2.fromOffset(3, 3),
 		Size = UDim2.fromOffset(36, 36),
 		BackgroundColor3 = color,
-		BackgroundTransparency = 0.6,
+		BackgroundTransparency = skinned and 1 or 0.6,
 		BorderSizePixel = 0,
 		Parent = f,
 	})
@@ -78,8 +82,10 @@ local function thinBar(parent, props)
 		BorderSizePixel = 0,
 		Parent = parent,
 	})
-	UI.Corner(UDim.new(1, 0)).Parent = back
-	UI.Stroke(props.Color, 1, 0.4).Parent = back
+	if not UI.Skin(back, "bar_back", nil, 0.5) then
+		UI.Corner(UDim.new(1, 0)).Parent = back
+		UI.Stroke(props.Color, 1, 0.4).Parent = back
+	end
 	local fill = UI.New("Frame", {
 		Size = UDim2.fromScale(0, 1),
 		BackgroundColor3 = props.Color,
@@ -103,9 +109,9 @@ local function buildTopLeft()
 	})
 	refs.topLeft = f
 	UI.New("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
-	refs.planets = pill(f, 1, Icons.Planets, "🪐", Color3.fromRGB(255, 205, 110))
-	refs.shards = pill(f, 2, Icons.Shards, "💎", Color3.fromRGB(90, 220, 255))
-	refs.stardust = pill(f, 3, Icons.Stardust, "✨", Color3.fromRGB(200, 160, 255))
+	refs.planets = pill(f, 1, Icons.Planets, "🪐", Color3.fromRGB(255, 205, 110), "pill_power")
+	refs.shards = pill(f, 2, Icons.Shards, "💎", Color3.fromRGB(90, 220, 255), "pill_shards")
+	refs.stardust = pill(f, 3, Icons.Stardust, "✨", Color3.fromRGB(200, 160, 255), "pill_stardust")
 end
 
 local function buildDock()

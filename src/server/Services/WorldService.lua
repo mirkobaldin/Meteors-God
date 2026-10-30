@@ -10,6 +10,7 @@ local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
@@ -36,9 +37,12 @@ local worldFolder
 local terrain = workspace.Terrain
 local trng = Random.new(7)
 
-local MARBLE = Color3.fromRGB(232, 224, 240)
-local GOLD = Color3.fromRGB(205, 145, 70)
-local GOLD_LIGHT = Color3.fromRGB(255, 195, 100)
+-- Theme "Sky Ruins" (same as the UI art): weathered sandstone, teal copper, glowing cyan runes.
+-- (The old names stay: MARBLE = stone, GOLD = copper, GOLD_LIGHT = rune glow.)
+local MARBLE = Color3.fromRGB(205, 178, 138)
+local GOLD = Color3.fromRGB(79, 163, 160)
+local GOLD_LIGHT = Color3.fromRGB(111, 216, 255)
+local STONE_DARK = Color3.fromRGB(140, 115, 96)
 local GLITCH_COLORS = {
 	Color3.fromRGB(80, 220, 255),
 	Color3.fromRGB(255, 80, 200),
@@ -97,35 +101,66 @@ local function label(parent, text, size, offset, color)
 	return t, bb
 end
 
--- Walkable bridge between two points: marble deck with golden rails.
+-- Walkable bridge between two points: a path of big weathered stone slabs (slightly irregular), low
+-- copper curbs and a pair of rune lanterns every ~30 studs.
 local function bridge(from, to, width, props)
 	props = props or {}
 	local flat = Vector3.new(to.X - from.X, 0, to.Z - from.Z)
 	local length = (to - from).Magnitude
-	local cf = CFrame.lookAt((from + to) / 2, to)
-	part({
-		Name = props.Name or "Bridge",
-		Size = Vector3.new(width, 1.2, length + 2),
-		CFrame = cf * CFrame.new(0, -0.6, 0),
-		Material = props.Material or Enum.Material.Marble,
-		Color = props.Color or MARBLE,
-	})
+	local cf = CFrame.lookAt(from, to)
+	local brng = Random.new(math.floor(from.X * 7 + from.Z * 13))
+	local z = 0
+	while z < length do
+		local slab = math.min(brng:NextNumber(7, 11), length - z + 1)
+		part({
+			Name = props.Name or "Bridge",
+			Size = Vector3.new(width * brng:NextNumber(0.9, 1), 2.4, slab + 0.8),
+			CFrame = cf * CFrame.new(brng:NextNumber(-0.5, 0.5), -1.2, -(z + slab / 2)) * CFrame.Angles(0, math.rad(brng:NextNumber(-2.5, 2.5)), 0),
+			Material = props.Material or Enum.Material.Sandstone,
+			Color = props.Color or MARBLE:Lerp(STONE_DARK, brng:NextNumber(0, 0.6)),
+		})
+		z += slab
+	end
 	if props.rails ~= false then
 		for _, side in ipairs({ -1, 1 }) do
 			part({
 				Name = "BridgeRail",
-				Size = Vector3.new(0.8, 1.6, length + 2),
-				CFrame = cf * CFrame.new(side * (width / 2 - 0.4), 0.8, 0),
-				Material = Enum.Material.Neon,
-				Color = GOLD_LIGHT,
-				Transparency = 0.15,
+				Size = Vector3.new(0.9, 1.2, length),
+				CFrame = cf * CFrame.new(side * (width / 2 + 0.2), 0.4, -length / 2),
+				Material = Enum.Material.Metal,
+				Color = GOLD,
 			})
+		end
+		local lanterns = math.max(1, math.floor(length / 30))
+		for i = 0, lanterns do
+			local at = cf * CFrame.new(0, 0, -length * i / lanterns)
+			for _, side in ipairs({ -1, 1 }) do
+				local post = at * CFrame.new(side * (width / 2 + 1), 0, 0)
+				part({ Name = "LanternPost", Size = Vector3.new(1.6, 5, 1.6), CFrame = post * CFrame.new(0, 2.5, 0), Material = Enum.Material.Sandstone, Color = STONE_DARK })
+				part({ Name = "LanternCap", Size = Vector3.new(2.2, 0.6, 2.2), CFrame = post * CFrame.new(0, 5.3, 0), Material = Enum.Material.Metal, Color = GOLD })
+				local rune = part({
+					Name = "LanternRune",
+					Size = Vector3.new(1, 1, 1),
+					CFrame = post * CFrame.new(0, 6.3, 0) * CFrame.Angles(0, math.rad(45), math.rad(45)),
+					Material = Enum.Material.Neon,
+					Color = GOLD_LIGHT,
+					CanCollide = false,
+					CanQuery = false,
+				})
+				if i % 2 == 0 then
+					local light = Instance.new("PointLight")
+					light.Color = GOLD_LIGHT
+					light.Range = 14
+					light.Brightness = 1.2
+					light.Parent = rune
+				end
+			end
 		end
 	end
 	return flat
 end
 
--- Asgard-style golden tower: stacked tapering blocks, glowing trims and a sharp spike.
+-- Tower: stacked tapering copper blocks, glowing rune trims and a sharp spike.
 local function tower(base, height, width)
 	local steps = 4
 	local y = base.Y
@@ -310,34 +345,73 @@ end
 
 -- Pads -------------------------------------------------------------------------------
 
--- Launch pad: big glowing disc in the tier color with a column of light, visible from far away.
+-- Launch altar: a round stone platform with a copper ring, a rune circle in the tier color and four
+-- small obelisks with glowing tips. The glowing center is the pad you stand on.
 local function makePad(index, position, lookAt, returnCFrame, tier, padsFolder)
 	local tierDef = Planets.Tiers[tier]
 	local R = W.LaunchPadRadius
-	disc(position - Vector3.new(0, 0.6, 0), R + 2.5, 1.2, {
+	disc(position - Vector3.new(0, 1, 0), R + 4, 2, {
 		Name = "PadBase",
-		Material = Enum.Material.Marble,
+		Material = Enum.Material.Sandstone,
 		Color = MARBLE,
+		Parent = padsFolder,
+	})
+	disc(position - Vector3.new(0, 0.3, 0), R + 4.6, 0.8, {
+		Name = "PadCopper",
+		Material = Enum.Material.Metal,
+		Color = GOLD,
+		CanCollide = false,
 		Parent = padsFolder,
 	})
 	local pad = disc(position, R, 0.6, {
 		Name = "LaunchPad" .. index,
-		Material = Enum.Material.Neon,
-		Color = tierDef.color,
+		Material = Enum.Material.Slate,
+		Color = Color3.fromRGB(46, 52, 66),
 		CanCollide = false,
 		Parent = padsFolder,
 	})
 	pad.CFrame = CFrame.lookAt(position, Vector3.new(lookAt.X, position.Y, lookAt.Z)) * CFrame.Angles(0, 0, math.rad(90))
-	-- Low glowing ring around the pad (visible from far, but never in the way of the camera).
-	disc(position + Vector3.new(0, 0.4, 0), R + 1.5, 0.3, {
-		Name = "PadRing",
+	-- Rune circle and core glow in the tier color (low, never in the way of the camera).
+	disc(position + Vector3.new(0, 0.35, 0), R - 1, 0.2, {
+		Name = "PadRune",
 		Material = Enum.Material.Neon,
-		Color = Color3.new(1, 1, 1),
-		Transparency = 0.3,
+		Color = tierDef.color,
+		Transparency = 0.45,
 		CanCollide = false,
 		CanQuery = false,
 		Parent = padsFolder,
 	})
+	disc(position + Vector3.new(0, 0.45, 0), R - 2.2, 0.2, {
+		Name = "PadInner",
+		Material = Enum.Material.Slate,
+		Color = Color3.fromRGB(46, 52, 66),
+		CanCollide = false,
+		CanQuery = false,
+		Parent = padsFolder,
+	})
+	disc(position + Vector3.new(0, 0.55, 0), R * 0.35, 0.2, {
+		Name = "PadCore",
+		Material = Enum.Material.Neon,
+		Color = tierDef.color,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = padsFolder,
+	})
+	for k = 0, 3 do
+		local a = math.rad(45 + k * 90)
+		local at = position + Vector3.new(math.cos(a), 0, math.sin(a)) * (R + 2.6)
+		part({ Name = "PadObelisk", Size = Vector3.new(1.8, 7, 1.8), CFrame = CFrame.new(at + Vector3.new(0, 3.5, 0)), Material = Enum.Material.Sandstone, Color = STONE_DARK, Parent = padsFolder })
+		part({
+			Name = "PadObeliskTip",
+			Size = Vector3.new(1.2, 1.2, 1.2),
+			CFrame = CFrame.new(at + Vector3.new(0, 7.8, 0)) * CFrame.Angles(math.rad(45), 0, math.rad(45)),
+			Material = Enum.Material.Neon,
+			Color = tierDef.color,
+			CanCollide = false,
+			CanQuery = false,
+			Parent = padsFolder,
+		})
+	end
 	local text, bb = label(pad, "LAUNCH · " .. tierDef.name, UDim2.new(22, 0, 4, 0), Vector3.new(0, 14, 0),
 		tierDef.color:Lerp(Color3.new(1, 1, 1), 0.4))
 	bb.MaxDistance = 600
@@ -350,36 +424,97 @@ end
 
 -- Central island and Meteor Field -------------------------------------------------------
 
-local function buildCenter()
-	island(Vector3.zero, W.CenterRadius, W.CenterRadius * 0.7)
-	-- Meteor Field: dark scorched rock with small craters, a glowing rim.
+local craterFolder
+
+-- Rebuilds the magma field: basalt crust with lava cracks from the middle and a lava ring around it.
+function WorldService:ResetField()
+	if craterFolder then
+		craterFolder:ClearAllChildren()
+	end
+	if not W.GenerateTerrain then
+		return
+	end
 	local f = W.FieldCenter
-	if W.GenerateTerrain then
-		terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 4, 0)), 8, W.FieldRadius, Enum.Material.Basalt)
-		for _ = 1, 40 do
-			local a = trng:NextNumber(0, math.pi * 2)
-			local d = trng:NextNumber(12, W.FieldRadius - 14)
-			local cr = trng:NextNumber(5, 10)
-			terrain:FillBall(f + Vector3.new(math.cos(a) * d, cr * 0.75, math.sin(a) * d), cr, Enum.Material.Air)
+	local frng = Random.new(11) -- same cracks every time
+	terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 6, 0)), 12, W.FieldRadius + 8, Enum.Material.CrackedLava)
+	terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 6, 0)), 12, W.FieldRadius, Enum.Material.Basalt)
+	terrain:FillCylinder(CFrame.new(f - Vector3.new(0, 4, 0)), 8, 26, Enum.Material.CrackedLava)
+	for k = 1, 11 do
+		local a = (k + frng:NextNumber(-0.3, 0.3)) / 11 * math.pi * 2
+		local d = 22
+		while d < W.FieldRadius - 6 do
+			a += frng:NextNumber(-0.12, 0.12)
+			terrain:FillBall(f + Vector3.new(math.cos(a) * d, -3.5, math.sin(a) * d), frng:NextNumber(3.5, 5), Enum.Material.CrackedLava)
+			d += 7
 		end
 	end
-	disc(f + Vector3.new(0, 0.1, 0), W.FieldRadius + 3, 0.3, {
-		Name = "FieldRim",
+end
+
+-- A meteor landed at `ground`: digs a crater lined with lava, with a molten glow at the bottom that
+-- cools down. Returns the bottom of the crater (where the meteor rests), or nil off the field.
+function WorldService:Crater(ground, radius)
+	local f = W.FieldCenter
+	local flat = Vector3.new(ground.X - f.X, 0, ground.Z - f.Z)
+	if not W.GenerateTerrain or flat.Magnitude > W.FieldRadius - radius then
+		return nil
+	end
+	local surface = Vector3.new(ground.X, f.Y, ground.Z)
+	terrain:FillBall(surface - Vector3.new(0, radius * 0.2, 0), radius * 0.75, Enum.Material.CrackedLava)
+	terrain:FillBall(surface + Vector3.new(0, radius * 0.6, 0), radius, Enum.Material.Air)
+	local bottom = surface - Vector3.new(0, radius * 0.4, 0)
+	local glow = part({
+		Name = "Molten",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.4, radius * 1.1, radius * 1.1),
+		CFrame = CFrame.new(bottom + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, 0, math.rad(90)),
 		Material = Enum.Material.Neon,
-		Color = Color3.fromRGB(255, 120, 60),
-		Transparency = 0.35,
+		Color = Color3.fromRGB(255, 140, 40),
+		Transparency = 0.15,
 		CanCollide = false,
 		CanQuery = false,
+		Parent = craterFolder,
 	})
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 120, 40)
+	light.Range = radius * 2.5
+	light.Brightness = 3
+	light.Parent = glow
+	local embers = Instance.new("ParticleEmitter")
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 200, 80), Color3.fromRGB(255, 70, 20))
+	embers.LightEmission = 1
+	embers.Size = NumberSequence.new(0.5, 0)
+	embers.Lifetime = NumberRange.new(1, 2)
+	embers.Rate = 12
+	embers.Speed = NumberRange.new(4, 9)
+	embers.SpreadAngle = Vector2.new(25, 25)
+	embers.EmissionDirection = Enum.NormalId.Right -- the cylinder's axis points up
+	embers.Parent = glow
+	-- Cools down in 40 s, then only the crater stays.
+	TweenService:Create(glow, TweenInfo.new(40), { Color = Color3.fromRGB(90, 20, 10), Transparency = 0.7 }):Play()
+	TweenService:Create(light, TweenInfo.new(40), { Brightness = 0 }):Play()
+	task.delay(25, function()
+		embers.Enabled = false
+	end)
+	task.delay(41, function()
+		glow:Destroy()
+	end)
+	return bottom
+end
+
+local function buildCenter()
+	island(Vector3.zero, W.CenterRadius, W.CenterRadius * 0.7)
+	-- Meteor Field: a magma field (dark crust, glowing cracks, a lava ring around it). Every meteor
+	-- that lands digs a molten crater (WorldService:Crater); the field heals at every new shower.
+	WorldService:ResetField()
 	-- The vortex meteors pour out of, high above the field.
-	disc(f + Vector3.new(0, 420, 0), W.FieldRadius * 0.8, 3, {
+	disc(W.FieldCenter + Vector3.new(0, 420, 0), W.FieldRadius * 0.8, 3, {
 		Name = "SkyVortex",
 		Material = Enum.Material.ForceField,
 		Color = Color3.fromRGB(170, 110, 255),
 		CanCollide = false,
 		CanQuery = false,
 	})
-	-- Golden towers around the island edge, between the bridges.
+	-- Copper towers around the island edge, between the bridges.
 	for _, deg in ipairs({ 95, 125, 235, 265 }) do
 		local a = math.rad(deg)
 		tower(Vector3.new(math.sin(a), 0, math.cos(a)) * (W.CenterRadius - 40), 130, 24)
@@ -413,8 +548,8 @@ buildHouseLectern = function(center, parent)
 	local model = Instance.new("Model")
 	model.Name = "HouseLectern"
 	local base = center * CFrame.new(26, 0, -100)
-	local root = part({ Name = "LecternBase", Size = Vector3.new(7, 1, 7), CFrame = base * CFrame.new(0, 0.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
-	part({ Name = "LecternPillar", Size = Vector3.new(2.6, 5, 2.6), CFrame = base * CFrame.new(0, 3.5, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	local root = part({ Name = "LecternBase", Size = Vector3.new(7, 1, 7), CFrame = base * CFrame.new(0, 0.5, 0), Material = Enum.Material.Sandstone, Color = MARBLE, Parent = model })
+	part({ Name = "LecternPillar", Size = Vector3.new(2.6, 5, 2.6), CFrame = base * CFrame.new(0, 3.5, 0), Material = Enum.Material.Sandstone, Color = MARBLE, Parent = model })
 	local top = part({
 		Name = "LecternTop",
 		Size = Vector3.new(5, 0.6, 3.6),
@@ -444,7 +579,7 @@ local function placeholderHouse(cf, parent)
 	local model = Instance.new("Model")
 	model.Name = "Placeholder"
 	local pos = cf.Position
-	disc(pos + Vector3.new(0, 0.75 * s, 0), 14 * s, 1.5 * s, { Name = "Base", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	disc(pos + Vector3.new(0, 0.75 * s, 0), 14 * s, 1.5 * s, { Name = "Base", Material = Enum.Material.Sandstone, Color = MARBLE, Parent = model })
 	for k = 0, 5 do
 		local a = math.rad(30 + k * 60)
 		part({
@@ -452,12 +587,12 @@ local function placeholderHouse(cf, parent)
 			Shape = Enum.PartType.Cylinder,
 			Size = Vector3.new(16 * s, 2.6 * s, 2.6 * s),
 			CFrame = CFrame.new(pos + Vector3.new(math.cos(a) * 10 * s, 9.5 * s, math.sin(a) * 10 * s)) * CFrame.Angles(0, 0, math.rad(90)),
-			Material = Enum.Material.Marble,
+			Material = Enum.Material.Sandstone,
 			Color = MARBLE,
 			Parent = model,
 		})
 	end
-	disc(pos + Vector3.new(0, 18.2 * s, 0), 13 * s, 1.4 * s, { Name = "Roof", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	disc(pos + Vector3.new(0, 18.2 * s, 0), 13 * s, 1.4 * s, { Name = "Roof", Material = Enum.Material.Sandstone, Color = MARBLE, Parent = model })
 	part({
 		Name = "Dome",
 		Shape = Enum.PartType.Ball,
@@ -488,7 +623,7 @@ local function pedestal(cf, index, parent)
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(9, 7, 7),
 		CFrame = CFrame.new(base + Vector3.new(0, 4.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Material = Enum.Material.Marble,
+		Material = Enum.Material.Sandstone,
 		Color = MARBLE,
 		Parent = parent,
 	})
@@ -591,7 +726,7 @@ local function buildShop()
 	-- Shop stall: marble counter, golden canopy, a prompt that opens the shop.
 	local stall = Instance.new("Model")
 	stall.Name = "ShopStall"
-	part({ Name = "Counter", Size = Vector3.new(22 * s, 4 * s, 5 * s), CFrame = front * CFrame.new(0, 2 * s, 0), Material = Enum.Material.Marble, Color = MARBLE, Parent = stall })
+	part({ Name = "Counter", Size = Vector3.new(22 * s, 4 * s, 5 * s), CFrame = front * CFrame.new(0, 2 * s, 0), Material = Enum.Material.Sandstone, Color = MARBLE, Parent = stall })
 	for _, x in ipairs({ -10, 10 }) do
 		part({ Name = "Post", Size = Vector3.new(1.6 * s, 14 * s, 1.6 * s), CFrame = front * CFrame.new(x * s, 7 * s, 3 * s), Material = Enum.Material.Foil, Color = GOLD, Parent = stall })
 	end
@@ -626,7 +761,7 @@ local function buildFusionReactor()
 	local model = Instance.new("Model")
 	model.Name = "FusionReactor"
 	local front = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
-	disc(pos + Vector3.new(0, 1.5, 0), 42, 3, { Name = "Base", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	disc(pos + Vector3.new(0, 1.5, 0), 42, 3, { Name = "Base", Material = Enum.Material.Sandstone, Color = MARBLE, Parent = model })
 	disc(pos + Vector3.new(0, 3.2, 0), 34, 0.6, { Name = "BaseTrim", Material = Enum.Material.Foil, Color = GOLD, Parent = model })
 	-- Four heavy pylons with glass tubes.
 	for k = 0, 3 do
@@ -687,7 +822,7 @@ local function buildHuntPortal()
 	local model = Instance.new("Model")
 	model.Name = "HuntPortal"
 	local face = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
-	disc(pos + Vector3.new(0, 1.5, 0), 34, 3, { Name = "Base", Material = Enum.Material.Marble, Color = MARBLE, Parent = model })
+	disc(pos + Vector3.new(0, 1.5, 0), 34, 3, { Name = "Base", Material = Enum.Material.Sandstone, Color = MARBLE, Parent = model })
 	local center = face * CFrame.new(0, 34, 0)
 	for i = 1, 28 do
 		local a = i / 28 * math.pi * 2
@@ -815,7 +950,7 @@ local function buildLane(lane, padsFolder)
 		island(isletPos, W.PadIsletRadius, W.PadIsletRadius * 1.8)
 		disc(isletPos + Vector3.new(0, 0.6, 0), W.PadIsletRadius - 2, 1.2, {
 			Name = "PadPlatform",
-			Material = Enum.Material.Marble,
+			Material = Enum.Material.Sandstone,
 			Color = MARBLE,
 		})
 		local fromHub = (isletPos - platform).Unit
@@ -1062,6 +1197,7 @@ function WorldService:AssignAltar(player)
 			altar.owner = player
 			altar.sign.Text = player.DisplayName
 			altar.model:SetAttribute("OwnerUserId", player.UserId)
+			player:SetAttribute("PlotPosition", altar.display.Position) -- where carried meteors go (CarryService)
 			return altar
 		end
 	end
@@ -1128,6 +1264,9 @@ function WorldService:Init()
 	worldFolder = Instance.new("Folder")
 	worldFolder.Name = "World"
 	worldFolder.Parent = workspace
+	craterFolder = Instance.new("Folder")
+	craterFolder.Name = "Craters"
+	craterFolder.Parent = worldFolder
 
 	setupLighting()
 	setupTerrainColors()
@@ -1148,39 +1287,44 @@ end
 
 -- Props ---------------------------------------------------------------------------------------
 
--- Scatters the props of ReplicatedStorage.Assets.Props on the islands (central island ring, shop
--- and leaderboard islands, the back of every house island and comet islet). Only on terrain
--- (never on bridges or buildings), upright, resized between Props.MinSize and MaxSize, random turn.
-local function scatterProps()
-	-- Props live in Assets/Props or Assets/Map (everything there except the "Citadel" custom map).
-	local templates = AssetLibrary.All("Props")
-	for _, t in ipairs(AssetLibrary.All("Map")) do
-		if t.Name ~= "Citadel" then
-			table.insert(templates, t)
+-- Places the props of ReplicatedStorage.Assets/Map (and Assets/Props) following Game.Props.Layout:
+-- each entry is one prop at a spot relative to an anchor (spawn, islets, houses...), on the ground
+-- below it (only on terrain, never on bridges or buildings), upright, at its configured size.
+local function placeProps()
+	local templates = {}
+	for _, category in ipairs({ "Props", "Map" }) do
+		for _, t in ipairs(AssetLibrary.All(category)) do
+			if t.Name ~= "Citadel" then
+				templates[string.lower(t.Name)] = t
+			end
 		end
-	end
-	print(string.format("[Props] %d prop models found in Assets/Props and Assets/Map", #templates))
-	if #templates == 0 then
-		return
 	end
 	local P = Game.Props
 	local tilt = P.TiltX or learnedTilt or 90
-	local prng = Random.new(7)
 	local folder = Instance.new("Folder")
 	folder.Name = "Props"
 	folder.Parent = worldFolder
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { folder }
-	local index = 0
+	local placed, skipped, missing = 0, 0, {}
 
-	local function place(pos)
-		local hit = workspace:Raycast(pos + Vector3.new(0, 300, 0), Vector3.new(0, -600, 0), params)
-		if not hit or hit.Instance ~= terrain then
-			return -- not on open ground (bridge, building, void)
+	local function spawnProp(name, cf, float)
+		local template = templates[string.lower(name)]
+		if not template then
+			missing[name] = true
+			return
 		end
-		index += 1
-		local prop = templates[(index - 1) % #templates + 1]:Clone()
+		local spot = cf.Position
+		if not float then
+			local hit = workspace:Raycast(spot + Vector3.new(0, 300, 0), Vector3.new(0, -600, 0), params)
+			if not hit or hit.Instance ~= terrain then
+				skipped += 1
+				return -- not on open ground (bridge, building, void)
+			end
+			spot = hit.Position
+		end
+		local prop = template:Clone()
 		if prop:IsA("BasePart") then
 			local m = Instance.new("Model")
 			prop.Parent = m
@@ -1201,51 +1345,70 @@ local function scatterProps()
 		end
 		local ext = maxV - minV
 		local big = math.max(ext.X, ext.Y, ext.Z)
-		local target = math.clamp(big, P.MinSize, P.MaxSize)
-		if big > 0.01 and math.abs(target - big) > 0.01 then
+		local target = P.Size[string.lower(name)] or 12
+		if big > 0.01 then
 			prop:ScaleTo(prop:GetScale() * target / big)
 			minV, maxV = worldBounds(prop)
 		end
 		local c = (minV + maxV) / 2
-		prop.WorldPivot = CFrame.new(c.X, minV.Y, c.Z)
-		prop:PivotTo(CFrame.new(hit.Position) * CFrame.Angles(0, prng:NextNumber(0, math.pi * 2), 0))
+		prop.WorldPivot = CFrame.new(c.X, float and c.Y or minV.Y, c.Z)
+		local turn = math.rad(P.Yaw[string.lower(name)] or 0)
+		prop:PivotTo(CFrame.new(spot) * (cf - cf.Position) * CFrame.Angles(0, turn, 0))
 		prop.Parent = folder
+		placed += 1
 	end
 
-	local function ring(center, rMin, rMax, count, skipDir, skipCos)
-		for i = 1, count do
-			local a = (i + prng:NextNumber(-0.3, 0.3)) / count * math.pi * 2
-			local dir = Vector3.new(math.cos(a), 0, math.sin(a))
-			if not skipDir or dir:Dot(skipDir) < skipCos then
-				place(center + dir * prng:NextNumber(rMin, rMax))
+	-- Anchors: CFrames whose LookVector is "forward" (see Game.Props).
+	local W = Game.World
+	local function flatLook(from, to)
+		return CFrame.lookAt(from, Vector3.new(to.X, from.Y, to.Z))
+	end
+	local anchors = {
+		world = { CFrame.new(W.FieldCenter) },
+		spawn = { flatLook(W.SpawnPosition, W.FieldCenter) },
+		shop = { flatLook(W.ShopIsland.center, Vector3.zero) },
+		leaderboard = { flatLook(W.LeaderboardIsland.center, Vector3.zero) },
+		islet = {},
+		house = {},
+	}
+	for _, altar in ipairs(WorldService.Altars) do
+		table.insert(anchors.islet, altar.display)
+		table.insert(anchors.house, altar.center)
+	end
+
+	-- The facing of a prop at `pos` (world) for an anchor `cf`.
+	local function facing(cf, pos, face)
+		local flat = Vector3.new(cf.Position.X - pos.X, 0, cf.Position.Z - pos.Z)
+		if (face == "center" or face == "out") and flat.Magnitude > 0.5 then
+			local dir = face == "center" and flat.Unit or -flat.Unit
+			return CFrame.lookAt(pos, pos + dir)
+		end
+		local look = face == "back" and -cf.LookVector or cf.LookVector
+		look = Vector3.new(look.X, 0, look.Z)
+		return look.Magnitude > 0.01 and CFrame.lookAt(pos, pos + look.Unit) or CFrame.new(pos)
+	end
+
+	for _, entry in ipairs(P.Layout) do
+		for _, cf in ipairs(anchors[entry.anchor] or {}) do
+			if entry.ring then
+				local count, radius = entry.ring[1], entry.ring[2]
+				for i = 1, count do
+					local a = (i - 0.5) / count * math.pi * 2
+					local pos = cf.Position + Vector3.new(math.cos(a) * radius, entry.at.Y, math.sin(a) * radius)
+					spawnProp(entry.prop, facing(cf, pos, entry.face), entry.float)
+				end
+			else
+				local pos = cf:PointToWorldSpace(entry.at)
+				spawnProp(entry.prop, facing(cf, pos, entry.face), entry.float)
 			end
 		end
 	end
-
-	local W = Game.World
-	local placed, skipped = 0, 0
-	local placeRaw = place
-	place = function(pos)
-		local before = index
-		placeRaw(pos)
-		if index > before then
-			placed += 1
-		else
-			skipped += 1
-		end
+	local names = {}
+	for name in pairs(missing) do
+		table.insert(names, name)
 	end
-	ring(Vector3.zero, W.FieldRadius + 40, W.CenterRadius - 45, P.CentralIsland)
-	for _, cfg in ipairs({ W.ShopIsland, W.LeaderboardIsland }) do
-		ring(cfg.center, cfg.radius * 0.5, cfg.radius * 0.85, P.SideIsland)
-	end
-	for _, altar in ipairs(WorldService.Altars) do
-		-- The back half of the house island (the front has the bridge, the lectern and the facade).
-		local toCenter = altar.center.LookVector
-		ring(altar.center.Position, altar.islandRadius * 0.78, altar.islandRadius * 0.9, P.HouseIsland * 2, toCenter, -0.1)
-		local islet = altar.display.Position
-		ring(islet, W.CometIsletRadius * 0.7, W.CometIsletRadius * 0.85, P.CometIslet * 2, toCenter, -0.1)
-	end
-	print(string.format("[Props] placed %d props (%d spots skipped: not on terrain)", placed, skipped))
+	print(string.format("[Props] placed %d props (%d spots skipped: not on terrain)%s", placed, skipped,
+		#names > 0 and (", missing models: " .. table.concat(names, ", ")) or ""))
 end
 
 function WorldService:Start()
@@ -1258,7 +1421,7 @@ function WorldService:Start()
 		while not learnedTilt and os.clock() - t < 25 do
 			task.wait(1)
 		end
-		scatterProps()
+		placeProps()
 	end)
 end
 

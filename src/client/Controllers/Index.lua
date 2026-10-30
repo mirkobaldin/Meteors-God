@@ -42,12 +42,34 @@ function Index:Refresh()
 				LayoutOrder = rarity.order * 100 + i,
 				Parent = grid,
 			})
-			UI.Corner().Parent = c
-			UI.Stroke(rarity.color, 3, discovered and 0 or 0.6).Parent = c
+			-- Rarity card art (UI art card_<rarity>): the frame goes over the content, inside its opening.
+			local cardArt = UI.Art("card_" .. string.lower(rarity.id))
+			if cardArt then
+				c.BackgroundTransparency = 1
+				local inner = UI.New("Frame", {
+					Position = UDim2.fromScale(0.08, 0.07),
+					Size = UDim2.fromScale(0.84, 0.86),
+					BackgroundColor3 = Color3.fromRGB(24, 30, 48),
+					BorderSizePixel = 0,
+					Parent = c,
+				})
+				UI.Corner(UDim.new(0, 8)).Parent = inner
+				UI.New("ImageLabel", {
+					BackgroundTransparency = 1,
+					Image = cardArt,
+					ImageTransparency = discovered and 0 or 0.45,
+					Size = UDim2.fromScale(1, 1),
+					ZIndex = 4,
+					Parent = c,
+				})
+			else
+				UI.Corner().Parent = c
+				UI.Stroke(rarity.color, 3, discovered and 0 or 0.6).Parent = c
+			end
 			local orb = UI.New("Frame", {
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0.08, 0),
-				Size = UDim2.fromScale(0.55, 0.55),
+				Position = UDim2.new(0.5, 0, 0.13, 0),
+				Size = UDim2.fromScale(0.48, 0.48),
 				BackgroundColor3 = discovered and def.body or Color3.fromRGB(20, 18, 30),
 				BorderSizePixel = 0,
 				Parent = c,
@@ -59,16 +81,16 @@ function Index:Refresh()
 				UI.Text({ Size = UDim2.fromScale(1, 1), Text = "?", TextColor3 = UI.Colors.Muted, MaxTextSize = 40, Parent = orb })
 			end
 			UI.Text({
-				Size = UDim2.new(1, -8, 0.16, 0),
-				Position = UDim2.new(0, 4, 0.66, 0),
+				Size = UDim2.new(0.8, 0, 0.13, 0),
+				Position = UDim2.new(0.1, 0, 0.62, 0),
 				Text = discovered and def.id or "???",
 				TextStrokeTransparency = 0,
 				MaxTextSize = 20,
 				Parent = c,
 			})
 			UI.Text({
-				Size = UDim2.new(1, -8, 0.13, 0),
-				Position = UDim2.new(0, 4, 0.83, 0),
+				Size = UDim2.new(0.8, 0, 0.1, 0),
+				Position = UDim2.new(0.1, 0, 0.76, 0),
 				Text = def.rarity,
 				TextColor3 = rarity.color,
 				MaxTextSize = 16,
@@ -80,9 +102,10 @@ function Index:Refresh()
 				local isPick = picks[def.rarity] == def.id
 				if isPick then
 					UI.Text({
-						Size = UDim2.fromOffset(34, 34),
-						Position = UDim2.fromOffset(4, 4),
+						Size = UDim2.fromOffset(30, 30),
+						Position = UDim2.fromOffset(14, 14),
 						Text = "⚔",
+						ZIndex = 5,
 						MaxTextSize = 28,
 						Parent = c,
 					})

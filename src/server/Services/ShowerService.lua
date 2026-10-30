@@ -1,4 +1,5 @@
--- Meteor showers: baby meteors fall on the Citadel and the first player to grab them keeps them.
+-- Meteor showers: baby meteors fall on the magma field in the middle of the map. The first player to
+-- grab one carries it, and keeps it only by bringing it home (CarryService). Each landing digs a crater.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -7,7 +8,6 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Game = require(Shared.Config.Game)
 local Meteors = require(Shared.Config.Meteors)
 local MeteorVisual = require(Shared.MeteorVisual)
-local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent.Parent
 local Notify = require(Server.Notify)
@@ -18,7 +18,6 @@ local services
 local rng = Random.new()
 local folder
 local onGround = 0
-local pickedRemote
 
 local FALL_HEIGHT = 260
 local FALL_TIME = 1.6
@@ -51,6 +50,7 @@ local function impactFlash(position, color)
 	end)
 end
 
+-- Collecting a meteor puts it in your hands: bring it home to keep it (CarryService).
 local function grab(player, model)
 	if model:GetAttribute("Taken") then
 		return
@@ -59,11 +59,14 @@ local function grab(player, model)
 	if not data then
 		return
 	end
-	if services.MeteorService:Count(player) >= Game.InventoryCap(data) then
+	if services.MeteorService:Count(player) + services.CarryService:Count(player) >= Game.InventoryCap(data) then
 		Notify.Toast(player, "Storage full! Sell some meteors.", "bad")
 		return
 	end
-	model:SetAttribute("Taken", true)
+	if services.CarryService:IsFull(player) then
+		Notify.Toast(player, "Your hands are full! Bring your meteors home first.", "bad")
+		return
+	end
 
 	local typeId = model:GetAttribute("MeteorType")
 	local mutation = model:GetAttribute("Mutation")
@@ -79,29 +82,25 @@ local function grab(player, model)
 		end
 	end
 
-	model:Destroy()
-	onGround -= 1
-
-	local uid = services.MeteorService:AddMeteor(player, typeId, mutation)
-	if not uid then
+	if not services.CarryService:Add(player, typeId, mutation, upgraded) then
 		return
 	end
-	-- Picked up during a shower: "carried" until the shower ends, a weapon hit can knock it out.
-	if services.CycleService.Phase == "Shower" and data.meteors[uid] then
-		data.meteors[uid].fresh = services.CycleService.ShowerId
-	end
-	pickedRemote:FireClient(player, { type = typeId, mutation = mutation, upgraded = upgraded })
+	model:SetAttribute("Taken", true)
+	model:Destroy()
+	onGround -= 1
+	Notify.Toast(player, "Bring the " .. typeId .. " back to your island to keep it!", "info")
 
 	local def = Meteors.ByID[typeId]
 	local rarity = Meteors.RarityByID[def.rarity]
 	if rarity.order >= 4 or mutation == "Eclipsed" then
 		local name = (mutation and (mutation .. " ") or "") .. def.id
-		Notify.Chat(player.DisplayName .. " found a " .. name .. " (" .. def.rarity .. ")!", rarity.color)
+		Notify.Chat(player.DisplayName .. " grabbed a " .. name .. " (" .. def.rarity .. ")! Stop them!", rarity.color)
 	end
 end
 
 -- Makes a meteor fall onto `ground` (from `height` above, in `fallTime`) and become collectable.
-local function dropMeteor(typeId, mutation, ground, height, fallTime, spread)
+-- crater = true: a shower meteor, digs a crater where it lands (on the magma field).
+local function dropMeteor(typeId, mutation, ground, height, fallTime, spread, crater)
 	local def = Meteors.ByID[typeId]
 	local rarity = Meteors.RarityByID[def.rarity]
 	spread = spread or 40
@@ -128,6 +127,13 @@ local function dropMeteor(typeId, mutation, ground, height, fallTime, spread)
 	model.Parent = folder
 
 	-- Lands facing away from the field center, towards the players coming from the edges.
+	-- In its crater, if it digs one (bigger for rarer meteors).
+	local craterRadius = 6 + rarity.order * 1.5
+	local digs = crater and services.WorldService.Field and (ground - services.WorldService.Field.center).Magnitude
+		< services.WorldService.Field.outer - craterRadius
+	if digs then
+		ground -= Vector3.new(0, craterRadius * 0.4, 0)
+	end
 	local rest = ground + Vector3.new(0, 1.5, 0)
 	local out = Vector3.new(rest.X - services.WorldService.Field.center.X, 0, rest.Z - services.WorldService.Field.center.Z)
 	local landing = out.Magnitude > 1 and CFrame.lookAt(rest, rest + out) or CFrame.new(rest)
@@ -138,6 +144,9 @@ local function dropMeteor(typeId, mutation, ground, height, fallTime, spread)
 	fall.Completed:Connect(function()
 		if not model.Parent then
 			return
+		end
+		if digs then
+			services.WorldService:Crater(ground + Vector3.new(0, craterRadius * 0.4, 0), craterRadius)
 		end
 		impactFlash(ground, rarity.color)
 		MeteorVisual.SetExpression(model, "happy")
@@ -177,7 +186,7 @@ local function dropMeteor(typeId, mutation, ground, height, fallTime, spread)
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.ActionText = "Collect"
 		prompt.ObjectText = def.id .. " (" .. def.rarity .. ")"
-		prompt.HoldDuration = 0.25
+		prompt.HoldDuration = Game.Carry.HoldTime[rarity.order] or 0.5
 		prompt.MaxActivationDistance = 10
 		prompt.RequiresLineOfSight = false
 		prompt.Parent = core
@@ -210,7 +219,7 @@ function ShowerService:SpawnOne(luck)
 	if not mutation and event and event.forceMutation and rng:NextNumber() < event.forceChance then
 		mutation = event.forceMutation
 	end
-	dropMeteor(typeId, mutation, randomGroundPoint(), FALL_HEIGHT, FALL_TIME)
+	dropMeteor(typeId, mutation, randomGroundPoint(), FALL_HEIGHT, FALL_TIME, nil, true)
 end
 
 -- A meteor knocked out of a player (weapons): it pops out and lands next to them.
@@ -245,7 +254,6 @@ function ShowerService:Init(s)
 	folder = Instance.new("Folder")
 	folder.Name = "ShowerMeteors"
 	folder.Parent = workspace
-	pickedRemote = Remotes.Get("MeteorPickedUp")
 end
 
 function ShowerService:Start()
@@ -253,6 +261,7 @@ function ShowerService:Start()
 		if phase ~= "Shower" then
 			return
 		end
+		services.WorldService:ResetField() -- the craters of the last shower heal
 		task.spawn(function()
 			local endsAt = os.clock() + duration
 			while os.clock() < endsAt and services.CycleService.Phase == "Shower" do

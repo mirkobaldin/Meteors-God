@@ -205,18 +205,25 @@ function PlayerService:Sync(player)
 	end
 end
 
+-- Walk speed: base + Swiftness upgrade, slowed down by the meteors carried home (CarryService).
+function PlayerService:UpdateSpeed(player)
+	local data = services.DataService:Get(player)
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if not data or not humanoid then
+		return
+	end
+	local speed = (Game.World.WalkSpeed + Game.UpgradeEffect(data, "speed")) * services.CarryService:SpeedMult(player)
+	humanoid.WalkSpeed = speed
+	player:SetAttribute("BaseWalkSpeed", speed)
+end
+
 function PlayerService:RefreshCharacter(player)
 	local data = services.DataService:Get(player)
 	local character = player.Character
 	if not data or not character then
 		return
 	end
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		local speed = Game.World.WalkSpeed + Game.UpgradeEffect(data, "speed")
-		humanoid.WalkSpeed = speed
-		player:SetAttribute("BaseWalkSpeed", speed)
-	end
+	PlayerService:UpdateSpeed(player)
 	EvolutionVisuals.Apply(character, data.evolution, PlayerService:HasPass(player, "VIP"))
 	updateOverhead(player, data)
 	-- The player's house (bought at the lectern; only if house models exist).

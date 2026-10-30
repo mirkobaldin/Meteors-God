@@ -9,6 +9,7 @@ Monetization.GamePasses = {
 	Power2x = { id = 0, name = "2x Power", desc = "Power per second doubled forever" },
 	Shards2x = { id = 0, name = "2x Shards", desc = "Stellar Shards doubled forever" },
 	ExtraAltar = { id = 0, name = "Extra Altar", desc = "+1 altar slot" },
+	BigBag = { id = 0, name = "Big Bag", desc = "Carry 2 more meteors at once" },
 }
 
 Monetization.Products = {

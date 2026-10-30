@@ -9,6 +9,7 @@ local ORDER = {
 	"MeteorService",
 	"CycleService",
 	"ShowerService",
+	"CarryService",
 	"PlanetService",
 	"LaunchService",
 	"ShopService",
