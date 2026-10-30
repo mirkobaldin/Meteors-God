@@ -37,9 +37,10 @@ vedi GDD): sostituisce il tempio segnaposto sull'Isola della Casa. Se ne manca u
 
 **Import delle case di Codex** (`art/export/houses/HouseN.fbx`): File → Import 3D → Model chiamato `House1` … `House6`
 in `ReplicatedStorage/Assets/Houses/`. Il codice fa il resto da solo:
-- **scala**: ridimensiona ogni casa alla sua misura di Blender (dai `HouseN_manifest.json`, copiati in
-  `Game.House.Models`) × `Game.House.Scale` (1,5), qualunque scala abbia usato l'importatore;
-- **posizione**: pivot sul centro del pavimento (origine di Blender), facciata verso l'isola centrale;
+- **dritta**: se l'import l'ha coricata, prova le rotazioni di 90° sull'asse X e tiene quella con la base `Base`
+  piatta e in basso (oppure `Game.House.TiltX`);
+- **scala**: larghezza = `Game.House.Footprints[livello]` stud, qualunque scala abbia usato l'importatore;
+- **posizione**: il punto più basso sull'isola, facciata (lato della targhetta `Sign`) verso l'isola centrale;
 - **isola**: se la casa è più grande, l'isola della casa si allarga (raggio casa + `IslandMargin`); il leggio si
   sposta davanti alla facciata;
 - **materiali**: ogni mesh si chiama come il suo materiale (es. `House3_Warm_Oak_01`); `Game.House.Materials` dà a
@@ -53,6 +54,12 @@ in `ReplicatedStorage/Assets/Houses/`. Il codice fa il resto da solo:
 
 Ingombro massimo: cerchio di raggio 100 stud (l'isola ha raggio 120). Altezza libera.
 I meteoriti non stanno più nella casa: fluttuano sui piedistalli dell'Isoletta delle Comete.
+
+### `Assets/Props/*` — props sparsi sulle isole (Model o Part)
+Qualsiasi Model/Part messo in `ReplicatedStorage/Assets/Props` viene sparso dal codice (`WorldService.scatterProps`):
+anello dell'isola centrale, isole di negozio e classifica, retro di ogni isola della casa e delle isolette delle
+comete. Solo su terreno (mai su ponti o edifici), raddrizzato come le case (o `Game.Props.TiltX`), ridimensionato tra
+`MinSize` e `MaxSize` stud, rotazione a caso. Quanti per zona: `Game.Props`.
 
 ### `Assets/Meteors/<TipoMeteorite>` — corpi dei meteoriti (MeshPart)
 `<TipoMeteorite>` = il campo `id` in `src/shared/Config/Meteors.lua` (es. `Pebble`, `Frost`, `Supernova`).
