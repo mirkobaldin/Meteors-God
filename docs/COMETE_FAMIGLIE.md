@@ -1,31 +1,25 @@
-# Comete: "Comet Beasts" (5 famiglie × 5 rarità)
+# Comete: 5 rarità × 5 comete + 2 Extraterrestri
 
-## Il concept (nuovo)
-Le palle di roccia tutte uguali non funzionano: da lontano sono identiche e non sembrano comete. Una cometa si
-riconosce dalla **CODA**. Quindi ogni cometa è una **creatura-cometa**:
+Ogni cometa ha il **suo stile** (niente famiglie). Le 13 di prima restano (stessi nomi, i giocatori non perdono
+niente), alcune cambiano rarità; 14 sono nuove (★).
 
-- una **testa** di roccia/cristallo (il nucleo) con la faccia scavata e luminosa: due occhi con pupille da serpente,
-  sopracciglia pesanti, bocca piena di denti;
-- una grossa **coda scolpita che va all'indietro come una criniera** (la coda della cometa resa solida): sembra
-  veloce anche quando è ferma, e in gioco si trasforma nella scia quando la lanci.
+| Rarità | Comete |
+|---|---|
+| ⚪ Comune | Pebble · Ember · Frost · Spark · ★ Sprout (roccia muschiosa con funghetti) |
+| 🔵 Rara | Magma · Venom · Crystal · ★ Tidal (oceano: coralli e un'onda sopra la testa) · ★ Cyclone (tornado) |
+| 🟣 Epica | Aurora · ★ Obsidian (cavaliere di vetro vulcanico) · ★ Tempest (nuvola temporalesca con fulmini) · ★ Prism (cristallo che fa arcobaleni) · ★ Phantom (fantasma viola trasparente) |
+| 🟡 Leggendaria | Solar · Royal Comet · ★ Phoenix (uccello di fuoco) · ★ Frost Wyrm (testa di drago di ghiaccio) · ★ Midas (oro massiccio) |
+| 🔴 Mitica | Void · Supernova · ★ Galaxy (galassia dentro la roccia) · ★ Chrono (anelli d'orologio, clessidra) · ★ Eclipse (eclissi vivente) |
+| 🟢 **Extraterrestre** (la più rara, solo dal cielo: niente fusione) | ★ Grey Visitor (metallo grigio, anello da disco volante, raggio verde) · ★ Xeno Hive (alveare alieno biomeccanico) |
 
-**La coda dice la famiglia** (sagoma diversa da lontano), **la testa dice la rarità** (cresce come un'evoluzione):
+Blue Comet resta esclusiva dello Starter Pack (fuori dalle collezioni).
 
-| Rarità | Testa | Coda |
-|---|---|---|
-| Comune | piccola, faccia semplice | corta, 3 ciocche |
-| Rara | sopracciglia/cornetti | più lunga, 5 ciocche |
-| Epica | corazza e corna | si divide in lame |
-| Leggendaria | cresta/corona regale | come un mantello |
-| Mitica | diventa una **bestia** (fenice, drago di ghiaccio, leviatano, titano-pianta, bestia-galassia) | diventa **ali** o un **corpo da serpente**, frammenti in orbita |
+## Armi
+Quando hai trovato **tutte le comete di una rarità** (l'Index se lo ricorda) sblocchi l'arma di quella rarità e
+**scegli tu** quale delle sue comete ne diventa la testa: nell'Index clicchi una cometa di quella rarità (⚔ = scelta
+attuale). Comune → Club, Rara → Hammer, Epica → Lance, Leggendaria → Scythe, Mitica → Mace, Extraterrestre → Ray Lance
+(es. "Phoenix Scythe"). L'arma funziona come prima: colpisci un giocatore, lo sbalzi e gli fai cadere una cometa
+raccolta in questa pioggia.
 
-| Famiglia | Coda | Comune | Rara | Epica | Leggendaria | Mitica (arma) |
-|---|---|---|---|---|---|---|
-| 🔥 Inferno | criniera di fiamme | Cinderling | Magmaw | Pyroclast | Solar Tyrant | **Phoenix Nova** (fenice) |
-| ❄️ Glacier | lame di ghiaccio | Frostling | Hailbreaker | Glacierfang | Aurora Warden | **Absolute Zero** (drago di ghiaccio) |
-| ⚡ Storm | fulmini solidi | Staticle | Thunderhorn | Tempest Eye | Storm Sovereign | **Ion Leviathan** (serpente elettrico) |
-| ☣️ Toxic | tentacoli di melma e rovi | Sporeling | Venomspike | Plague Bloom | Hive Queen | **Blight Titan** (titano-pianta) |
-| 🌌 Void | fumo di nebulosa con stelle | Duskstone | Shadowfang | Nebula Maw | Eclipse Lord | **Galaxy Singularity** (bestia-galassia) |
-
-Descrizioni (inglese, per Codex): `art/concepts/comets/comets.json`. Prompt: `docs/PROMPT_CODEX_COMETE.md`.
-Consiglio: fai prima **solo la famiglia Inferno** (5 comete), guardiamo se il concept funziona, poi le altre.
+Descrizioni per le immagini: `art/concepts/comets/comets.json` (campo `look`, uguale a `Config/Meteors.lua`).
+Prompt: `docs/PROMPT_CODEX_COMETE.md`.

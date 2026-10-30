@@ -32,6 +32,7 @@ local function defaultData()
 		bestHunt = 0,
 		evolution = 1,
 		houseLevel = 1, -- Game.House.Levels
+		weaponPicks = {}, -- [rarity] = meteor type used as the head of that rarity's weapon
 		ascensions = 0,
 		planetsDestroyed = 0,
 		totalDamage = 0,

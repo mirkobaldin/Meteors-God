@@ -34,6 +34,7 @@ local EVENTS = {
 	"Ascend", -- ()
 	"BuyUpgrade", -- (upgradeId, count 1..100)
 	"UpgradeHouse", -- () buy the next house level
+	"PickWeapon", -- (rarityId, typeId) which meteor of a completed rarity becomes the weapon
 	"TradeRequest", -- (targetUserId)
 	"TradeRespond", -- (fromUserId, accepted)
 	"TradeSetOffer", -- ({uid})

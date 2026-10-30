@@ -280,7 +280,7 @@ function MeteorService:Fuse(player, uid)
 	local name = (mutation and (mutation .. " ") or "") .. typeId
 	Notify.Toast(player, "✨ FUSION! 3 " .. m.t .. " became a " .. name .. " (" .. nextRarity .. ")", "good")
 	local rarity = Meteors.RarityByID[nextRarity]
-	if rarity.order >= 5 then
+	if rarity.order >= 4 then
 		Notify.Chat(player.DisplayName .. " fused a " .. name .. " (" .. nextRarity .. ")!", rarity.color)
 	end
 	return true
@@ -361,6 +361,7 @@ function MeteorService:Snapshot(player)
 		altarSlots = MeteorService:AltarSlots(player),
 		cooldowns = cd,
 		index = data.index,
+		weaponPicks = data.weaponPicks or {},
 		indexSize = Meteors.IndexSize(),
 		inventoryCap = Game.InventoryCap(data),
 		equipped = data.equipped,

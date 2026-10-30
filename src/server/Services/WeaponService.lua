@@ -1,7 +1,7 @@
--- Family weapons (Config/Meteors.Families): complete a family and its rarest meteor becomes a
--- weapon (a Tool whose head is the meteor itself). A swing hits the players in front of you:
--- they are knocked back and drop one meteor they picked up during the current shower (the
--- dropped meteor falls next to them and anyone can grab it). Like stealing eggs, with meteors.
+-- Rarity weapons (Config/Meteors.Weapons): find all the meteors of a rarity and pick one of them
+-- (Index window) to become a weapon (a Tool whose head is that meteor). A swing hits the players in
+-- front of you: they are knocked back and drop one meteor they picked up during the current shower
+-- (it falls next to them and anyone can grab it). Like stealing eggs, with meteors.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,7 +22,7 @@ local services
 local hitRemote
 local lastSwing = {} -- [player] = os.clock()
 local immuneUntil = {} -- [player] = os.clock()
-local owned = {} -- [player] = { [familyId] = true } families already announced this session
+local owned = {} -- [player] = { [rarityId] = true } weapons already announced this session
 local rng = Random.new()
 
 local function part(props)
@@ -43,15 +43,20 @@ local function weld(a, b)
 	w.Parent = a
 end
 
-local function makeTool(family)
-	local headType = Meteors.FamilyHead(family)
+local function toolName(rarityId, headType)
+	return headType .. " " .. Meteors.Weapons[rarityId].name
+end
+
+local function makeTool(rarityId, headType)
+	local weapon = Meteors.Weapons[rarityId]
+	local color = Meteors.RarityByID[rarityId].color
 	local tool = Instance.new("Tool")
-	tool.Name = family.weapon.name
-	tool.ToolTip = family.name .. " family weapon: knock meteors out of other players during a shower"
+	tool.Name = toolName(rarityId, headType)
+	tool.ToolTip = rarityId .. " weapon: knock meteors out of other players during a shower"
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
-	tool:SetAttribute("Family", family.id)
-	local kind = family.weapon.kind
+	tool:SetAttribute("Rarity", rarityId)
+	local kind = weapon.kind
 	local length = kind == "lance" and 7 or 5
 	local handle = part({
 		Name = "Handle",
@@ -66,7 +71,7 @@ local function makeTool(family)
 	local collar = part({ Size = Vector3.new(1.1, 0.5, 1.1), Material = Enum.Material.Foil, Color = Color3.fromRGB(214, 168, 96), CFrame = top })
 	collar.Parent = tool
 	weld(handle, collar)
-	-- The meteor head (the family's rarest meteor, angry).
+	-- The meteor head (the meteor the player picked for this rarity, angry).
 	local head = MeteorVisual.Build(headType, { size = kind == "hammer" and 3 or 2.2, expression = "furious", anchored = false })
 	for _, d in ipairs(head:GetDescendants()) do
 		if d:IsA("BasePart") then
@@ -79,7 +84,7 @@ local function makeTool(family)
 	head.Parent = tool
 	weld(handle, head.PrimaryPart)
 	if kind == "lance" then
-		local tip = part({ Size = Vector3.new(0.6, 2.4, 0.6), Material = Enum.Material.Glass, Color = family.color, Transparency = 0.2 })
+		local tip = part({ Size = Vector3.new(0.6, 2.4, 0.6), Material = Enum.Material.Glass, Color = color, Transparency = 0.2 })
 		tip.CFrame = top * CFrame.new(0, 3.2, 0)
 		tip.Parent = tool
 		weld(handle, tip)
@@ -88,7 +93,7 @@ local function makeTool(family)
 		blade.CanCollide = false
 		blade.Massless = true
 		blade.Material = Enum.Material.Neon
-		blade.Color = family.color
+		blade.Color = color
 		blade.Size = Vector3.new(0.2, 1.2, 4)
 		blade.CFrame = top * CFrame.new(0, 0.3, -2) * CFrame.Angles(0, 0, 0)
 		blade.Parent = tool
@@ -104,7 +109,7 @@ local function makeTool(family)
 	local trail = Instance.new("Trail")
 	trail.Attachment0 = a0
 	trail.Attachment1 = a1
-	trail.Color = ColorSequence.new(family.color)
+	trail.Color = ColorSequence.new(color)
 	trail.LightEmission = 1
 	trail.Lifetime = 0.2
 	trail.Transparency = NumberSequence.new(0.2, 1)
@@ -166,14 +171,32 @@ local function swing(player, tool)
 					position = oroot.Position,
 					direction = flat.Unit,
 					dropped = dropped,
-					family = tool:GetAttribute("Family"),
+					rarity = tool:GetAttribute("Rarity"),
 				})
 			end
 		end
 	end
 end
 
--- Gives the player the weapons of every family they completed (once per character).
+-- The meteor chosen as the weapon of a completed rarity (default: the strongest of the set).
+local function pickFor(data, rarityId)
+	local pick = data.weaponPicks and data.weaponPicks[rarityId]
+	local members = Meteors.SetMembers(rarityId)
+	if pick and table.find(members, pick) then
+		return pick
+	end
+	local best, bestDmg
+	for _, id in ipairs(members) do
+		local def = Meteors.ByID[id]
+		if not bestDmg or def.baseDamage > bestDmg then
+			best, bestDmg = id, def.baseDamage
+		end
+	end
+	return best
+end
+
+-- Gives the player one weapon per completed rarity, with the head they picked; replaces a weapon
+-- whose head changed.
 function WeaponService:Refresh(player, announce)
 	local data = services.DataService:Get(player)
 	if not data then
@@ -181,24 +204,56 @@ function WeaponService:Refresh(player, announce)
 	end
 	owned[player] = owned[player] or {}
 	local backpack = player:FindFirstChildOfClass("Backpack")
-	for _, family in ipairs(Meteors.Families) do
-		if Meteors.FamilyComplete(family, data.index) then
-			local name = family.weapon.name
-			local has = (backpack and backpack:FindFirstChild(name)) or (player.Character and player.Character:FindFirstChild(name))
-			if not has and backpack then
-				local tool = makeTool(family)
+	if not backpack then
+		return
+	end
+	for _, rarity in ipairs(Meteors.Rarities) do
+		local r = rarity.id
+		if Meteors.Weapons[r] and Meteors.SetComplete(r, data.index) then
+			local head = pickFor(data, r)
+			local name = toolName(r, head)
+			for _, container in ipairs({ backpack, player.Character }) do
+				if container then
+					for _, t in ipairs(container:GetChildren()) do
+						if t:IsA("Tool") and t:GetAttribute("Rarity") == r and t.Name ~= name then
+							t:Destroy() -- the player picked another head
+						end
+					end
+				end
+			end
+			local has = backpack:FindFirstChild(name) or (player.Character and player.Character:FindFirstChild(name))
+			if not has then
+				local tool = makeTool(r, head)
 				tool.Activated:Connect(function()
 					swing(player, tool)
 				end)
 				tool.Parent = backpack
 			end
-			if announce and not owned[player][family.id] then
-				Notify.Toast(player, "⚔ " .. family.name .. " family complete! You got the " .. name .. "!", "good")
-				Notify.Chat(player.DisplayName .. " completed the " .. family.name .. " family and wields the " .. name .. "!", family.color)
+			if announce and not owned[player][r] then
+				Notify.Toast(player, "⚔ All " .. r .. " meteors found! Your " .. name .. " is ready (pick its meteor in the Index)", "good")
+				Notify.Chat(player.DisplayName .. " found every " .. r .. " meteor and forged a " .. name .. "!", rarity.color)
 			end
-			owned[player][family.id] = true
+			owned[player][r] = true
 		end
 	end
+end
+
+-- Index window: choose which meteor of a completed rarity is the weapon's head.
+local function pickWeapon(player, rarityId, typeId)
+	local data = services.DataService:Get(player)
+	local def = typeof(typeId) == "string" and Meteors.ByID[typeId]
+	if not data or typeof(rarityId) ~= "string" or not def or def.rarity ~= rarityId or def.exclusive then
+		return
+	end
+	if not Meteors.SetComplete(rarityId, data.index) then
+		Notify.Toast(player, "Find every " .. rarityId .. " meteor first", "bad")
+		return
+	end
+	data.weaponPicks = data.weaponPicks or {}
+	data.weaponPicks[rarityId] = typeId
+	WeaponService:Refresh(player, false)
+	services.MeteorService:PushSnapshot(player)
+	Notify.Toast(player, "⚔ Your " .. rarityId .. " weapon is now the " .. toolName(rarityId, typeId), "good")
 end
 
 function WeaponService:Init(s)
@@ -207,6 +262,11 @@ function WeaponService:Init(s)
 end
 
 function WeaponService:Start()
+	Remotes.Get("PickWeapon").OnServerEvent:Connect(function(player, rarityId, typeId)
+		if require(Server.RateLimit).Allow(player, "PickWeapon", 0.5) then
+			pickWeapon(player, rarityId, typeId)
+		end
+	end)
 	services.DataService.PlayerLoaded:Connect(function(player, data)
 		-- Meteors carried from an old session are safe.
 		for _, m in pairs(data.meteors) do

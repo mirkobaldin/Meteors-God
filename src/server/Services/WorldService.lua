@@ -1152,7 +1152,14 @@ end
 -- and leaderboard islands, the back of every house island and comet islet). Only on terrain
 -- (never on bridges or buildings), upright, resized between Props.MinSize and MaxSize, random turn.
 local function scatterProps()
+	-- Props live in Assets/Props or Assets/Map (everything there except the "Citadel" custom map).
 	local templates = AssetLibrary.All("Props")
+	for _, t in ipairs(AssetLibrary.All("Map")) do
+		if t.Name ~= "Citadel" then
+			table.insert(templates, t)
+		end
+	end
+	print(string.format("[Props] %d prop models found in Assets/Props and Assets/Map", #templates))
 	if #templates == 0 then
 		return
 	end
@@ -1216,6 +1223,17 @@ local function scatterProps()
 	end
 
 	local W = Game.World
+	local placed, skipped = 0, 0
+	local placeRaw = place
+	place = function(pos)
+		local before = index
+		placeRaw(pos)
+		if index > before then
+			placed += 1
+		else
+			skipped += 1
+		end
+	end
 	ring(Vector3.zero, W.FieldRadius + 40, W.CenterRadius - 45, P.CentralIsland)
 	for _, cfg in ipairs({ W.ShopIsland, W.LeaderboardIsland }) do
 		ring(cfg.center, cfg.radius * 0.5, cfg.radius * 0.85, P.SideIsland)
@@ -1227,6 +1245,7 @@ local function scatterProps()
 		local islet = altar.display.Position
 		ring(islet, W.CometIsletRadius * 0.7, W.CometIsletRadius * 0.85, P.CometIslet * 2, toCenter, -0.1)
 	end
+	print(string.format("[Props] placed %d props (%d spots skipped: not on terrain)", placed, skipped))
 end
 
 function WorldService:Start()

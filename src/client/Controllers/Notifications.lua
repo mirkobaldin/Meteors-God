@@ -217,11 +217,11 @@ function Notifications:Start()
 		local name = (info.mutation and (info.mutation .. " ") or "") .. def.id
 		local subtitle = def.rarity .. (info.upgraded and "  ·  LUCKY! Rarity upgraded!" or "")
 		Anim.Play("Pickup")
-		Sfx.Play((rarity.order >= 3 or info.mutation) and "RarePickup" or "Pickup")
+		Sfx.Play((rarity.order >= 2 or info.mutation) and "RarePickup" or "Pickup")
 		-- Common pickups only make a sound; rare ones get a toast, epic+ a popup.
-		if rarity.order >= 4 or info.mutation or info.upgraded then
+		if rarity.order >= 3 or info.mutation or info.upgraded then
 			Notifications.Popup(name .. "!", subtitle, rarity.color)
-		elseif rarity.order == 3 then
+		elseif rarity.order == 2 then
 			Notifications.Toast("You picked up: " .. name, "good")
 		end
 	end)

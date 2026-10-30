@@ -1,291 +1,172 @@
 {
-  "families": [
+  "comets": [
     {
-      "id": "inferno",
-      "name": "Inferno",
-      "theme": "Volcanoes and fire",
-      "color": "#FF7A28",
-      "weapon": {
-        "name": "Phoenix Nova Hammer",
-        "kind": "hammer"
-      },
-      "members": [
-        "inferno_common",
-        "inferno_rare",
-        "inferno_epic",
-        "inferno_legendary",
-        "inferno_mythic"
-      ]
+      "id": "pebble",
+      "name": "Pebble",
+      "rarity": "Common",
+      "look": "a classic grey space boulder, chunky and stubborn, a scar across its brow"
     },
     {
-      "id": "glacier",
-      "name": "Glacier",
-      "theme": "Ice and frozen space",
-      "color": "#9BE0FF",
-      "weapon": {
-        "name": "Absolute Zero Lance",
-        "kind": "lance"
-      },
-      "members": [
-        "glacier_common",
-        "glacier_rare",
-        "glacier_epic",
-        "glacier_legendary",
-        "glacier_mythic"
-      ]
+      "id": "ember",
+      "name": "Ember",
+      "rarity": "Common",
+      "look": "a charcoal rock split by glowing orange cracks, smoldering"
     },
     {
-      "id": "storm",
-      "name": "Storm",
-      "theme": "Lightning and storms",
-      "color": "#FFE65A",
-      "weapon": {
-        "name": "Ion Leviathan Mace",
-        "kind": "hammer"
-      },
-      "members": [
-        "storm_common",
-        "storm_rare",
-        "storm_epic",
-        "storm_legendary",
-        "storm_mythic"
-      ]
+      "id": "frost",
+      "name": "Frost",
+      "rarity": "Common",
+      "look": "a frosted blue rock with ice shards on top"
     },
     {
-      "id": "toxic",
-      "name": "Toxic",
-      "theme": "Alien swamps and venom",
-      "color": "#7DFF3C",
-      "weapon": {
-        "name": "Blight Maul",
-        "kind": "hammer"
-      },
-      "members": [
-        "toxic_common",
-        "toxic_rare",
-        "toxic_epic",
-        "toxic_legendary",
-        "toxic_mythic"
-      ]
+      "id": "spark",
+      "name": "Spark",
+      "rarity": "Common",
+      "look": "a dark rock crackling with yellow electricity"
+    },
+    {
+      "id": "sprout",
+      "name": "Sprout",
+      "rarity": "Common",
+      "look": "a mossy green rock with a little alien plant and glowing mushrooms growing on its head"
+    },
+    {
+      "id": "magma",
+      "name": "Magma",
+      "rarity": "Rare",
+      "look": "black basalt with molten lava dripping from its mouth and two curved horns"
+    },
+    {
+      "id": "venom",
+      "name": "Venom",
+      "rarity": "Rare",
+      "look": "a toxic green-purple rock with dripping fangs"
+    },
+    {
+      "id": "crystal",
+      "name": "Crystal",
+      "rarity": "Rare",
+      "look": "grey rock bursting with big pink crystals"
+    },
+    {
+      "id": "tidal",
+      "name": "Tidal",
+      "rarity": "Rare",
+      "look": "an ocean comet: deep blue rock with coral, shells and a wave of water curling over its head"
+    },
+    {
+      "id": "cyclone",
+      "name": "Cyclone",
+      "rarity": "Rare",
+      "look": "a pale rock wrapped in a spinning tornado of wind and dust"
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "rarity": "Epic",
+      "look": "dark blue rock with green-violet northern lights flowing through it"
+    },
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "rarity": "Epic",
+      "look": "an armored knight comet of black volcanic glass with sharp faceted plates and a visor-like brow"
+    },
+    {
+      "id": "tempest",
+      "name": "Tempest",
+      "rarity": "Epic",
+      "look": "a storm-cloud comet: dark clouds swirling around it with lightning bolts striking out"
+    },
+    {
+      "id": "prism",
+      "name": "Prism",
+      "rarity": "Epic",
+      "look": "a clear crystal comet that splits light into rainbows, faceted like a gem"
+    },
+    {
+      "id": "phantom",
+      "name": "Phantom",
+      "rarity": "Epic",
+      "look": "a ghostly translucent violet comet with a wispy spirit trail and hollow glowing eyes"
+    },
+    {
+      "id": "solar",
+      "name": "Solar",
+      "rarity": "Legendary",
+      "look": "a small sun with a crown of solar flares"
+    },
+    {
+      "id": "royal_comet",
+      "name": "Royal Comet",
+      "rarity": "Legendary",
+      "look": "a noble ice-white comet with a natural crown of ice crystals and veins of gold ore"
+    },
+    {
+      "id": "phoenix",
+      "name": "Phoenix",
+      "rarity": "Legendary",
+      "look": "a fire-bird comet with wings and a crest of flames, proud and fierce"
+    },
+    {
+      "id": "frost_wyrm",
+      "name": "Frost Wyrm",
+      "rarity": "Legendary",
+      "look": "an ice dragon head comet with frozen horns and frost breath"
+    },
+    {
+      "id": "midas",
+      "name": "Midas",
+      "rarity": "Legendary",
+      "look": "a solid gold comet, polished and gleaming, with jewel-like eyes"
     },
     {
       "id": "void",
       "name": "Void",
-      "theme": "The dark side of the cosmos",
-      "color": "#AA50FF",
-      "weapon": {
-        "name": "Singularity Scythe",
-        "kind": "scythe"
-      },
-      "members": [
-        "void_common",
-        "void_rare",
-        "void_epic",
-        "void_legendary",
-        "void_mythic"
-      ]
-    }
-  ],
-  "comets": [
-    {
-      "id": "inferno_common",
-      "family": "inferno",
-      "rarity": "Common",
-      "name": "Cinderling",
-      "look": "small charcoal rock head with orange glowing cracks; short tail of 3 flame strands",
-      "tail": "a mane of sculpted flames streaming backwards"
-    },
-    {
-      "id": "inferno_rare",
-      "family": "inferno",
-      "rarity": "Rare",
-      "name": "Magmaw",
-      "look": "basalt head with heavy brow ridges and two horn nubs, lava drooling from the mouth; longer tail of 5 flame strands",
-      "tail": "a mane of sculpted flames streaming backwards"
-    },
-    {
-      "id": "inferno_epic",
-      "family": "inferno",
-      "rarity": "Epic",
-      "name": "Pyroclast",
-      "look": "armored basalt head with two curved horns and small volcano vents on top; tail splits into sharp flame blades",
-      "tail": "a mane of sculpted flames streaming backwards"
-    },
-    {
-      "id": "inferno_legendary",
-      "family": "inferno",
-      "rarity": "Legendary",
-      "name": "Solar Tyrant",
-      "look": "molten gold-orange head with a crest of solar-flare spikes, white-hot eyes; tail like a royal cape of fire with gold streaks",
-      "tail": "a mane of sculpted flames streaming backwards"
-    },
-    {
-      "id": "inferno_mythic",
-      "family": "inferno",
       "rarity": "Mythic",
-      "name": "Phoenix Nova",
-      "look": "PHOENIX: the head becomes a fierce firebird-like beast head with an open jaw, the flame tail spreads into two great wings of fire, burning rock fragments orbit",
-      "tail": "a mane of sculpted flames streaming backwards"
+      "look": "a black hole comet: pitch black, violet event horizon, reality bending around it"
     },
     {
-      "id": "glacier_common",
-      "family": "glacier",
-      "rarity": "Common",
-      "name": "Frostling",
-      "look": "small blue-grey rock head with frosted edges and cyan cracks; short tail of 3 ice shards",
-      "tail": "a tail of long ice blades and frozen crystals streaming backwards"
-    },
-    {
-      "id": "glacier_rare",
-      "family": "glacier",
-      "rarity": "Rare",
-      "name": "Hailbreaker",
-      "look": "head covered in sharp hail crystals, frosty brow; longer tail of 5 ice blades",
-      "tail": "a tail of long ice blades and frozen crystals streaming backwards"
-    },
-    {
-      "id": "glacier_epic",
-      "family": "glacier",
-      "rarity": "Epic",
-      "name": "Glacierfang",
-      "look": "frozen armor plates on the head, two big ice tusks from the jaw; tail splits into long icicle blades",
-      "tail": "a tail of long ice blades and frozen crystals streaming backwards"
-    },
-    {
-      "id": "glacier_legendary",
-      "family": "glacier",
-      "rarity": "Legendary",
-      "name": "Aurora Warden",
-      "look": "dark navy head with green-violet aurora veins and a crown of icicles; tail like a cape of aurora light and ice",
-      "tail": "a tail of long ice blades and frozen crystals streaming backwards"
-    },
-    {
-      "id": "glacier_mythic",
-      "family": "glacier",
+      "id": "supernova",
+      "name": "Supernova",
       "rarity": "Mythic",
-      "name": "Absolute Zero",
-      "look": "ABSOLUTE ZERO: a frost dragon-like head of black ice with a glowing white-blue core in the open mouth, the ice tail becomes a long serpent body of crystals, ice shards orbit",
-      "tail": "a tail of long ice blades and frozen crystals streaming backwards"
+      "look": "an exploding star breaking through red and gold armor, light leaking from every crack"
     },
     {
-      "id": "storm_common",
-      "family": "storm",
-      "rarity": "Common",
-      "name": "Staticle",
-      "look": "small slate head with jagged yellow electric cracks; short tail of 3 lightning bolts",
-      "tail": "a zigzag tail of solid lightning bolts streaming backwards"
-    },
-    {
-      "id": "storm_rare",
-      "family": "storm",
-      "rarity": "Rare",
-      "name": "Thunderhorn",
-      "look": "copper-veined head with two zigzag lightning horns; longer tail of 5 bolts",
-      "tail": "a zigzag tail of solid lightning bolts streaming backwards"
-    },
-    {
-      "id": "storm_epic",
-      "family": "storm",
-      "rarity": "Epic",
-      "name": "Tempest Eye",
-      "look": "head wrapped by a ring of storm-cloud stone, glowing blue eyes; tail of crackling bolts and cloud puffs",
-      "tail": "a zigzag tail of solid lightning bolts streaming backwards"
-    },
-    {
-      "id": "storm_legendary",
-      "family": "storm",
-      "rarity": "Legendary",
-      "name": "Storm Sovereign",
-      "look": "gold and copper armored head with a crown of lightning-rod spikes; tail like a cape of plasma",
-      "tail": "a zigzag tail of solid lightning bolts streaming backwards"
-    },
-    {
-      "id": "storm_mythic",
-      "family": "storm",
+      "id": "galaxy",
+      "name": "Galaxy",
       "rarity": "Mythic",
-      "name": "Ion Leviathan",
-      "look": "ION LEVIATHAN: a thunder-beast head with plates floating apart held by plasma arcs, the tail becomes a long electric serpent body, sparks orbit",
-      "tail": "a zigzag tail of solid lightning bolts streaming backwards"
+      "look": "a whole spiral galaxy swirling inside a cracked rock shell, pink, violet and orange"
     },
     {
-      "id": "toxic_common",
-      "family": "toxic",
-      "rarity": "Common",
-      "name": "Sporeling",
-      "look": "small mossy green rock head with tiny glowing mushrooms; short tail of 3 slime drips",
-      "tail": "a tail of dripping glowing slime tendrils and thorny vines streaming backwards"
-    },
-    {
-      "id": "toxic_rare",
-      "family": "toxic",
-      "rarity": "Rare",
-      "name": "Venomspike",
-      "look": "purple-black head with venom spikes on the brow; longer tail of 5 dripping tendrils",
-      "tail": "a tail of dripping glowing slime tendrils and thorny vines streaming backwards"
-    },
-    {
-      "id": "toxic_epic",
-      "family": "toxic",
-      "rarity": "Epic",
-      "name": "Plague Bloom",
-      "look": "head with carnivorous alien flowers blooming from the cracks; tail of thorny vines and slime",
-      "tail": "a tail of dripping glowing slime tendrils and thorny vines streaming backwards"
-    },
-    {
-      "id": "toxic_legendary",
-      "family": "toxic",
-      "rarity": "Legendary",
-      "name": "Hive Queen",
-      "look": "amber honeycomb hive head with an insect-like crown; tail like a cape of amber resin and wings of a wasp",
-      "tail": "a tail of dripping glowing slime tendrils and thorny vines streaming backwards"
-    },
-    {
-      "id": "toxic_mythic",
-      "family": "toxic",
+      "id": "chrono",
+      "name": "Chrono",
       "rarity": "Mythic",
-      "name": "Blight Titan",
-      "look": "BLIGHT TITAN: a monstrous plant-beast head with a huge toothy flower-jaw, giant toxic crystals, the tail becomes many glowing vines, spore orbs float around",
-      "tail": "a tail of dripping glowing slime tendrils and thorny vines streaming backwards"
+      "look": "a time comet: bronze clockwork rings orbiting a glowing hourglass core"
     },
     {
-      "id": "void_common",
-      "family": "void",
-      "rarity": "Common",
-      "name": "Duskstone",
-      "look": "small near-black rock head with faint violet cracks; short tail of 3 smoke wisps with stars",
-      "tail": "a tail of dark nebula smoke full of tiny stars streaming backwards"
-    },
-    {
-      "id": "void_rare",
-      "family": "void",
-      "rarity": "Rare",
-      "name": "Shadowfang",
-      "look": "obsidian head with violet-black fangs and shadow spikes; longer tail of 5 nebula wisps",
-      "tail": "a tail of dark nebula smoke full of tiny stars streaming backwards"
-    },
-    {
-      "id": "void_epic",
-      "family": "void",
-      "rarity": "Epic",
-      "name": "Nebula Maw",
-      "look": "head with a pink-blue nebula glowing in every crack and stars inside the mouth; tail of swirling nebula clouds",
-      "tail": "a tail of dark nebula smoke full of tiny stars streaming backwards"
-    },
-    {
-      "id": "void_legendary",
-      "family": "void",
-      "rarity": "Legendary",
-      "name": "Eclipse Lord",
-      "look": "black head with a crown of dark spikes and a golden eclipse corona behind it; tail like a cape of night sky",
-      "tail": "a tail of dark nebula smoke full of tiny stars streaming backwards"
-    },
-    {
-      "id": "void_mythic",
-      "family": "void",
+      "id": "eclipse",
+      "name": "Eclipse",
       "rarity": "Mythic",
-      "name": "Galaxy Singularity",
-      "look": "GALAXY SINGULARITY: a cosmic beast head with a swirling galaxy core in pink, violet and orange inside its open jaw (style of art/reference/meteor_supernova.png), the tail becomes a spiral galaxy arm, rock fragments orbit",
-      "tail": "a tail of dark nebula smoke full of tiny stars streaming backwards"
+      "look": "a black sphere with a blazing golden corona: a living solar eclipse"
+    },
+    {
+      "id": "grey_visitor",
+      "name": "Grey Visitor",
+      "rarity": "Extraterrestrial",
+      "look": "an alien visitor comet: smooth grey metal with a ring like a flying saucer, green tractor-beam light underneath"
+    },
+    {
+      "id": "xeno_hive",
+      "name": "Xeno Hive",
+      "rarity": "Extraterrestrial",
+      "look": "a biomechanical alien hive comet with ribbed chitin plates and glowing green pods"
+    },
+    {
+      "id": "blue_comet",
+      "name": "Blue Comet",
+      "rarity": "Epic",
+      "look": "a streamlined blue comet shaped for speed, swept-back spikes like a helmet"
     }
   ]
 }

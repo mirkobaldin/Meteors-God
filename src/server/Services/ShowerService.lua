@@ -94,7 +94,7 @@ local function grab(player, model)
 
 	local def = Meteors.ByID[typeId]
 	local rarity = Meteors.RarityByID[def.rarity]
-	if rarity.order >= 5 or mutation == "Eclipsed" then
+	if rarity.order >= 4 or mutation == "Eclipsed" then
 		local name = (mutation and (mutation .. " ") or "") .. def.id
 		Notify.Chat(player.DisplayName .. " found a " .. name .. " (" .. def.rarity .. ")!", rarity.color)
 	end
@@ -143,7 +143,7 @@ local function dropMeteor(typeId, mutation, ground, height, fallTime, spread)
 		MeteorVisual.SetExpression(model, "happy")
 
 		-- Rarity beacon so players can spot the good ones from far away.
-		if rarity.order >= 3 then
+		if rarity.order >= 2 then
 			local beam = Instance.new("Part")
 			beam.Name = "Beacon"
 			beam.Anchored = true

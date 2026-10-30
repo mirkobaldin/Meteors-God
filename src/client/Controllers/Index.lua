@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Assets = require(Shared.Config.Assets)
 local Meteors = require(Shared.Config.Meteors)
+local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
 local Panels = require(script.Parent.Panels)
@@ -73,22 +74,46 @@ function Index:Refresh()
 				MaxTextSize = 16,
 				Parent = c,
 			})
+			-- Completed rarity: click a meteor to make it that rarity's weapon (⚔ = current pick).
+			if discovered and not def.exclusive and Meteors.Weapons[def.rarity] and Meteors.SetComplete(def.rarity, found) then
+				local picks = snap and snap.weaponPicks or {}
+				local isPick = picks[def.rarity] == def.id
+				if isPick then
+					UI.Text({
+						Size = UDim2.fromOffset(34, 34),
+						Position = UDim2.fromOffset(4, 4),
+						Text = "⚔",
+						MaxTextSize = 28,
+						Parent = c,
+					})
+				end
+				local button = UI.New("TextButton", {
+					Size = UDim2.fromScale(1, 1),
+					BackgroundTransparency = 1,
+					Text = "",
+					ZIndex = 5,
+					Parent = c,
+				})
+				button.Activated:Connect(function()
+					Remotes.Get("PickWeapon"):FireServer(def.rarity, def.id)
+				end)
+			end
 		end
 	end
 	header.Text = "Discovered " .. count .. " / " .. total
-	-- Families: complete one to get its weapon.
+	-- Rarity sets: find all the meteors of a rarity to forge its weapon, then click one to use it.
 	local parts = {}
-	for _, family in ipairs(Meteors.Families) do
+	for _, rarity in ipairs(Meteors.Rarities) do
+		local members = Meteors.SetMembers(rarity.id)
 		local n = 0
-		for _, id in ipairs(family.members) do
+		for _, id in ipairs(members) do
 			if found[id] then
 				n += 1
 			end
 		end
-		local done = n == #family.members
-		table.insert(parts, (done and "⚔ " or "") .. family.name .. " " .. n .. "/" .. #family.members .. (done and (" " .. family.weapon.name) or ""))
+		table.insert(parts, (n == #members and "⚔ " or "") .. rarity.id .. " " .. n .. "/" .. #members)
 	end
-	familiesText.Text = "Families (complete one = weapon): " .. table.concat(parts, "  ·  ")
+	familiesText.Text = "Weapons: find a whole rarity, then click one of its meteors  ·  " .. table.concat(parts, "  ·  ")
 end
 
 function Index:Init()

@@ -315,21 +315,14 @@ Su mobile: joystick per volare, trascini per guardare, tocchi un pianeta per lan
 5. **Museo personale**: la casa mostra le comete più rare in vetrine; gli altri possono visitarla e "mettere
    una stella". Classifica delle case più stellate.
 
-### Famiglie e armi (fatto)
-Le comete sono divise in 4 **famiglie**. Quando hai trovato tutte le comete di una famiglia (l'Index se lo ricorda),
-la più rara diventa la tua **arma** (Tool nello zaino, la testa è la cometa stessa):
-
-| Famiglia | Comete | Arma |
-|---|---|---|
-| Inferno | Ember, Magma, Solar | Solar Hammer |
-| Glacier | Frost, Blue Comet, Royal Comet | Royal Ice Lance |
-| Storm | Spark, Aurora, Supernova | Nova Mace |
-| Abyss | Pebble, Venom, Crystal, Void | Void Scythe |
-
-Stile Steal an Egg: le comete raccolte **durante una pioggia** restano "portate addosso" finché la pioggia finisce.
-Se un altro giocatore ti colpisce con un'arma vieni sbalzato via e **ti cade una di quelle comete** (non quelle
+### Collezioni per rarità e armi (fatto)
+5 rarità (Comune, Rara, Epica, Leggendaria, Mitica) con 5 comete ciascuna + 2 **Extraterrestri** (le più rare, solo
+dal cielo). Elenco in `docs/COMETE_FAMIGLIE.md`. Quando trovi **tutte le comete di una rarità** sblocchi la sua arma e
+scegli nell'Index quale di quelle comete ne è la testa (Club, Hammer, Lance, Scythe, Mace, Ray Lance).
+Stile Steal an Egg: le comete raccolte **durante una pioggia** restano "addosso" finché la pioggia finisce; se un
+altro giocatore ti colpisce con un'arma vieni sbalzato via e **ti cade una di quelle comete** (non quelle
 sull'altare né quella equipaggiata), che chiunque può raccogliere. Ricarica 1,1 s, portata 11 stud, 2,5 s di
-immunità dopo un colpo; niente colpi su chi sta lanciando o è nella Cosmic Hunt. L'Index mostra l'avanzamento.
+immunità; niente colpi su chi sta lanciando o è nella Cosmic Hunt.
 
 ### Idee del proprietario (da fare più avanti)
 - **Cavalcare la propria cometa** (tipo nuvola Speedy di Goku): si sblocca a una certa Evoluzione (es. Titan).

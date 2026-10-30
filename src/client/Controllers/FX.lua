@@ -1084,13 +1084,8 @@ function FX:Start()
 	end)
 	-- Family weapon hit: burst on the victim; the victim's own client applies the knockback.
 	Remotes.Get("WeaponHit").OnClientEvent:Connect(function(p)
-		local Meteors_ = Meteors
-		local color = Color3.fromRGB(255, 200, 120)
-		for _, f in ipairs(Meteors_.Families) do
-			if f.id == p.family then
-				color = f.color
-			end
-		end
+		local rarity = Meteors.RarityByID[p.rarity or ""]
+		local color = rarity and rarity.color or Color3.fromRGB(255, 200, 120)
 		expandAndFade(neonBall(p.position, 2, Color3.new(1, 1, 1), 0), Vector3.one * 12, 0.35)
 		ring(p.position, Vector3.new(0, 1, 0), 2, 22, color, 0.5, 0.2)
 		rocks(p.position, p.direction + Vector3.new(0, 0.6, 0), 8, 1.2, color, 18, Enum.Material.Neon)
