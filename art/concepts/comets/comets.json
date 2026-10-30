@@ -1,172 +1,200 @@
 {
   "comets": [
     {
-      "id": "pebble",
-      "name": "Pebble",
+      "id": "grumble",
+      "name": "Grumble",
       "rarity": "Common",
-      "look": "a classic grey space boulder, chunky and stubborn, a scar across its brow"
+      "look": "a lumpy grey moon-rock ball pocked with little craters, one bigger crater on its forehead like a bump",
+      "expression": "heavy half-closed grumpy eyes with tiny pupils; a flat wide frown with one chipped front tooth sticking up; a grumpy old rock"
     },
     {
-      "id": "ember",
-      "name": "Ember",
+      "id": "cinder",
+      "name": "Cinder",
       "rarity": "Common",
-      "look": "a charcoal rock split by glowing orange cracks, smoldering"
+      "look": "a coal-black ball speckled with glowing orange embers, a short curl of solid smoke on top like a cowlick",
+      "expression": "huge round excited eyes glowing orange; a wide open laughing mouth with one single tooth; a hyperactive kid"
     },
     {
-      "id": "frost",
-      "name": "Frost",
+      "id": "flurry",
+      "name": "Flurry",
       "rarity": "Common",
-      "look": "a frosted blue rock with ice shards on top"
+      "look": "a packed snowball with a messy hairdo of icicle spikes on top, frosty blue shadows",
+      "expression": "squinting mischievous eyes; a cheeky grin with two big buck teeth of ice; a prankster"
     },
     {
-      "id": "spark",
-      "name": "Spark",
+      "id": "zap",
+      "name": "Zap",
       "rarity": "Common",
-      "look": "a dark rock crackling with yellow electricity"
+      "look": "a round ball of bright yellow static fur standing on end, two lightning-bolt shaped ear spikes",
+      "expression": "wide shocked eyes with tiny dot pupils; a zigzag mouth; always startled"
     },
     {
       "id": "sprout",
       "name": "Sprout",
       "rarity": "Common",
-      "look": "a mossy green rock with a little alien plant and glowing mushrooms growing on its head"
+      "look": "a mossy green rock ball with a leafy sprout and tiny glowing mushrooms on its head",
+      "expression": "eyes closed in happy upside-down U curves; a small content smile and moss-pink cheeks; gentle and calm"
     },
     {
-      "id": "magma",
-      "name": "Magma",
+      "id": "magmaw",
+      "name": "Magmaw",
       "rarity": "Rare",
-      "look": "black basalt with molten lava dripping from its mouth and two curved horns"
+      "look": "a cracked black basalt shell over a molten core, two stubby horns, lava drooling from the jaw",
+      "expression": "angry slanted eyes glowing yellow; a huge underbite jaw with two tusks pointing up; a bully"
     },
     {
-      "id": "venom",
-      "name": "Venom",
+      "id": "gloop",
+      "name": "Gloop",
       "rarity": "Rare",
-      "look": "a toxic green-purple rock with dripping fangs"
+      "look": "a bubbling toxic-green slime ball with a crusty purple rock crust grown over its top, bubbles rising inside",
+      "expression": "mismatched crazy eyes, one big and one small; a wide wobbly grin with the tongue lolling out; completely unhinged"
     },
     {
-      "id": "crystal",
-      "name": "Crystal",
+      "id": "geode",
+      "name": "Geode",
       "rarity": "Rare",
-      "look": "grey rock bursting with big pink crystals"
+      "look": "a plain brown rock ball split open horizontally: the split is its mouth, lined with purple amethyst crystals that glow inside",
+      "expression": "two small faceted amethyst eyes, narrowed and cunning; the mouth is the geode crack with crystal teeth; sly"
     },
     {
-      "id": "tidal",
-      "name": "Tidal",
+      "id": "puffer",
+      "name": "Puffer",
       "rarity": "Rare",
-      "look": "an ocean comet: deep blue rock with coral, shells and a wave of water curling over its head"
+      "look": "a deep-space pufferfish puffed into a ball, covered in short spines, teal with glowing bioluminescent spots, small fins",
+      "expression": "big round watery fish eyes; a tiny puckered O-shaped mouth; nervous"
     },
     {
-      "id": "cyclone",
-      "name": "Cyclone",
+      "id": "scarab",
+      "name": "Scarab",
       "rarity": "Rare",
-      "look": "a pale rock wrapped in a spinning tornado of wind and dust"
+      "look": "a space beetle rolled up into an armored ball: glossy metallic green-blue shell plates, two short antennae",
+      "expression": "two big glossy black bug eyes with a white highlight; small clicking mandibles; busy and fast"
     },
     {
-      "id": "aurora",
-      "name": "Aurora",
+      "id": "aurowl",
+      "name": "Aurowl",
       "rarity": "Epic",
-      "look": "dark blue rock with green-violet northern lights flowing through it"
+      "look": "a round night-sky owl: feathers like dark blue crystal plates, green-violet northern lights flowing across its chest, two crystal ear tufts",
+      "expression": "huge calm round owl eyes with green-violet aurora irises; a small closed hooked beak; wise"
     },
     {
-      "id": "obsidian",
-      "name": "Obsidian",
+      "id": "bastion",
+      "name": "Bastion",
       "rarity": "Epic",
-      "look": "an armored knight comet of black volcanic glass with sharp faceted plates and a visor-like brow"
+      "look": "an armored knight ball of black volcanic glass with sharp faceted plates and a visor ridge across the face",
+      "expression": "two eyes glowing red through the narrow visor slit; the mouth hidden behind a grille of glass plates; stoic and silent"
     },
     {
-      "id": "tempest",
-      "name": "Tempest",
+      "id": "stormram",
+      "name": "Stormram",
       "rarity": "Epic",
-      "look": "a storm-cloud comet: dark clouds swirling around it with lightning bolts striking out"
+      "look": "a thundercloud ram: a body of dark sculpted storm-cloud wool with lightning glowing inside, two big curled ram horns of rock",
+      "expression": "fierce narrowed eyes glowing white-blue; gritted teeth with sparks between them; aggressive"
     },
     {
       "id": "prism",
       "name": "Prism",
       "rarity": "Epic",
-      "look": "a clear crystal comet that splits light into rainbows, faceted like a gem"
+      "look": "a faceted clear gem ball that splits light into rainbows",
+      "expression": "diamond-shaped eyes; a smug one-sided smirk; arrogant"
     },
     {
-      "id": "phantom",
-      "name": "Phantom",
+      "id": "specter",
+      "name": "Specter",
       "rarity": "Epic",
-      "look": "a ghostly translucent violet comet with a wispy spirit trail and hollow glowing eyes"
+      "look": "a translucent violet ghost orb with a soft wavy bottom edge (no wisps) and a dark rock skull-core visible inside",
+      "expression": "hollow round eye sockets with tiny white pinpoint pupils; a wide stitched creepy grin; unsettling"
     },
     {
-      "id": "solar",
-      "name": "Solar",
+      "id": "solaris",
+      "name": "Solaris",
       "rarity": "Legendary",
-      "look": "a small sun with a crown of solar flares"
+      "look": "a miniature sun of boiling plasma with a crown of solar-flare loops arching over the top (attached loops, nothing trailing)",
+      "expression": "confident narrowed eyes, white-hot; a proud closed-mouth smile; a king"
     },
     {
-      "id": "royal_comet",
-      "name": "Royal Comet",
+      "id": "leviathan",
+      "name": "Leviathan",
       "rarity": "Legendary",
-      "look": "a noble ice-white comet with a natural crown of ice crystals and veins of gold ore"
+      "look": "a round deep-space whale creature, navy blue with glowing constellation spots, small fins, ancient and majestic",
+      "expression": "small wise ancient eyes; a huge wide gentle mouth with baleen plates; serene"
     },
     {
       "id": "phoenix",
       "name": "Phoenix",
       "rarity": "Legendary",
-      "look": "a fire-bird comet with wings and a crest of flames, proud and fierce"
+      "look": "a round fire bird with its wings folded tight around its body like a cloak and a crest of flame feathers (nothing trailing behind)",
+      "expression": "sharp golden hawk eyes; a hooked beak open in a battle cry; proud and fierce"
     },
     {
-      "id": "frost_wyrm",
-      "name": "Frost Wyrm",
+      "id": "frostfang",
+      "name": "Frostfang",
       "rarity": "Legendary",
-      "look": "an ice dragon head comet with frozen horns and frost breath"
+      "look": "a compact ice dragon head shaped like a ball: curled ice horns and a ridge of frost spikes along the back",
+      "expression": "icy blue reptile eyes with slit pupils; a fanged jaw with cold mist; predatory"
     },
     {
       "id": "midas",
       "name": "Midas",
       "rarity": "Legendary",
-      "look": "a solid gold comet, polished and gleaming, with jewel-like eyes"
+      "look": "a solid polished gold ball studded with cut gems",
+      "expression": "round coin-like eyes with ruby pupils; a greedy grin full of gold teeth; greedy"
     },
     {
-      "id": "void",
-      "name": "Void",
+      "id": "singularity",
+      "name": "Singularity",
       "rarity": "Mythic",
-      "look": "a black hole comet: pitch black, violet event horizon, reality bending around it"
+      "look": "a pitch-black sphere with a glowing violet accretion ring orbiting around its middle like a planet ring, light bending at its edges",
+      "expression": "two glowing violet ring eyes with black centers; a mouth that is a swirling vortex; ominous"
     },
     {
       "id": "supernova",
       "name": "Supernova",
       "rarity": "Mythic",
-      "look": "an exploding star breaking through red and gold armor, light leaking from every crack"
+      "look": "a star bursting through cracked dark armor plates, white-gold light blasting out of every crack",
+      "expression": "furious blazing eyes; a roaring wide-open mouth pouring light; pure rage"
     },
     {
       "id": "galaxy",
       "name": "Galaxy",
       "rarity": "Mythic",
-      "look": "a whole spiral galaxy swirling inside a cracked rock shell, pink, violet and orange"
+      "look": "a sphere of dark glass with a whole spiral galaxy swirling inside, tiny planets orbiting close around it",
+      "expression": "eyes with star-shaped pupils; a serene knowing smile; all-knowing"
     },
     {
       "id": "chrono",
       "name": "Chrono",
       "rarity": "Mythic",
-      "look": "a time comet: bronze clockwork rings orbiting a glowing hourglass core"
+      "look": "a bronze clockwork sphere with two thin crossed rings orbiting it and gears visible through glass panels",
+      "expression": "eyes that are two little clock dials with moving hands; a small precise smile with square cog teeth; calculating"
     },
     {
       "id": "eclipse",
       "name": "Eclipse",
       "rarity": "Mythic",
-      "look": "a black sphere with a blazing golden corona: a living solar eclipse"
+      "look": "a sphere split down the middle: one half a blazing golden sun, the other half a cold silver moon",
+      "expression": "the face is split too: one eye golden fire, the other pale silver; the mouth half grin, half frown; two-faced"
     },
     {
-      "id": "grey_visitor",
-      "name": "Grey Visitor",
+      "id": "visitor",
+      "name": "Visitor",
       "rarity": "Extraterrestrial",
-      "look": "an alien visitor comet: smooth grey metal with a ring like a flying saucer, green tractor-beam light underneath"
+      "look": "a smooth silver biomechanical orb with glowing green seams and a thin saucer ring around its middle",
+      "expression": "huge black almond-shaped alien eyes; a tiny thin slit mouth, no nose; eerily calm"
     },
     {
-      "id": "xeno_hive",
-      "name": "Xeno Hive",
+      "id": "xenobloom",
+      "name": "Xenobloom",
       "rarity": "Extraterrestrial",
-      "look": "a biomechanical alien hive comet with ribbed chitin plates and glowing green pods"
+      "look": "an alien carnivorous seed-pod: dark purple chitin petals clamped shut around a glowing green core",
+      "expression": "two glowing green slit eyes between the petals; the petals part like a mouth showing rows of glowing green needle teeth; predatory"
     },
     {
       "id": "blue_comet",
       "name": "Blue Comet",
       "rarity": "Epic",
-      "look": "a streamlined blue comet shaped for speed, swept-back spikes like a helmet"
+      "look": "a sleek blue ice-glass ball with short swept-back fin spikes on its head, built for speed (no trail)",
+      "expression": "determined narrowed racer eyes; a confident grin; a speed demon"
     }
   ]
 }

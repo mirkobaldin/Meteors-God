@@ -86,30 +86,29 @@ danno = DannoBase(tipo)
 
 | Rarità | Peso | Colore |
 |---|---|---|
-| Comune | 60 | grigio |
-| Non comune | 25 | verde |
-| Raro | 10 | blu |
-| Epico | 4 | viola |
-| Leggendario | 0,9 | oro |
-| Mitico | 0,1 | rosso/rosa |
+| Comune | 62 | grigio |
+| Rara | 26 | blu |
+| Epica | 9 | viola |
+| Leggendaria | 2,5 | oro |
+| Mitica | 0,45 | rosa |
+| Extraterrestre | 0,05 | verde (solo dal cielo, niente fusione) |
 
-### Tipi (v0.1)
+### Tipi (roster v2: ognuno ha corpo e faccia propri, niente scia)
 
-| Tipo | Rarità | Faccia | Danno base | Crescita |
-|---|---|---|---|---|
-| Pebble | Comune | normale | 40 | 2 min |
-| Ember | Comune | normale | 45 | 2 min |
-| Frost | Non comune | normale | 70 | 4 min |
-| Spark | Non comune | normale | 75 | 4 min |
-| Venom | Raro | corna | 120 | 8 min |
-| Crystal | Raro | normale | 130 | 8 min |
-| Magma | Epico | corna | 220 | 15 min |
-| Aurora | Epico | normale | 240 | 15 min |
-| Solar | Leggendario | corona | 450 | 30 min |
-| Royal Comet | Leggendario | corona | 500 | 30 min |
-| Void | Mitico | ciclope | 1000 | 60 min |
-| Supernova | Mitico | occhiali da sole | 1100 | 60 min |
-| Blue Comet | Epico (esclusivo Starter Pack, non scambiabile) | occhiali da sole | 260 | 15 min |
+Corpo compatto e tondeggiante (è un proiettile), due occhi sempre, faccia diversa per ognuno. Descrizioni complete
+(`look` ed `expression`) in `src/shared/Config/Meteors.lua`.
+
+| Rarità | Comete |
+|---|---|
+| Comune | Grumble (sasso lunare brontolone) · Cinder (palla di carbone iperattiva) · Flurry (palla di neve dispettosa) · Zap (palla di pelo elettrico) · Sprout (sasso muschioso tranquillo) |
+| Rara | Magmaw (basalto e lava, bullo con le zanne) · Gloop (slime tossico pazzo) · Geode (geode furbo, la bocca è la crepa di cristalli) · Puffer (pesce palla spaziale) · Scarab (scarabeo arrotolato a palla) |
+| Epica | Aurowl (gufo dell'aurora) · Bastion (cavaliere di vetro nero) · Stormram (ariete di nuvola temporalesca) · Prism (gemma arrogante) · Specter (fantasma inquietante) |
+| Leggendaria | Solaris (re sole) · Leviathan (balena dello spazio) · Phoenix (fenice raccolta nelle ali) · Frostfang (drago di ghiaccio) · Midas (oro e gemme, avido) |
+| Mitica | Singularity (buco nero con anello) · Supernova (stella che esplode dall'armatura) · Galaxy (galassia in una sfera) · Chrono (orologio cosmico) · Eclipse (metà sole, metà luna) |
+| Extraterrestre | Visitor (alieno grigio argentato) · Xenobloom (baccello alieno carnivoro) |
+
+Blue Comet: Epica, esclusiva dello Starter Pack. I salvataggi con i vecchi nomi vengono convertiti (`LEGACY_IDS` in
+`DataService`).
 
 ### Mutazioni (tirate alla caduta)
 
@@ -187,8 +186,8 @@ Shadow, Legendary), lune (Rocky, Ice, Shadow), strisce (Candy), spuntoni giganti
 - **Strati veri**: sotto la crosta il **mantello** di lava (CrackedLava), al centro una cavità con il **nucleo** al neon.
 - **Crateri**: ogni colpo scava una sfera d'aria. Raggio = R × (quota danno × 1,3)^(1/3) tra 5% e 30% di R: la somma
   dei crateri svuota il pianeta. Il bordo viene "bruciato" e resta il **segno dell'elemento**:
-  Frost/Royal/Blue Comet → ghiaccio e spuntoni di cristallo; Magma/Ember → lava; Venom → melma tossica;
-  Crystal → cristalli rosa; Solar → vetro dorato; Void → buco nero più grande; Supernova → cratere più grande con lava.
+  Flurry/Leviathan/Blue Comet → ghiaccio e spuntoni di cristallo; Magmaw/Cinder → lava; Gloop → melma tossica;
+  Geode → cristalli; Solaris → vetro dorato; Singularity → buco nero più grande; Supernova → cratere più grande con lava.
 - **VFX per elemento** (client): ghiaccio che spunta, schizzi di lava ad arco, fulmini, nube tossica con bolle,
   schegge di cristallo, nastri d'aurora, raggi solari, implosione nera, onde arcobaleno.
 - **Arrivo** (2,4 s, stile "terremoto che spacca l'aria"): una **linea sottile** si disegna nello spazio, poi partono
@@ -276,7 +275,7 @@ Casa. La casa si **migliora al leggio** davanti a lei (finestra "Your House"): 6
   al livello 5 diventa *Awakened*, al 10 *Ascended*. Costo = 40 × rarità^1,5 × 1,55^livello.
 - **Abilità** (una per tipo, in `Config/Meteors.lua`): Burn/Poison/Eruption (danno extra in 3 s), Chain Lightning e
   Nova Blast (secondo colpo), Deep Freeze e Solar Flare (il pianeta prende più danni da tutti per 8 s), Shatter
-  (critico più forte), Aurora/Royal (più Frammenti), Rock Solid/Void (più danno), Hyperspeed (ricarica dimezzata).
+  (critico più forte), Aurowl/Leviathan (più Frammenti), Rock Solid/Singularity (più danno), Hyperspeed (ricarica dimezzata).
 - **Reattore a Fusione**: si sblocca a 3 pianeti distrutti; 3 meteoriti uguali in magazzino → 1 della rarità dopo.
 
 ## 12c. Cosmic Hunt (modalità volo)

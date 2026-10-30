@@ -62,7 +62,7 @@ comete. Solo su terreno (mai su ponti o edifici), raddrizzato come le case (o `G
 `MinSize` e `MaxSize` stud, rotazione a caso. Quanti per zona: `Game.Props`.
 
 ### `Assets/Meteors/<TipoMeteorite>` — corpi dei meteoriti (MeshPart)
-`<TipoMeteorite>` = il campo `id` in `src/shared/Config/Meteors.lua` (es. `Pebble`, `Frost`, `Supernova`).
+`<TipoMeteorite>` = il campo `id` in `src/shared/Config/Meteors.lua` (es. `Grumble`, `Flurry`, `Supernova`).
 Un singolo **MeshPart** chiamato come il tipo, roccia/forma del meteorite **senza faccia**:
 la faccia (occhi, pupille, sopracciglia, bocca, guance) è fatta di **parti 3D saldate al corpo** dal codice sul lato
 −Z, così le espressioni cambiano. Lascia il fronte (−Z) abbastanza liscio e tondo per ospitarla.
@@ -70,7 +70,7 @@ Dimensione 1×1×1 stud circa: il codice lo scala. Pivot al centro. Se manca, `A
 
 **Le 13 comete sono già fatte** da `art/blender/meteors_build.py` (Blender, procedurale): FBX in
 `art/export/meteors/<Nome>.fbx` (nome senza spazi, es. `RoyalComet.fbx`; in Studio rinomina il MeshPart con l'`id`
-esatto, es. `Royal Comet`), render in `art/renders/meteors/`. Lo script scrive anche
+esatto, es. `Blue Comet`), render in `art/renders/meteors/`. Lo script scrive anche
 `src/shared/Config/MeteorMeshes.lua` con il riquadro di ogni mesh: serve al codice per far combaciare la sfera della
 roccia con la faccia anche se ci sono corna o creste. Se rifai una cometa a mano, riesegui lo script con `--config`
 o aggiorna quel file. Niente accessori: corna, creste, cristalli e pinne fanno parte della roccia.
@@ -84,7 +84,7 @@ secondo l'espressione, pupille che si muovono) sono nel controller client `Meteo
 texture (`<Nome>.png` e `<Nome>_Jaw.png`, incluse nell'FBX). ~16.000 triangoli per cometa.
 
 **Import in Studio:** File → Import 3D → scegli `art/export/meteors/<Nome>.fbx` → ottieni un Model con le MeshPart
-`Body` e `Jaw`. Rinomina il Model con l'`id` esatto (es. `Royal Comet`, con lo spazio) e mettilo in
+`Body` e `Jaw`. Rinomina il Model con l'`id` esatto (es. `Blue Comet`, con lo spazio) e mettilo in
 `ReplicatedStorage/Assets/Meteors/`. Non spostare né ridimensionare i pezzi: il codice li posiziona da solo con
 `Config/MeteorMeshes.lua`.
 

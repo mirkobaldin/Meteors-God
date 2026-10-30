@@ -63,18 +63,38 @@ local function reconcile(data, template)
 	return data
 end
 
--- Meteor and mutation ids were renamed to English; convert old saves.
+-- Meteor and mutation ids were renamed (to English, then the new meteor roster); convert old saves.
 local LEGACY_IDS = {
-	Sassolino = "Pebble",
-	Brace = "Ember",
-	Gelo = "Frost",
-	Scintilla = "Spark",
-	Veleno = "Venom",
-	Cristallo = "Crystal",
-	Solare = "Solar",
-	["Cometa Regale"] = "Royal Comet",
-	Vuoto = "Void",
+	Sassolino = "Grumble",
+	Brace = "Cinder",
+	Gelo = "Flurry",
+	Scintilla = "Zap",
+	Veleno = "Gloop",
+	Cristallo = "Geode",
+	Solare = "Solaris",
+	["Cometa Regale"] = "Leviathan",
+	Vuoto = "Singularity",
 	["Cometa Blu"] = "Blue Comet",
+	-- roster v2
+	Pebble = "Grumble",
+	Ember = "Cinder",
+	Frost = "Flurry",
+	Spark = "Zap",
+	Magma = "Magmaw",
+	Venom = "Gloop",
+	Crystal = "Geode",
+	Tidal = "Puffer",
+	Cyclone = "Scarab",
+	Aurora = "Aurowl",
+	Obsidian = "Bastion",
+	Tempest = "Stormram",
+	Phantom = "Specter",
+	Solar = "Solaris",
+	["Royal Comet"] = "Leviathan",
+	["Frost Wyrm"] = "Frostfang",
+	Void = "Singularity",
+	["Grey Visitor"] = "Visitor",
+	["Xeno Hive"] = "Xenobloom",
 	Dorato = "Golden",
 	Arcobaleno = "Rainbow",
 	Eclissato = "Eclipsed",
@@ -92,6 +112,9 @@ local function migrate(data)
 		index[LEGACY_IDS[id] or id] = v
 	end
 	data.index = index
+	for rarity, typeId in pairs(data.weaponPicks) do
+		data.weaponPicks[rarity] = LEGACY_IDS[typeId] or typeId
+	end
 end
 
 local function keyFor(player)

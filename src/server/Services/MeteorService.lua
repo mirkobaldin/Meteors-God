@@ -484,7 +484,7 @@ function MeteorService:Start()
 		end
 		-- Every new god starts with one meteor so the first launch happens in minute one.
 		if next(data.meteors) == nil then
-			MeteorService:AddMeteor(player, "Pebble", nil, { silent = true })
+			MeteorService:AddMeteor(player, "Grumble", nil, { silent = true })
 		end
 		-- Meteors that were on slots no longer available (e.g. pass lost) go back to storage.
 		local slots = MeteorService:AltarSlots(player)

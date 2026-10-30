@@ -1,45 +1,48 @@
-# Prompt per Codex: le comete "Comet Beasts"
+# Prompt per Codex: le comete (roster v2)
 
-Prima prova: lascia `ONLY = pebble, magma, obsidian, phoenix, galaxy, grey_visitor` (una per rarità). Se ti
-piacciono, rilancialo con `ONLY = all`.
+Roster nuovo da zero (vedi `docs/COMETE_FAMIGLIE.md`). Ogni cometa ha un corpo e una faccia propri, e **nessuna scia**.
+Prima prova con una per rarità: `ONLY = grumble, puffer, bastion, leviathan, eclipse, visitor`. Se ti piacciono,
+rilancialo con `ONLY = all`.
 
 ```
-ONLY = pebble, magma, obsidian, phoenix, galaxy, grey_visitor
+ONLY = grumble, puffer, bastion, leviathan, eclipse, visitor
 
-Read art/concepts/comets/comets.json. For every comet listed in ONLY (or all if ONLY = all) generate TWO images, PNG with a
-fully transparent background, 1024x1024:
-  art/concepts/comets/<id>_34.png     3/4 side view: the head on the left looking at the camera, the whole tail
-                                       streaming back and up to the right, nothing cut off
-  art/concepts/comets/<id>_front.png  front view, face looking straight at the camera, the tail visible behind
-Overwrite files with the same name.
+FORGET every comet image made before and do NOT use art/reference/meteor_base.png or any other reference image:
+the old comets all had the same face and a trail, and both are wrong.
 
-GAME: "Meteor Gods" (Roblox). Young gods tame LIVING COMETS and hurl them at giant planets. The comets are the
-stars of the game and the thing players collect, so they must look like the coolest creatures in a collectible
-creature game: badass, powerful, full of personality. NOT cute, NOT a rock with a face.
+Read art/concepts/comets/comets.json. For every comet listed in ONLY (or all if ONLY = all) generate TWO images, PNG
+with a fully transparent background, 1024x1024, overwriting files with the same name:
+  art/concepts/comets/<id>_34.png     3/4 view, the creature looking at the camera
+  art/concepts/comets/<id>_front.png  front view, face looking straight at the camera
 
-THE CONCEPT, "COMET BEASTS": every comet is a creature made of two parts.
-1) The HEAD: the comet's core, a chunky rounded head of rock/crystal/metal (see "look"), with the face CARVED
-   into it and lit from inside: two fierce glowing eyes with vertical snake-slit pupils, heavy brow ridges
-   always frowning, a wide mouth full of jagged teeth. Two eyes, always.
-2) The TAIL: the comet's tail made SOLID and sculpted, streaming backwards like a mane or a cape (see "tail"):
-   it gives the silhouette and the sense of speed even when standing still. It is attached to the head and part
-   of the same object (it is not loose VFX). The tail is made of what the comet is made of (fire, ice, water,
-   wind, crystal, smoke, metal...).
-EVERY COMET HAS ITS OWN STYLE: use the "look" field; no two comets may look alike. "rarity" tells how
-spectacular it is: Common = simple and charming, small; Rare = more details, stronger shapes; Epic = armor, horns,
-striking materials; Legendary = regal and majestic, precious materials, a crest; Mythic = cosmic and
-overwhelming, orbiting fragments, the core shining through; Extraterrestrial = clearly ALIEN (strange metal,
-biomechanical shapes, otherworldly green light), unlike anything else in the game.
+GAME: "Meteor Gods" (Roblox). Young gods collect LIVING COMETS that rain from the sky, raise them, and hurl them at
+giant planets to smash them. The comets are the collectibles of the game: each one is a little character with its own
+personality, like the creatures of the best collectible creature games.
 
-STYLE: premium stylized 3D creature render, like the legendary creatures of the best collectible creature games
-and the best Roblox showcase games: bold readable silhouette that works even when tiny, chunky proportions
-(big head, strong shapes), hand-painted PBR materials (rough rock, glossy crystal, molten emissive cracks), strong
-rim light, soft studio lighting, saturated colors with clear contrast between the dark rock and the glowing
-parts. Same lighting and camera for all.
+BODY: every comet is a COMPACT, ROUNDED creature (ball or egg shaped), something a god could throw like a
+cannonball. Its features (horns, fins, spikes, crystals, ear tufts, folded wings, rings) grow from the body and stay
+close to it, so the silhouette is still roughly round but instantly recognizable. Use the "look" field exactly.
 
-RULES: no accessories (no hats, glasses, jewelry, clothes: horns, crests and spikes grow from the body); no text,
-no letters, no logos, no watermarks; no background, no ground, no shadow plane; one creature per image,
-centered, fully visible.
+NO TRAIL: absolutely no tail, trail, streak, motion lines, flames or smoke streaming behind, comet tail, speed lines
+or particles. The creature is shown standing still.
 
-When done: git add art/concepts/comets ; git commit -m "comet concepts" ; git pull --rebase ; git push.
+FACE: use the "expression" field exactly; EVERY comet has a DIFFERENT face (eye shape, pupils, mouth, teeth,
+mood). Do NOT give them the generic angry glowing eyes with a jagged-tooth grin unless the expression asks for it.
+Always exactly two eyes. Eyes and mouth are part of the body (carved, grown, glowing from inside), never stuck-on
+pieces. The expression must read clearly even when the image is small.
+
+RARITY ("rarity" field) sets how spectacular it is: Common = simple, one main material, small and charming;
+Rare = two materials, stronger shapes; Epic = armor, horns or striking materials, cool; Legendary = majestic,
+precious materials, a crest or crown grown from the body; Mythic = cosmic and overwhelming, orbiting pieces, inner
+light; Extraterrestrial = clearly ALIEN (strange metal, biomechanical, otherworldly green light), unlike anything else.
+
+STYLE: premium stylized 3D render, like a high-end collectible toy or a top Roblox showcase game: chunky proportions,
+bold readable silhouette, hand-painted PBR materials (real rock, real ice, glossy crystal, soft fur, slime), saturated
+colors with strong contrast, soft studio light with a rim light. Same lighting, camera distance and size for every
+comet, so they look like one set. Avoid washed-out colors and avoid making everything white and gold.
+
+RULES: no accessories (no hats, glasses, jewelry, clothes); no text, letters, logos or watermarks; no background,
+ground or shadow plane; one creature per image, centered, fully visible.
+
+When done: git add art/concepts/comets ; git commit -m "comet concepts v2" ; git pull --rebase ; git push.
 ```
